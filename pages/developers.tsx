@@ -82,12 +82,15 @@ export default function Developers({ base }: { base: string }) {
 
       <Panel title='Quote' note='What a swap would deliver right now, or what to pay for an amount to arrive. Amounts are in whole tokens, the way people write them.'>
         <Code>{`curl "${base}/api/quote?from=LUNA&to=USDC&amount=100"
-curl "${base}/api/quote?from=LUNA&to=USDC&receive=5"`}</Code>
+curl "${base}/api/quote?from=LUNA&to=USDC&receive=5"
+curl "${base}/api/quote?from=LUNA&to=USDC&amount=100&tx=1&sender=terra1…&slippage=0.5"`}</Code>
         <div style={{ marginTop: SPACE['2'] }}>
           <Param k='from, to' v="a ticker or the token's denom or contract" />
           <Param k='amount' v='what to pay, a positive number of whole tokens' />
           <Param k='receive' v='instead of amount: what should arrive. The answer says what to pay so that at least this arrives at 1% slippage, and carries exactOut: true' />
-          <Param k='400 · 404 · 429 · 503' v='bad input · no route right now · busy · the chain did not answer' />
+          <Param k='slippage' v='how far the price may move before the swap fails instead, in percent from 0.1 to 5; default 1' />
+          <Param k='tx=1, sender' v="adds tx: the exact messages this page would ask that wallet to sign for the quote (msgs, with each message's JSON and funds), the memo, and the amounts in smallest units. Never cached. Sign the messages, not the rounded numbers; a route is fresh for about a minute" />
+          <Param k='400 · 404 · 422 · 429 · 503' v='bad input · no route right now · too small to route · busy · the chain did not answer' />
         </div>
         <Code>{sample}</Code>
       </Panel>
