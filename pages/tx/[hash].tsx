@@ -8,7 +8,7 @@
  */
 
 import Link from 'next/link'
-import type { GetServerSideProps } from 'next'
+import type { GetStaticPaths, GetStaticProps } from 'next'
 import { useState } from 'react'
 import { SPACE, TEXT } from 'components/tokens'
 import { C, Page, Panel, linkBtn, row } from 'components/PageShell'
@@ -16,7 +16,7 @@ import { TokenIcon } from 'components/TokenIcon'
 import { KNOWN_TOKENS, fromMicro, tokenFor, type KnownToken } from 'lib/dex'
 import { fmtAmount } from 'lib/arb'
 import { TX_HASH, readReceipt, type Receipt } from 'lib/txReceipt'
-import { withCpuSsr } from 'lib/cpuLog'
+import { SITE_URL } from 'lib/siteUrl'
 
 const KIND: Record<string, string> = {
   swap: 'Swap', zap: 'Zap', 'add liquidity': 'Added liquidity', 'remove liquidity': 'Removed liquidity', stake: 'Staked LP', unstake: 'Unstaked LP',
@@ -45,15 +45,21 @@ function vsQuote(r: Receipt): number | null {
   return got ? (amountOf(got).n / q.amount - 1) * 100 : null
 }
 
-const ssp: GetServerSideProps = async ctx => {
+/**
+ * Built on the first visit and kept (incremental static regeneration). A
+ * transaction never changes once it is in a block, so a found receipt is kept
+ * for good; one the endpoints do not know yet is asked for again in a minute.
+ * Rendered per request before 2026-09-27 (Vercel's Hobby plan).
+ */
+export const getStaticPaths: GetStaticPaths = async () => ({ paths: [], fallback: 'blocking' })
+
+export const getStaticProps: GetStaticProps = async ctx => {
   const raw = String(ctx.params?.hash ?? '')
-  if (!TX_HASH.test(raw)) return { notFound: true }
+  if (!TX_HASH.test(raw)) return { notFound: true, revalidate: 86_400 }
   const hash = raw.toUpperCase()
   if (raw !== hash) return { redirect: { destination: `/tx/${hash}`, permanent: true } }
   const receipt = await readReceipt(hash)
-  const base = `https://${ctx.req.headers.host ?? 'swap.openfields.app'}`
-  // A transaction never changes once it is in a block, so a found receipt can be kept at the edge.
-  if (receipt) ctx.res.setHeader('Cache-Control', 'public, s-maxage=3600, stale-while-revalidate=86400')
+  const base = SITE_URL
   const vs = receipt ? vsQuote(receipt) : null
   const facts = receipt?.quote
     ? [
@@ -63,6 +69,7 @@ const ssp: GetServerSideProps = async ctx => {
       ].filter(Boolean).join(', ') + '. '
     : ''
   return {
+    revalidate: receipt ? false : 60,
     props: {
       hash,
       receipt,
@@ -163,6 +170,3 @@ export default function TxPage({ hash, receipt }: { hash: string; receipt: Recei
     </Page>
   )
 }
-
-// TEMPORARY: CPU per page (lib/cpuLog).
-export const getServerSideProps = withCpuSsr('page/tx', ssp)

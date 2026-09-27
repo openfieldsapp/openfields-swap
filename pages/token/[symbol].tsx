@@ -10,7 +10,7 @@
  */
 
 import Link from 'next/link'
-import type { GetServerSideProps } from 'next'
+import type { GetStaticPaths, GetStaticProps } from 'next'
 import { useEffect, useMemo, useState } from 'react'
 import { SPACE, TEXT } from 'components/tokens'
 import { C, Figure, Page, Panel, cell, fmtNum, linkBtn, row } from 'components/PageShell'
@@ -27,7 +27,7 @@ import type { DexResponse } from 'lib/api/dex'
 import type { VenueResponse } from 'lib/api/dex-venue'
 import type { DepthResponse } from 'lib/api/depth'
 import { pageActive } from 'lib/pageActive'
-import { withCpuSsr } from 'lib/cpuLog'
+import { SITE_URL } from 'lib/siteUrl'
 
 /** Bought with and sold for USDC from Noble; USDC itself, and USDC.inj, which never meets it, trade against LUNA. */
 const counterpart = (key: string) => (key === 'USDC' || key === 'USDC.inj' ? 'LUNA' : 'USDC')
@@ -52,13 +52,23 @@ function kindOf(t: KnownToken): string {
   return 'native token'
 }
 
-const ssp: GetServerSideProps = async ctx => {
+/**
+ * Every listed token's page is built with the site, and served from the CDN:
+ * the page is client-rendered, and the server only writes its social card.
+ * Rendered per request before 2026-09-27 (Vercel's Hobby plan). Another
+ * spelling of a symbol is answered once, then kept.
+ */
+export const getStaticPaths: GetStaticPaths = async () => ({
+  paths: KNOWN_TOKENS.map(t => ({ params: { symbol: t.key } })),
+  fallback: 'blocking',
+})
+
+export const getStaticProps: GetStaticProps = async ctx => {
   const raw = String(ctx.params?.symbol ?? '')
   const t = KNOWN_TOKENS.find(x => x.key.toLowerCase() === raw.toLowerCase())
-  if (!t) return { notFound: true }
-  if (t.key !== raw) return { redirect: { destination: `/token/${encodeURIComponent(t.key)}`, permanent: false } }
-  ctx.res.setHeader('Cache-Control', 'public, s-maxage=3600, stale-while-revalidate=86400')
-  const base = `https://${ctx.req.headers.host ?? 'swap.openfields.app'}`
+  if (!t) return { notFound: true, revalidate: 86_400 }
+  if (t.key !== raw) return { redirect: { destination: `/token/${encodeURIComponent(t.key)}`, permanent: false }, revalidate: 86_400 }
+  const base = SITE_URL
   const meta = TOKEN_META[t.key]
   return {
     props: {
@@ -363,6 +373,3 @@ export default function TokenPage({ symbol }: { symbol: string }) {
     </Page>
   )
 }
-
-// TEMPORARY: CPU per page (lib/cpuLog).
-export const getServerSideProps = withCpuSsr('page/token', ssp)

@@ -5,11 +5,14 @@
  *
  * It first asks the site for its public build settings (GET /api/pool-scans),
  * so it builds exactly what the site would. Then every few seconds it asks each
- * scan for its value (lib/poolScans): with no KV here, a scan builds again once
- * its `everyMs` has passed. New values go to the site together, with a GitHub
- * OIDC token that the site checks against its own repository and this
- * workflow. As each ten-minute slot begins it also writes that slot of the
- * price history, with the volume traded since the one before.
+ * scan for its value (lib/poolScans), and a scan builds again once its
+ * `everyMs` has passed. As each ten-minute slot begins it also writes that
+ * slot of the price history, with the volume traded since the one before.
+ *
+ * Where the results go depends on the secrets (see DIRECT below): straight
+ * into the site's store, with the board and the LP holders built here too; or,
+ * without them, to the site together, with a GitHub OIDC token that the site
+ * checks against its own repository and this workflow.
  *
  * It prints counts and times only: a public repository's run logs are public.
  *
@@ -35,9 +38,22 @@ const SLOT_MS = 600_000
 /** Into a slot before writing it, so the new slot's first blocks are in. */
 const SLOT_SETTLE_MS = 5_000
 
-// This process builds; it must not read or write the site's store itself.
-delete process.env.KV_REST_API_URL
-delete process.env.KV_REST_API_TOKEN
+/**
+ * With the site's store in this job's environment (the repository secrets
+ * KV_REST_API_URL and KV_REST_API_TOKEN), it writes every scan, the board,
+ * the LP holders and each price slot straight into it, as the site's own
+ * functions would, and never calls the site's functions for them: nothing of
+ * this runs on Vercel. Without them it hands each scan over to
+ * /api/pool-scans instead, and the board and holders stay the site's.
+ */
+// A dry run never touches the store, whatever this shell holds.
+const DIRECT = !DRY_RUN && !!process.env.KV_REST_API_URL && !!process.env.KV_REST_API_TOKEN
+if (!DIRECT) {
+  delete process.env.KV_REST_API_URL
+  delete process.env.KV_REST_API_TOKEN
+}
+/** In direct mode nothing reaches the site's function, so it would go cold; a request this often keeps it warm for visitors. */
+const WARM_MS = 4 * 60_000
 
 const log = (...a: unknown[]) => console.log(new Date().toISOString().slice(11, 19), ...a)
 const sleep = (ms: number) => new Promise(r => setTimeout(r, ms))
@@ -96,18 +112,27 @@ async function main() {
     log('the site gave no settings; using this shell\'s')
   }
   const repo = process.env.GITHUB_REPOSITORY
-  if (!DRY_RUN && (!status?.accepting || (repo && status.accepting.toLowerCase() !== repo.toLowerCase()))) {
+  if (!DRY_RUN && !DIRECT && (!status?.accepting || (repo && status.accepting.toLowerCase() !== repo.toLowerCase()))) {
     throw new Refused(`${SITE} takes pool scans from ${status?.accepting ?? 'nobody'}, not from ${repo ?? 'here'}`)
   }
   for (const [k, v] of Object.entries(status?.env ?? {})) if (k.startsWith('NEXT_PUBLIC_')) process.env[k] = v
 
   // The site's modules read those settings when first loaded, so they load only now.
   const { SCANS } = await import('lib/poolScans')
-  const { SCAN_NAMES, SCAN_PLAN, POOL_SCANS_AUDIENCE } = await import('lib/scanPlan')
+  const { SCAN_NAMES, SCAN_PLAN, POOL_SCANS_AUDIENCE, POOL_SCANS_BEAT_KEY } = await import('lib/scanPlan')
   const { keepSitePools, sitePools } = await import('lib/sitePools')
   const { memCursors, scanVolumes, setCursors, volumePools } = await import('lib/volumeScan')
+  const { actAsBuilder } = await import('lib/sharedCache')
+  const { claimSlot, recordPrices } = await import('lib/priceHistory')
+  const { BOARD_EVERY_MS, buildBoard } = await import('lib/board')
+  const { HOLDERS_EVERY_MS, buildHolders } = await import('lib/lpHolders')
+  const { kv } = await import('@vercel/kv')
   type Name = (typeof SCAN_NAMES)[number]
   const audience = status?.audience || POOL_SCANS_AUDIENCE
+  if (DIRECT) actAsBuilder()
+  const run = process.env.GITHUB_RUN_ID ?? ''
+  /** Direct mode: what the site's status route shows, as the handover writes it. */
+  const beat = (fields: Record<string, number>) => kv.hset(POOL_SCANS_BEAT_KEY, { at: Date.now(), run, ...fields }).catch(() => 0)
 
   const asked: Partial<Record<Name, number>> = {}
   const sent: Partial<Record<Name, number>> = {}
@@ -129,6 +154,8 @@ async function main() {
         took[n] = Date.now() - t0
         if (!(SCANS[n].keep as (v: unknown) => boolean)(v)) { count.failed++; return }
         if (DRY_RUN) { sent[n] = v.at; log(`${n}: built in ${took[n]} ms, ${JSON.stringify(v).length} bytes`); return }
+        // Direct mode: run() has stored it already (lib/sharedCache).
+        if (DIRECT) { sent[n] = v.at; count.stored++; void beat({ [n]: v.at }); return }
         if (!pendingSince) pendingSince = Date.now()
         pending[n] = v
       })
@@ -171,6 +198,17 @@ async function main() {
     if (!keepSitePools(site) || Date.now() - site.at > 2 * SCAN_PLAN.site.everyMs) return
     const addrs = volumePools(site.pools).map(p => p.contract_addr)
     if (DRY_RUN) { log(`slot ${slot}: would scan volume on ${addrs.length} pools`); slotDone = slot; return }
+    if (DIRECT) {
+      // The cursors are the store's own here, as on the site (lib/volumeScan).
+      const busy = await claimSlot()
+      if (busy) { slotDone = slot; log(`slot not written here: ${busy}`); return }
+      const vol = await scanVolumes(site.pools).catch(() => ({} as Record<string, number>))
+      const r = await recordPrices(site.px, site.pools, vol)
+      slotDone = slot
+      count.slots++
+      log(r.recorded ? `slot written: ${r.tokens} tokens, ${r.pools} pool hours, volume on ${Object.keys(vol).length} pools` : 'slot not written: no prices')
+      return
+    }
     if (addrs.some(a => !inStep.has(a))) {
       const want = await post(audience, { want: addrs })
       setCursors(addrs, want.cursors ?? {})
@@ -188,13 +226,35 @@ async function main() {
     if (r?.recorded && a.cursors) { setCursors(addrs, a.cursors); inStep = new Set(addrs) } else inStep = new Set()
   }
 
-  log(`scanning for ${SITE} for ${WATCH_MS / 60_000} min${DRY_RUN ? ', dry run' : ''}`)
+  /** Direct mode: the board and the LP holders, each on its own rhythm, never two of one at once. */
+  const extra = { board: { every: BOARD_EVERY_MS, build: buildBoard }, holders: { every: HOLDERS_EVERY_MS, build: buildHolders } }
+  const extraAt: Record<string, number> = {}
+  const extraBusy = new Set<string>()
+  function runExtra(name: keyof typeof extra) {
+    if (extraBusy.has(name) || Date.now() - (extraAt[name] ?? 0) < extra[name].every) return
+    extraBusy.add(name)
+    extraAt[name] = Date.now()
+    extra[name].build()
+      .then(v => { if (v) { count.stored++; void beat({ [name]: v.at }) } else count.failed++ })
+      .catch(() => { count.failed++; extraAt[name] = Date.now() - extra[name].every + RETRY_MS })
+      .finally(() => extraBusy.delete(name))
+  }
+  let warmAt = 0
+
+  log(`scanning for ${SITE} for ${WATCH_MS / 60_000} min${DRY_RUN ? ', dry run' : ''}${DIRECT ? ', writing the store directly' : ''}`)
   const end = Date.now() + WATCH_MS
   let lastReport = Date.now()
   while (Date.now() < end) {
     const now = Date.now()
     for (const n of SCAN_NAMES) if (now - (asked[n] ?? 0) >= Math.min(SCAN_PLAN[n].everyMs, RETRY_MS)) ask(n)
-    await flush()
+    if (DIRECT && !DRY_RUN) {
+      runExtra('board')
+      runExtra('holders')
+      if (now - warmAt >= WARM_MS) {
+        warmAt = now
+        fetch(`${SITE}/api/geo`, { signal: AbortSignal.timeout(15_000) }).catch(() => {})
+      }
+    } else await flush()
     const slot = Math.floor(now / SLOT_MS)
     if (slot !== slotDone && now - slot * SLOT_MS >= SLOT_SETTLE_MS && now - slotTried >= RETRY_MS) {
       await writeSlot(slot).catch(e => { if (e instanceof Refused) throw e })

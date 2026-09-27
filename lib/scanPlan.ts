@@ -47,6 +47,9 @@ export const SCAN_PLAN: Record<ScanName, ScanPlan> = {
 
 export const SCAN_NAMES = Object.keys(SCAN_PLAN) as ScanName[]
 
+/** A hash: `at` and `run` of the workflow's last handover or write, and each scan's build time (GET /api/pool-scans shows it). */
+export const POOL_SCANS_BEAT_KEY = 'atrium:pool-scans:beat:v1'
+
 /** The audience the workflow asks GitHub to put in its OIDC token, and /api/pool-scans checks for. */
 export const POOL_SCANS_AUDIENCE = 'terra-swap-pool-scans'
 

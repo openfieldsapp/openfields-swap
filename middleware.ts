@@ -8,6 +8,11 @@
  *
  * Operator bypass for testing: `?bypass=<GEOBLOCK_BYPASS_SECRET>` sets a
  * cookie that reports the region as allowed.
+ *
+ * Link previews: the swap page is built ahead of time (pages/index.tsx), so
+ * its own card is the generic one. A chat app or social site that previews a
+ * shared swap (?from=&to=&amount=) or a board entry (?who=) gets a small page
+ * with that link's card from here instead. People are never matched.
  */
 
 import { NextResponse } from 'next/server'
@@ -26,7 +31,44 @@ function withRegion(res: NextResponse, allowed: boolean, country: string): NextR
   return res
 }
 
+/** The bots that fetch a link to show its preview; search engines are not among them. */
+const PREVIEW_BOTS = /facebookexternalhit|facebot|twitterbot|slackbot|slack-imgproxy|discordbot|telegrambot|whatsapp|linkedinbot|skypeuripreview|pinterest|redditbot|embedly|iframely|mastodon|bluesky|cardyb|vkshare|signal|preview/i
+const TOKEN = /^[A-Za-z0-9.\-]{1,20}$/
+const AMOUNT = /^\d{1,12}(\.\d{1,8})?$/
+const ADDRESS = /^terra1[0-9a-z]{38,58}$/
+const esc = (v: string) => v.replace(/&/g, '&amp;').replace(/"/g, '&quot;').replace(/</g, '&lt;').replace(/>/g, '&gt;')
+
+/** The card a shared swap or board entry unfurls as, or null for any other link. /api/og/swap draws it, checking the tokens itself. */
+function previewCard(request: NextRequest): Response | null {
+  if (request.nextUrl.pathname !== '/' || !PREVIEW_BOTS.test(request.headers.get('user-agent') ?? '')) return null
+  const q = request.nextUrl.searchParams
+  const origin = request.nextUrl.origin
+  const who = q.get('who') ?? ''
+  const from = q.get('from') ?? '', to = q.get('to') ?? ''
+  const amount = AMOUNT.test(q.get('amount') ?? '') && Number(q.get('amount')) > 0 ? q.get('amount')! : ''
+  let title = '', description = '', query = ''
+  if (ADDRESS.test(who)) {
+    const short = `${who.slice(0, 9)}…${who.slice(-4)}`
+    title = `${short} on Terra Swap`
+    description = `${short} is written down on the Terra Swap board. A DEX for Terra built in a night for the price of gas. Steady lads.`
+    query = `?who=${who}`
+  } else if (TOKEN.test(from) && TOKEN.test(to) && from.toLowerCase() !== to.toLowerCase()) {
+    title = `Swap ${amount ? `${amount} ` : ''}${from} for ${to} on Terra Swap`
+    description = "Opens Terra Swap with this swap filled in. The route is priced across Terra Swap's and Astroport's pools when the page opens. No interface fee."
+    query = `?from=${encodeURIComponent(from)}&to=${encodeURIComponent(to)}${amount ? `&amount=${amount}` : ''}`
+  } else return null
+  const url = `${origin}/${query}`, image = `${origin}/api/og/swap${query}`
+  const meta = [
+    ['og:title', title], ['og:description', description], ['og:image', image], ['og:url', url], ['og:type', 'website'], ['og:site_name', 'Terra Swap'],
+  ].map(([k, v]) => `<meta property="${k}" content="${esc(v)}">`).join('')
+    + `<meta name="twitter:card" content="summary_large_image"><meta name="twitter:title" content="${esc(title)}"><meta name="twitter:description" content="${esc(description)}"><meta name="twitter:image" content="${esc(image)}">`
+  const html = `<!doctype html><html lang="en"><head><meta charset="utf-8"><title>${esc(title)}</title><meta name="description" content="${esc(description)}">${meta}<link rel="canonical" href="${esc(url)}"></head><body><a href="${esc(url)}">${esc(title)}</a></body></html>`
+  return new Response(html, { headers: { 'content-type': 'text/html; charset=utf-8', 'cache-control': 'public, max-age=3600' } })
+}
+
 export function middleware(request: NextRequest) {
+  const card = previewCard(request)
+  if (card) return card
   if (BYPASS_SECRET) {
     const bypass = request.nextUrl.searchParams.get('bypass')
     if (bypass && bypass === BYPASS_SECRET) {

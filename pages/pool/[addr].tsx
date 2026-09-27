@@ -8,7 +8,7 @@
  */
 
 import Link from 'next/link'
-import type { GetServerSideProps } from 'next'
+import type { GetStaticPaths, GetStaticProps } from 'next'
 import { useEffect, useMemo, useState } from 'react'
 import { SPACE, TEXT } from 'components/tokens'
 import { C, Figure, Page, Panel, fmtNum, linkBtn, row } from 'components/PageShell'
@@ -27,16 +27,24 @@ import type { VenueResponse } from 'lib/api/dex-venue'
 import type { PoolFeesResponse } from 'lib/api/pool-fees'
 import type { PricesResponse } from 'lib/api/dex-prices'
 import type { DepthResponse } from 'lib/api/depth'
-import { withCpuSsr } from 'lib/cpuLog'
+import { SITE_URL } from 'lib/siteUrl'
 
 const ADDR = /^terra1[02-9ac-hj-np-z]{38,58}$/
 const enc = encodeURIComponent
 const mono = 'ui-monospace, SFMono-Regular, Menlo, monospace'
 
-const ssp: GetServerSideProps = async ctx => {
+/**
+ * Built on the first visit and kept (incremental static regeneration): the
+ * page is client-rendered, and the server only names the pool for its social
+ * card. Rendered per request before 2026-09-27, which cost CPU on every visit
+ * that missed the CDN (Vercel's Hobby plan).
+ */
+export const getStaticPaths: GetStaticPaths = async () => ({ paths: [], fallback: 'blocking' })
+
+export const getStaticProps: GetStaticProps = async ctx => {
   const addr = String(ctx.params?.addr ?? '')
-  if (!ADDR.test(addr)) return { notFound: true }
-  const base = `https://${ctx.req.headers.host ?? 'swap.openfields.app'}`
+  if (!ADDR.test(addr)) return { notFound: true, revalidate: 86_400 }
+  const base = SITE_URL
   let label = ''
   let share = ''
   try {
@@ -52,9 +60,9 @@ const ssp: GetServerSideProps = async ctx => {
       if (listed && !(dollars.includes(NOBLE_USDC) && dollars.includes(USDC_INJ_DENOM))) share = `?from=${enc(t0.key)}&to=${enc(t1.key)}`
     }
   } catch { /* the page reads the pool again in the browser */ }
-  // An hour at the CDN once the pool's name is known; a minute if the chain did not answer in time.
-  ctx.res.setHeader('Cache-Control', label ? 'public, s-maxage=3600, stale-while-revalidate=86400' : 'public, s-maxage=60, stale-while-revalidate=300')
   return {
+    // A day once the pool's name is known (a pair never changes its tokens); a minute if the chain did not answer in time.
+    revalidate: label ? 86_400 : 60,
     props: {
       addr,
       label,
@@ -257,6 +265,3 @@ export default function PoolPage({ addr, label }: { addr: string; label: string 
     </Page>
   )
 }
-
-// TEMPORARY: CPU per page (lib/cpuLog).
-export const getServerSideProps = withCpuSsr('page/pool', ssp)

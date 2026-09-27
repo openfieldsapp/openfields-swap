@@ -28,7 +28,7 @@ import { verifyGithubToken, type GithubClaims } from 'lib/githubOidc'
 import { BadBody, readJsonBody } from 'lib/jsonBody'
 import { SCANS } from 'lib/poolScans'
 import { claimSlot, recordPrices, type RecordResult } from 'lib/priceHistory'
-import { POOL_SCANS_AUDIENCE, SCAN_NAMES, SCAN_PLAN, type ScanName } from 'lib/scanPlan'
+import { POOL_SCANS_AUDIENCE, POOL_SCANS_BEAT_KEY, SCAN_NAMES, SCAN_PLAN, type ScanName } from 'lib/scanPlan'
 import { stale, store } from 'lib/sharedCache'
 import type { SitePools } from 'lib/sitePools'
 import { advanceCursors } from 'lib/volumeScan'
@@ -38,8 +38,6 @@ import { advanceCursors } from 'lib/volumeScan'
 export const config = { api: { bodyParser: false }, maxDuration: 30 }
 
 const WORKFLOW_FILE = '.github/workflows/pool-scans.yml'
-/** A hash: `at` and `run` of the last handover, and each scan's build time. */
-const BEAT_KEY = 'atrium:pool-scans:beat:v1'
 const HAS_KV = !!process.env.KV_REST_API_URL && !!process.env.KV_REST_API_TOKEN
 
 /** The build settings the scans read. All NEXT_PUBLIC_, so they are in every visitor's page already. */
@@ -103,7 +101,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse<
   res.setHeader('Cache-Control', 'no-store')
   if (req.method === 'GET') {
     const env = Object.fromEntries(Object.entries(PUBLIC_ENV).filter((e): e is [string, string] => !!e[1]))
-    const beat = HAS_KV ? await vercelKv.hgetall<Beat>(BEAT_KEY).catch(() => null) : null
+    const beat = HAS_KV ? await vercelKv.hgetall<Beat>(POOL_SCANS_BEAT_KEY).catch(() => null) : null
     res.setHeader('Cache-Control', 'public, s-maxage=30, stale-while-revalidate=60')
     return res.status(200).json({ accepting: acceptedRepo(), branch: acceptedRef(), audience: POOL_SCANS_AUDIENCE, env, plan: SCAN_PLAN, beat })
   }
@@ -154,7 +152,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse<
   if (stored.length > 0) {
     const beat: Beat = { at: now, run: String(claims.run_id ?? '') }
     for (const n of stored) beat[n] = (body.entries?.[n] as { at: number }).at
-    await vercelKv.hset(BEAT_KEY, beat).catch(() => {})
+    await vercelKv.hset(POOL_SCANS_BEAT_KEY, beat).catch(() => {})
   }
   return res.status(200).json(answer)
 }

@@ -9,7 +9,7 @@
 
 import Head from 'next/head'
 import Link from 'next/link'
-import type { GetServerSideProps } from 'next'
+import type { GetStaticProps } from 'next'
 import { Fragment, useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import useMyAddress from 'components/hooks/useMyAddress'
 import WalletButton from 'components/WalletButton'
@@ -71,7 +71,7 @@ import { GAS_DROP_BELOW_MICRO, LUNA, gasDropMicro, planGasDrop } from 'lib/gasDr
 import { askNotifications, fmtUsdPrice, notificationsAllowed, removeAlert, toggleFavorite, useAlertWatcher, usePrefs } from 'lib/alerts'
 import { MONTSERRAT, TERRA_FONT } from 'lib/font'
 import { poll } from 'lib/pageActive'
-import { withCpuSsr } from 'lib/cpuLog'
+import { SITE_URL } from 'lib/siteUrl'
 
 /**
  * How often an open page reads each of the site's lists, and only while someone
@@ -6236,44 +6236,24 @@ export default function SwapPage() {
 }
 
 /**
- * Social card. The page itself is client-rendered; this only feeds _app's
- * server-rendered Head so crawlers get a Terra Swap card instead of Atrium's
- * default Crystal. With ?who=terra1… the image and copy become that person's.
+ * Social card. The page itself is client-rendered, so it is built once ahead
+ * of time and served from the CDN whatever the query string says: rendering
+ * it on each request was most of what this site's server did (Vercel's Hobby
+ * plan, 2026-09-27). A shared swap (?from=&to=) and a board entry (?who=)
+ * still unfurl as themselves: link previews get their card from the
+ * middleware (middleware.ts), which only answers those.
  */
-const ssp: GetServerSideProps = async (ctx) => {
-  // Nothing here depends on who asks (the region check is the middleware's and /api/geo's), so the CDN keeps it:
-  // rendering this page is most of what a cold function costs.
-  ctx.res.setHeader('Cache-Control', 'public, s-maxage=3600, stale-while-revalidate=86400')
-  const base = `https://${ctx.req.headers.host ?? 'localhost:3000'}`
-  const q = ctx.query.who
-  const who = typeof q === 'string' && /^terra1[0-9a-z]{38,}$/.test(q) ? q : ''
-  const short = who ? `${who.slice(0, 9)}…${who.slice(-4)}` : ''
-  // A shared swap (SwapPanel's "share link") unfurls as that swap. Only tokens this site names; anything else gets the generic card.
-  const known = (v: unknown) => (typeof v === 'string' ? KNOWN_TOKENS.find(t => t.key.toLowerCase() === v.toLowerCase()) : undefined)
-  const sf = known(ctx.query.from), st = known(ctx.query.to)
-  const sa = typeof ctx.query.amount === 'string' && /^\d{1,12}(\.\d{1,8})?$/.test(ctx.query.amount) && Number(ctx.query.amount) > 0 ? ctx.query.amount : ''
-  const share = !LITE && !who && sf && st && sf.key !== st.key
-    ? { query: `?from=${encodeURIComponent(sf.key)}&to=${encodeURIComponent(st.key)}${sa ? `&amount=${sa}` : ''}`, title: `Swap ${sa ? `${sa} ` : ''}${sf.label} for ${st.label} on Terra Swap` }
-    : null
-  return {
-    props: {
-      og: {
-        title: LITE ? 'Terra Pools' : who ? `${short} on Terra Swap` : share ? share.title : 'Terra Swap',
-        image: LITE ? `${base}/img/openfields-x.png` : `${base}/api/og/swap${who ? `?who=${who}` : share ? share.query : ''}`,
-        contract: '', token: '',
-        description: LITE
-          ? `An unofficial, open-source interface to Astroport's pool contracts on Terra. No fee, no keys, self-hostable. Not affiliated with Astroport.`
-          : who
-          ? `${short} is written down on the Terra Swap board. A DEX for Terra built in a night for the price of gas. Steady lads.`
-          : share
-          ? `Opens Terra Swap with this swap filled in. The route is priced across Terra Swap's and Astroport's pools when the page opens. No interface fee.`
-          : 'A DEX for Terra, shipped overnight on audited pool code, with every fee handed back to the people who show up. No permission. Not affiliated with Terraswap. Steady lads.',
-        url: `${base}/${who ? `?who=${who}` : share ? share.query : ''}`,
-        type: 'website',
-      },
+export const getStaticProps: GetStaticProps = async () => ({
+  props: {
+    og: {
+      title: LITE ? 'Terra Pools' : 'Terra Swap',
+      image: LITE ? `${SITE_URL}/img/openfields-x.png` : `${SITE_URL}/api/og/swap`,
+      contract: '', token: '',
+      description: LITE
+        ? `An unofficial, open-source interface to Astroport's pool contracts on Terra. No fee, no keys, self-hostable. Not affiliated with Astroport.`
+        : 'A DEX for Terra, shipped overnight on audited pool code, with every fee handed back to the people who show up. No permission. Not affiliated with Terraswap. Steady lads.',
+      url: `${SITE_URL}/`,
+      type: 'website',
     },
-  }
-}
-
-// TEMPORARY: CPU per page (lib/cpuLog).
-export const getServerSideProps = withCpuSsr('page/', ssp)
+  },
+})

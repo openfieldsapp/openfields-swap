@@ -9,8 +9,13 @@
 # site together). Actions minutes are free for a public repository. When this
 # stops, the site builds its scans itself again, only less often.
 #
-# The site takes the results only with an OIDC token GitHub issues to this
-# workflow file on main of this repository, so there is no secret to keep.
+# Two ways to deliver. With the repository secrets KV_REST_API_URL and
+# KV_REST_API_TOKEN (the site's store), the job writes every scan, the board,
+# the LP holders and the price history straight into the store, and nothing of
+# it runs on Vercel. Without them it hands the scans to the site, which takes
+# them only with an OIDC token GitHub issues to this workflow file on main of
+# this repository; the board and the LP holders are then built by the site.
+# The secrets reach only the step that runs the job, not the install.
 #
 # Like the uptime workflow, one run keeps going for close to the six hours a job
 # may last and then starts the next itself; the hourly schedule restarts the
@@ -49,6 +54,8 @@ jobs:
       - name: Scan and hand over each result
         env:
           WATCH_MINUTES: '340'
+          KV_REST_API_URL: ${{ secrets.KV_REST_API_URL }}
+          KV_REST_API_TOKEN: ${{ secrets.KV_REST_API_TOKEN }}
         run: npx tsx scripts/pool-scans.ts
       - name: Hand over to the next run
         # Only after a watch that ended as planned: a run the site refused would refuse again.

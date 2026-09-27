@@ -22,15 +22,25 @@ const HAS_KV = !!process.env.KV_REST_API_URL && !!process.env.KV_REST_API_TOKEN
 const local = new Map<string, { checked: number; value: { at: number } }>()
 const inflight = new Map<string, Promise<unknown>>()
 
+/**
+ * Set by the pool-scan workflow when it writes the store itself
+ * (scripts/pool-scans.ts): it builds each scan every `everyMs`, so only a
+ * value that new counts as fresh there. Everywhere else a value counts until
+ * `freshMs`, and the site builds only when the workflow has stopped.
+ */
+let builder = false
+export function actAsBuilder(): void { builder = true }
+
 export async function shared<T extends { at: number }>(key: string, f: Freshness, build: () => Promise<T>, keep: (v: T) => boolean = () => true): Promise<T> {
   const now = Date.now()
+  const freshMs = builder ? f.everyMs : f.freshMs
   const mine = local.get(key) as { checked: number; value: T } | undefined
   // Good until the next one is due; after that KV may hold a newer one.
-  if (mine && now - mine.checked < f.everyMs && now - mine.value.at < f.freshMs) return mine.value
+  if (mine && now - mine.checked < f.everyMs && now - mine.value.at < freshMs) return mine.value
   if (HAS_KV) {
     try {
       const v = await vercelKv.get<T>(key)
-      if (v && now - v.at < f.freshMs) {
+      if (v && now - v.at < freshMs) {
         local.set(key, { checked: now, value: v })
         return v
       }

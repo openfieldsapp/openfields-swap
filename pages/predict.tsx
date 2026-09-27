@@ -10,7 +10,7 @@
 
 import Head from 'next/head'
 import Link from 'next/link'
-import type { GetServerSideProps } from 'next'
+import type { GetStaticProps } from 'next'
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import useMyAddress from 'components/hooks/useMyAddress'
 import WalletButton from 'components/WalletButton'
@@ -27,7 +27,7 @@ import { useBet, useClaim, useCreateMarket, useObserve, useResolve, useVoidMarke
 import { humanizeTxError } from 'lib/errors'
 import { TERRA_FONT } from 'lib/font'
 import { poll } from 'lib/pageActive'
-import { withCpuSsr } from 'lib/cpuLog'
+import { SITE_URL } from 'lib/siteUrl'
 
 
 const C = {
@@ -396,9 +396,9 @@ export default function PredictPage() {
   return <PredictPageInner />
 }
 
-const ssp: GetServerSideProps = async (ctx) => {
-  ctx.res.setHeader('Cache-Control', 'public, s-maxage=3600, stale-while-revalidate=86400')
-  const base = `https://${ctx.req.headers.host ?? 'localhost:3000'}`
+/** Built with the site: nothing here changes between requests (per request before 2026-09-27, Vercel's Hobby plan). */
+export const getStaticProps: GetStaticProps = async () => {
+  const base = SITE_URL
   return ({
   props: {
     og: {
@@ -412,6 +412,3 @@ const ssp: GetServerSideProps = async (ctx) => {
   },
 })
 }
-
-// TEMPORARY: CPU per page (lib/cpuLog).
-export const getServerSideProps = withCpuSsr('page/predict', ssp)
