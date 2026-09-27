@@ -112,7 +112,7 @@ export default function CommandPalette({ items, onClose }: { items: PaletteItem[
         <div ref={listRef} role='listbox' style={{ overflowY: 'auto', padding: 6 }}>
           {list.length === 0 && (
             <div style={{ padding: 12, fontSize: TEXT.xs.size, color: C.textMuted, lineHeight: 1.6 }}>
-              Nothing matches that. Try a token such as LUNA or SOLID, or a word such as bridge, pool, stake or history.
+              Nothing matches. Try LUNA, SOLID, bridge, pool, stake or history.
             </div>
           )}
           {list.map((item, idx) => (

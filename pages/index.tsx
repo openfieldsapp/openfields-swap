@@ -581,7 +581,7 @@ function LedgerOverlay({ board, pools, onClose }: { board: BoardResponse | null;
           ))}
           {rows.length === 0 && <div style={{ color: C.textWhisper, fontSize: '0.8rem', padding: 8 }}>Nothing yet. The first line is still unwritten.</div>}
         </div>
-        <div style={{ marginTop: 10, fontSize: '0.7rem', color: C.textWhisper, fontStyle: 'italic' }}>Every line is a real transaction. Click one for the receipt.</div>
+        <div style={{ marginTop: 10, fontSize: '0.7rem', color: C.textWhisper, fontStyle: 'italic' }}>Click a line for its receipt.</div>
       </div>
     </div>
   )
@@ -899,7 +899,7 @@ function Trials({ mine, crystal }: { mine: LeaderRowLike | null; crystal: boolea
           </div>
         ))}
       </div>
-      {n === t.length && <div style={{ marginTop: 8, fontSize: TEXT.xs.size, color: C.success, fontStyle: 'italic' }}>All of them. Cosmic. There is nothing left to prove, so keep going anyway.</div>}
+      {n === t.length && <div style={{ marginTop: 8, fontSize: TEXT.xs.size, color: C.success, fontStyle: 'italic' }}>All of them. Cosmic.</div>}
     </Card>
   )
 }
@@ -1103,7 +1103,7 @@ function KwonLine({ recent }: { recent?: { id: string; action: string; address: 
         <div className='kwon-ground' />
       </div>
       <div style={{ fontSize: '0.62rem', color: C.textWhisper, marginTop: 6, lineHeight: 1.5 }}>
-        Parody. Every line is his own public post or interview, dated. He reacts to real moves on the wire. Click him for more.
+        Parody. Every line is his own public post or interview, dated.
       </div>
     </div>
   )
@@ -1304,7 +1304,7 @@ function PriceChart({ pool, from, to, compact }: { pool: PoolView; from: KnownTo
         </svg>
       ) : (
         <div style={{ fontSize: TEXT.xs.size, color: C.textWhisper, marginTop: 8, textAlign: 'center', padding: '8px 0' }}>
-          Not enough trades for a chart yet. Be the print that starts it.
+          Not enough trades for a chart yet.
         </div>
       ))}
       {!compact && data && data.tape.length > 0 && (
@@ -1767,7 +1767,7 @@ function SwapPanel({ pools, venuePools, crystal, feeBps, poolFeeBps, onDone, arb
   }
 
   if (tradable.length === 0) {
-    return <Empty title='No pool has liquidity yet' body='Someone has to go first. Add liquidity in the Pools tab, or open a new pool. The first ones are being written down.' />
+    return <Empty title='No pool has liquidity yet' body='Add liquidity in the Pools tab, or open a new pool.' />
   }
 
   return (
@@ -1793,7 +1793,7 @@ function SwapPanel({ pools, venuePools, crystal, feeBps, poolFeeBps, onDone, arb
               type='button'
               className='terra-arb-pill'
               onClick={() => onTakeArb?.(best)}
-              title={`${best.pool.label} prices ${best.outToken.label} ${best.off.toFixed(2)}× away from the Astroport reference. ${fmtAmount(best.inAmount)} ${best.inToken.label} in is the size that closes it. Anyone can take it, and it moves on every trade.`}
+              title={`${best.pool.label} prices ${best.outToken.label} ${best.off.toFixed(2)}× away from the Astroport reference. ${fmtAmount(best.inAmount)} ${best.inToken.label} in closes the gap. First come; it moves on every trade.`}
               style={{
                 display: 'inline-flex', alignItems: 'center', gap: 6, whiteSpace: 'nowrap',
                 fontSize: TEXT.xs.size, padding: '3px 10px', borderRadius: 999, cursor: 'pointer',
@@ -1819,8 +1819,8 @@ function SwapPanel({ pools, venuePools, crystal, feeBps, poolFeeBps, onDone, arb
         return (
           <div style={{ fontSize: TEXT.xs.size, lineHeight: 1.5, padding: `${SPACE['2']}px ${SPACE['3']}px`, borderRadius: 10, marginBottom: SPACE['3'], background: good ? C.successSoft : C.alertSoft, color: good ? C.success : C.alert, border: `1px solid ${good ? 'rgba(61,220,151,0.3)' : 'rgba(224,74,90,0.35)'}` }}>
             {good
-              ? <>⚡ This pool sells {to.label} {off.toFixed(1)}× cheaper than market. You are the arb. Size is small; so is the pool.</>
-              : <>⚠ This pool is {off.toFixed(1)}× off market and it is against you: {to.label} costs {off.toFixed(1)}× more here than on Astroport. You are the exit liquidity. Consider not.</>}
+              ? <>⚡ This pool sells {to.label} {off.toFixed(1)}× cheaper than market. The pool is small.</>
+              : <>⚠ This pool is {off.toFixed(1)}× off market, against you: {to.label} costs {off.toFixed(1)}× more here than on Astroport.</>}
             {!fromIsBase && null}
           </div>
         )
@@ -1915,18 +1915,18 @@ function SwapPanel({ pools, venuePools, crystal, feeBps, poolFeeBps, onDone, arb
           {netFee && <Row k={t('Network fee')} v={`≈ ${fromMicro(netFee, 6, 4)} LUNA`} />}
           {mode === 'out' && (
             <div style={{ fontSize: TEXT.xs.size, color: C.textWhisper, lineHeight: 1.5, paddingTop: 2 }}>
-              {t('What to pay is worked out from the pools right now, with {pct}% room for the price to move. If the price holds, a little more arrives.', { pct: slipPct })}
+              {t('The amount to pay includes {pct}% room for the price to move. If the price holds, a little more arrives.', { pct: slipPct })}
             </div>
           )}
           {(trade.parts.length > 1 || route.legs.length > 1) && (
             <div style={{ fontSize: TEXT.xs.size, color: C.textWhisper, lineHeight: 1.5, paddingTop: 2 }}>
               {trade.parts.length > 1
-                ? <>One transaction, the amount split over two paths that share no pool, so neither moves its pools as far as one path would. Each part carries its own minimum, and if either would land short, all of it reverts.</>
+                ? <>One transaction. Each path has its own minimum; if either lands short, all of it reverts.</>
                 : trade.parts[0].plan.kind === 'router'
-                  ? <>One transaction through Astroport&apos;s router: each swap&apos;s full return goes into the next, and it reverts if less than the minimum arrives.</>
+                  ? <>One transaction through Astroport&apos;s router. Reverts if less than the minimum arrives.</>
                   : trade.parts[0].plan.kind === 'multi'
-                    ? <>One transaction through Terra Swap&apos;s router, across both sites&apos; pools: each swap&apos;s full return goes into the next, and it reverts if less than the minimum arrives.</>
-                    : <>One transaction, {route.legs.length} swaps. Each swap after the first spends the least the one before it can return, so if any leg would land past its limit, all of it reverts.</>}
+                    ? <>One transaction through Terra Swap&apos;s router. Reverts if less than the minimum arrives.</>
+                    : <>One transaction, {route.legs.length} swaps. If any leg lands past its limit, all of it reverts.</>}
               {trade.leftover.length > 0 && <> At the quoted prices about {trade.leftover.map(x => `${fromMicro(x.micro, x.token.decimals, 6)} ${x.token.label}`).join(' and ')} stays in your wallet.</>}
             </div>
           )}
@@ -1947,7 +1947,7 @@ function SwapPanel({ pools, venuePools, crystal, feeBps, poolFeeBps, onDone, arb
         ))}
               {slippage === '3' && <span style={{ fontSize: TEXT.xs.size, color: C.korea, fontStyle: 'italic' }}>brave.</span>}
         {from && to && (
-          <button type='button' onClick={share} title='A link that opens this swap, with its own preview card'
+          <button type='button' onClick={share} title='Copy a link to this swap'
             style={{ ...ghostBtn, padding: '2px 8px', marginLeft: 'auto', color: copied ? C.success : C.textMuted }}>
             {t(copied ? 'link copied ✓' : 'share link')}
           </button>
@@ -2100,7 +2100,7 @@ function HubAlternative({ from, to, micro, swapOut, blocked, onDone }: {
   return (
     <div style={{ padding: `${SPACE['2']}px ${SPACE['3']}px`, borderRadius: 10, marginBottom: SPACE['3'], background: C.surface, border: `1px solid ${C.dividerWarm}`, fontSize: TEXT.xs.size, color: C.textSecondary, lineHeight: 1.6 }}>
       {minting
-        ? <><b style={{ color: C.textPrimary }}>Or stake at {hub.provider}:</b> {out} {hub.key} straight from its hub{edge !== null && <>, <b style={{ color: C.success }}>{edge.toFixed(2)}% more</b> than this swap</>}. Instant, at the hub&apos;s exchange rate.</>
+        ? <><b style={{ color: C.textPrimary }}>Or stake at {hub.provider}:</b> {out} {hub.key} at the hub&apos;s rate{edge !== null && <>, <b style={{ color: C.success }}>{edge.toFixed(2)}% more</b> than this swap</>}. Instant.</>
         : <><b style={{ color: C.textPrimary }}>Or unstake at {hub.provider}:</b> about {out} LUNA{edge !== null && <>, <b style={{ color: C.success }}>{edge.toFixed(2)}% more</b> than selling now</>}, ready in about {days}. You withdraw it from Portfolio.</>}
       {err && <div style={{ color: C.alert, marginTop: 4 }}>{err}</div>}
       {done && <div style={{ color: C.success, marginTop: 4 }}>✓ {done}</div>}
@@ -2153,7 +2153,7 @@ const neutronToken = (label: string, sourceDenom: string, terraDenom: string): S
   toTerra: NEUTRON_TO_TERRA_CHANNEL, fromTerra: TERRA_TO_NEUTRON_CHANNEL, balance: a => neutronBalance(a, sourceDenom), feeReserve: BigInt(0),
   feeDenom: NEUTRON_FEE_DENOM, feeLabel: 'NTRN', feeBalance: a => neutronBalance(a, NEUTRON_FEE_DENOM),
   txUrl: h => `https://www.mintscan.io/neutron/tx/${h}`, never: [],
-  footnote: 'Neutron charges its network fee in NTRN, so the Neutron wallet needs a little of it.',
+  footnote: 'The Neutron wallet needs a little NTRN for the network fee.',
 })
 /** A token from Stride: its fee is STRD. Checked on both chains 2026-09-15 (lib/stride). */
 const strideToken = (label: string, sourceDenom: string, terraDenom: string): SourceChain => ({
@@ -2161,7 +2161,7 @@ const strideToken = (label: string, sourceDenom: string, terraDenom: string): So
   toTerra: STRIDE_TO_TERRA_CHANNEL, fromTerra: TERRA_TO_STRIDE_CHANNEL, balance: a => strideBalance(a, sourceDenom), feeReserve: BigInt(0),
   feeDenom: STRIDE_FEE_DENOM, feeLabel: 'STRD', feeBalance: a => strideBalance(a, STRIDE_FEE_DENOM),
   txUrl: h => `https://www.mintscan.io/stride/tx/${h}`, never: [],
-  footnote: 'Stride charges its network fee in STRD, so the Stride wallet needs a little of it.',
+  footnote: 'The Stride wallet needs a little STRD for the network fee.',
 })
 
 const SOURCE_CHAINS: Record<SourceKey, SourceChain> = {
@@ -2172,7 +2172,7 @@ const SOURCE_CHAINS: Record<SourceKey, SourceChain> = {
     txUrl: h => `https://www.mintscan.io/noble/tx/${h}`,
     // USDC.inj is a different dollar with its own switch, so USDC never turns into it here, or comes from it.
     never: [USDC_INJ_DENOM],
-    footnote: 'This route carries USDC issued on Noble; USDC.inj from Injective has its own switch above. Noble charges its network fee in USDC.',
+    footnote: 'USDC issued on Noble. USDC.inj has its own switch above. Noble charges its network fee in USDC.',
   },
   cosmoshub: {
     feeDenom: HUB_ATOM_DENOM, feeLabel: 'ATOM', feeBalance: hubAtomBalance,
@@ -2298,7 +2298,7 @@ function CosmosTransfer({ net, routePools, onDone, switcher }: { net: SourceChai
         const trade = planTrade(q.split ?? [{ quote: q.best, share: 1 }], SLIP)
         setQuote({
           out: trade.minOut, secs: 60, trade, path: `${tradeText(trade.parts)}, then IBC transfer to ${net.name}`,
-          note: `The swap should give about ${fromMicro(trade.expectedOut, base.decimals)} ${net.label}. At least ${fromMicro(trade.minOut, base.decimals)} is sent to ${net.name}, and anything above that stays in your Terra wallet as ${net.label}.`,
+          note: `About ${fromMicro(trade.expectedOut, base.decimals)} ${net.label} from the swap. At least ${fromMicro(trade.minOut, base.decimals)} is sent to ${net.name}; anything above that stays in your Terra wallet.`,
         })
       }).catch(() => { if (alive) setQuoteErr('Could not price that right now.') })
     }
@@ -2373,7 +2373,7 @@ function CosmosTransfer({ net, routePools, onDone, switcher }: { net: SourceChai
       <Section title='Bridge' />
       {switcher}
       <p style={{ fontSize: TEXT.xs.size, color: C.textMuted, lineHeight: 1.6, margin: `${SPACE['2']}px 0 ${SPACE['3']}px` }}>
-        Move {net.label} between {net.name} and Terra in one signature. Arriving on Terra it can land as {net.label} or already swapped into another token; leaving Terra, any token here is swapped to {net.label} on the way out.
+        Move {net.label} between {net.name} and Terra in one signature, swapped into another token on the way if you like.
       </p>
       <div style={{ margin: `0 0 ${SPACE['3']}px` }}>
         <ElectricPulse
@@ -2442,7 +2442,7 @@ function CosmosTransfer({ net, routePools, onDone, switcher }: { net: SourceChai
         </div>
       )}
 
-      {noGas && <div style={{ fontSize: TEXT.xs.size, color: C.alert, marginBottom: SPACE['2'] }}>This {net.name} wallet has no {net.feeLabel}. {net.name} charges its network fee in {net.feeLabel}, so it needs a little first.</div>}
+      {noGas && <div style={{ fontSize: TEXT.xs.size, color: C.alert, marginBottom: SPACE['2'] }}>This {net.name} wallet has no {net.feeLabel} for the network fee. Add a little first.</div>}
       {err && <div style={{ fontSize: TEXT.xs.size, color: C.alert, marginBottom: SPACE['2'] }}>{err}</div>}
       {status && (
         <div style={{ fontSize: TEXT.xs.size, color: status.failed ? C.alert : status.done ? C.success : C.textSecondary, marginBottom: SPACE['2'], lineHeight: 1.6 }}>
@@ -2460,7 +2460,7 @@ function CosmosTransfer({ net, routePools, onDone, switcher }: { net: SourceChai
             </button>}
 
       <div style={{ fontSize: TEXT.xs.size, color: C.textWhisper, lineHeight: 1.6, marginTop: SPACE['3'] }}>
-        Plain transfers are ordinary IBC. A swap on arrival travels in the same transfer: Terra&apos;s IBC hooks hand the {net.label} to Terra Swap&apos;s router (no owner, no fee), which swaps it through pools listed here and sends the result to your Terra address. If less than the minimum would arrive, the transfer fails and {net.name} returns the {net.label}. {net.footnote} This page adds no fee.
+        A swap on arrival runs in the same transfer, through Terra Swap&apos;s router (no owner, no fee). {net.footnote} This page adds no fee.
       </div>
     </Card>
   )
@@ -2520,7 +2520,7 @@ function GasDropRow({ gas, from, sourceName }: { gas: ReturnType<typeof useGasDr
       </div>
       {gas.on && !gas.failed && (
         <div style={{ fontSize: TEXT.xs.size, color: C.textWhisper, lineHeight: 1.5, paddingTop: 2 }}>
-          Your Terra wallet has almost no LUNA, and every transaction on Terra pays its fee in LUNA. This part travels as its own transfer in the same signature and is swapped into LUNA on arrival; if that swap cannot deliver its minimum, {sourceName} returns this part and the rest still arrives.
+          Your Terra wallet has almost no LUNA for fees. This part is swapped into LUNA on arrival; if that swap falls short, {sourceName} returns this part and the rest still arrives.
         </div>
       )}
     </>
@@ -2551,7 +2551,7 @@ function followIbc(before: string, readDest: () => Promise<string>, setStatus: (
     if (BigInt(now || '0') > BigInt(before || '0')) { setStatus(s => s && { ...s, text: 'Arrived.', done: true }); return }
     if (back && returned) { setStatus(s => s && { ...s, text: returned.text, failed: true }); return }
     if (n < 40) setTimeout(tick, 7000)
-    else setStatus(s => s && { ...s, text: 'Still on its way. IBC transfers usually land within a few minutes, and one that is not delivered goes back to where it was sent from.' })
+    else setStatus(s => s && { ...s, text: 'Still on its way. IBC transfers usually land within a few minutes; one that is not delivered goes back.' })
   }
   setTimeout(tick, 6000)
 }
@@ -2732,7 +2732,7 @@ function InjectiveTransfer({ routePools, onDone, switcher }: { routePools: PoolV
       <Section title='Bridge' />
       {switcher}
       <p style={{ fontSize: TEXT.xs.size, color: C.textMuted, lineHeight: 1.6, margin: `${SPACE['2']}px 0 ${SPACE['3']}px` }}>
-        Move USDC.inj, Circle&apos;s USDC as issued on Injective, between Injective and Terra in one signature. On Terra it is USDC.inj, a token of its own with its own pools; arriving, it can stay USDC.inj or be swapped into another token, never into USDC from Noble.
+        Move USDC.inj (Circle&apos;s USDC issued on Injective) between Injective and Terra in one signature. On Terra it is its own token, never swapped for USDC from Noble.
       </p>
       <div style={{ margin: `0 0 ${SPACE['3']}px` }}>
         <ElectricPulse
@@ -2808,7 +2808,7 @@ function InjectiveTransfer({ routePools, onDone, switcher }: { routePools: PoolV
         </div>
       )}
 
-      {noGas && <div style={{ fontSize: TEXT.xs.size, color: C.alert, marginBottom: SPACE['2'] }}>This Injective wallet has no INJ. Injective charges its network fee in INJ, so it needs a little first.</div>}
+      {noGas && <div style={{ fontSize: TEXT.xs.size, color: C.alert, marginBottom: SPACE['2'] }}>This Injective wallet has no INJ for the network fee. Add a little first.</div>}
       {err && <div style={{ fontSize: TEXT.xs.size, color: C.alert, marginBottom: SPACE['2'] }}>{err}</div>}
       {status && (
         <div style={{ fontSize: TEXT.xs.size, color: status.failed ? C.alert : status.done ? C.success : C.textSecondary, marginBottom: SPACE['2'], lineHeight: 1.6 }}>
@@ -2826,7 +2826,7 @@ function InjectiveTransfer({ routePools, onDone, switcher }: { routePools: PoolV
             </button>}
 
       <div style={{ fontSize: TEXT.xs.size, color: C.textWhisper, lineHeight: 1.6, marginTop: SPACE['3'] }}>
-        Ordinary IBC over the channel between Injective and Terra, in both directions. A swap on arrival travels in the same transfer: Terra&apos;s IBC hooks hand the USDC.inj to Terra Swap&apos;s router (no owner, no fee), which swaps it and sends the result to your Terra address; if less than the minimum would arrive, the transfer fails and Injective returns the USDC.inj. Injective charges its network fee in INJ. This page adds no fee.
+        A swap on arrival runs in the same transfer, through Terra Swap&apos;s router (no owner, no fee). Injective charges its network fee in INJ. This page adds no fee.
       </div>
     </Card>
   )
@@ -2875,7 +2875,7 @@ function PositionsPanel({ onDone, flows }: { onDone: () => void; flows?: Record<
       <Card>
         <Section title='Your positions' />
         <p style={{ fontSize: TEXT.sm.size, color: C.textMuted, lineHeight: 1.6, margin: `0 0 ${SPACE['3']}px` }}>
-          Connect a wallet to see every pool position it holds on Terra Swap and Astroport, LP staked in Astroport&apos;s incentives included, and to leave any of them from here.
+          Connect a wallet to see and withdraw its pool positions on Terra Swap and Astroport, staked LP included.
         </p>
         <div className='terra-connect-cta'><WalletButton /></div>
       </Card>
@@ -2892,7 +2892,7 @@ function PositionsPanel({ onDone, flows }: { onDone: () => void; flows?: Record<
         <button type='button' onClick={() => setReload(Date.now())} style={{ ...ghostBtn, marginLeft: 'auto', padding: '2px 8px' }} disabled={loading}>{loading ? 'reading…' : 'refresh'}</button>
       </div>
       <p style={{ fontSize: TEXT.xs.size, color: C.textMuted, lineHeight: 1.6, margin: `0 0 ${SPACE['3']}px` }}>
-        Every pool position this wallet holds on Terra Swap and Astroport, including LP staked in Astroport&apos;s incentives contract, and any old ASTRO. Withdrawing takes one signature: it unstakes what it needs and sends both tokens to your wallet.
+        Withdrawing takes one signature: it unstakes what it needs and sends both tokens to your wallet.
       </p>
       {loading && !data && <div style={{ fontSize: TEXT.xs.size, color: C.textMuted }}>Reading your positions from the chain…</div>}
       {data && positions.length === 0 && !(data.astro && (data.astro.xastro !== '0' || data.astro.astroCw20 !== '0')) && !(data.unstaking?.length) && <div style={{ fontSize: TEXT.sm.size, color: C.textMuted }}>No pool positions found for this wallet.</div>}
@@ -3138,7 +3138,7 @@ function WalletPanel({ pools, onDone }: { pools: PoolView[]; onDone: () => void 
       <Card>
         <Section title='Your wallet' />
         <p style={{ fontSize: TEXT.sm.size, color: C.textMuted, lineHeight: 1.6, margin: `0 0 ${SPACE['3']}px` }}>
-          Connect a wallet to see every listed token it holds with its value, and to sell small leftover balances into USDC or LUNA in one signature.
+          Connect a wallet to see its tokens and sell small leftovers into USDC or LUNA in one signature.
         </p>
         <div className='terra-connect-cta'><WalletButton /></div>
       </Card>
@@ -3152,7 +3152,7 @@ function WalletPanel({ pools, onDone }: { pools: PoolView[]; onDone: () => void 
         <button type='button' onClick={() => setReload(Date.now())} style={{ ...ghostBtn, marginLeft: 'auto', padding: '2px 8px' }}>refresh</button>
       </div>
       <p style={{ fontSize: TEXT.xs.size, color: C.textMuted, lineHeight: 1.6, margin: `0 0 ${SPACE['3']}px` }}>
-        Every listed token in this wallet, with its value at market prices. Tick the small balances you would rather not keep, pick what they become, and sell them all in one signature, up to {SWEEP_MAX} at a time.
+        Tick the small balances to sell, pick what they become, and sell up to {SWEEP_MAX} in one signature.
       </p>
       {!bal && <div style={{ fontSize: TEXT.xs.size, color: C.textMuted }}>Reading the wallet…</div>}
       {bal && holdings.length === 0 && <div style={{ fontSize: TEXT.sm.size, color: C.textMuted }}>This wallet holds none of the tokens listed here.</div>}
@@ -3198,7 +3198,7 @@ function WalletPanel({ pools, onDone }: { pools: PoolView[]; onDone: () => void 
               <Row k='You receive' v={lines ? `${fromMicro(totalOut.toString(), target.decimals, 4)} ${target.label}` : 'pricing…'} hi />
               {lines && ready.length > 0 && <Row k={`At least (${SLIP * 100}% slippage on each)`} v={`${fromMicro(totalMin.toString(), target.decimals, 4)} ${target.label}`} />}
               <div style={{ fontSize: TEXT.xs.size, color: C.textWhisper, lineHeight: 1.5, paddingTop: 2 }}>
-                One transaction, one swap per token, each through its best path on either site with its own minimum. If any of them would arrive short, nothing is sold.
+                One transaction, one swap per token, each with its own minimum. If any would arrive short, nothing is sold.
               </div>
             </div>
           )}
@@ -3287,7 +3287,7 @@ function SendPanel({ pools, onDone }: { pools: PoolView[]; onDone: () => void })
     <Card>
       <Section title='Send' />
       <p style={{ fontSize: TEXT.xs.size, color: C.textMuted, lineHeight: 1.6, margin: `0 0 ${SPACE['3']}px` }}>
-        Any listed token to another Terra address. A send cannot be undone, so the address is checked before you sign. Name an address to keep it, with its memo, in this browser&apos;s address book.
+        A send cannot be undone. The address is checked before you sign. Name an address to save it, with its memo, in this browser.
       </p>
       <label style={label}>Token and amount</label>
       <div style={{ display: 'flex', gap: SPACE['2'], marginBottom: SPACE['2'] }}>
@@ -3376,7 +3376,7 @@ function AlertsPanel() {
     <Card>
       <Section title='Price alerts and starred tokens' />
       <p style={{ fontSize: TEXT.xs.size, color: C.textMuted, lineHeight: 1.6, margin: `0 0 ${SPACE['2']}px` }}>
-        Kept in this browser. An alert goes off once, when the market reference crosses its level: on an open Terra Swap page, and with the option below, as a notification with the page closed. Set one on any token&apos;s page, for example <Link href='/token/LUNA' style={{ color: C.goldLit }}>LUNA</Link>; star tokens in the token picker to keep them at the top.
+        Kept in this browser. An alert goes off once, when the market reference crosses its level. Set one on any token&apos;s page, for example <Link href='/token/LUNA' style={{ color: C.goldLit }}>LUNA</Link>; star tokens in the token picker.
       </p>
       {waiting.length > 0 && !allowed && typeof Notification !== 'undefined' && (
         <button type='button' onClick={async () => setAllowed(await askNotifications())} style={{ ...ghostBtn, padding: '3px 10px', marginBottom: SPACE['2'] }}>Allow browser notifications</button>
@@ -3497,7 +3497,7 @@ function HistoryPanel({ pools }: { pools: PoolView[] }) {
       <Card>
         <Section title='History' />
         <p style={{ fontSize: TEXT.sm.size, color: C.textMuted, lineHeight: 1.6, margin: `0 0 ${SPACE['3']}px` }}>
-          Connect a wallet to see its swaps, liquidity and transfers on Terra, read back from the chain, with what each swap here was quoted beside what arrived.
+          Connect a wallet to see its swaps, liquidity and transfers on Terra.
         </p>
         <div className='terra-connect-cta'><WalletButton /></div>
       </Card>
@@ -3511,9 +3511,6 @@ function HistoryPanel({ pools }: { pools: PoolView[] }) {
         <Section title='History' />
         <button type='button' onClick={() => setReload(Date.now())} style={{ ...ghostBtn, marginLeft: 'auto', padding: '2px 8px' }} disabled={loading}>{loading ? 'reading…' : 'refresh'}</button>
       </div>
-      <p style={{ fontSize: TEXT.xs.size, color: C.textMuted, lineHeight: 1.6, margin: `0 0 ${SPACE['3']}px` }}>
-        This wallet&apos;s recent transactions on Terra, read back from the chain: what left, what arrived, and the network fee. A swap signed here carries its quote in the memo, so what it was quoted sits beside what actually arrived.
-      </p>
       <div style={{ padding: `${SPACE['2']}px ${SPACE['3']}px`, background: C.surface, border: `1px solid ${C.divider}`, borderRadius: 10, marginBottom: SPACE['3'], display: 'grid', gap: 6 }}>
         <div style={{ display: 'flex', gap: 8, alignItems: 'center', flexWrap: 'wrap' }}>
           <span style={{ fontSize: TEXT.xs.size, color: C.textSecondary }}>Every transaction of</span>
@@ -3525,7 +3522,7 @@ function HistoryPanel({ pools }: { pools: PoolView[] }) {
           </button>
         </div>
         <div style={{ fontSize: TEXT.xs.size, color: C.textWhisper, lineHeight: 1.5 }}>
-          For tax software, in the columns Koinly imports. A dollar value is filled in only where one side of a swap is USDC from Noble; the rest is left for the software to price.
+          For tax software, in the columns Koinly imports. Dollar values only where one side of a swap is USDC from Noble; the software prices the rest.
         </div>
         {exporting && !exporting.busy && <div style={{ fontSize: TEXT.xs.size, color: C.textMuted, lineHeight: 1.5 }}>{exporting.text}</div>}
         {exporting?.busy && <div style={{ fontSize: TEXT.xs.size, color: C.textMuted }}>{exporting.text}</div>}
@@ -3757,7 +3754,7 @@ function PutInRow({ flow, tokens, amounts, usd, px }: { flow?: LpFlow; tokens: [
         </span>
       </div>
       {vs != null && held != null && usd != null && (
-        <div style={rowStyle} title="Both at today's prices. The difference is what the pool's fees added and what the two prices moving apart took, together. It says what happened, not what will.">
+        <div style={rowStyle} title="Both at today's prices. The difference is the pool's fees and the effect of the two prices moving apart. Past, not a forecast.">
           <span>Against holding it</span>
           <span style={{ color: C.textSecondary }}>
             {fmtUsd(usd)} in the pool · {fmtUsd(held)} if kept in the wallet · {tag(vs)}
@@ -3936,7 +3933,7 @@ function PoolRow({ p, routePools, onDone, onParty, act, height, firstHand, cryst
         <div style={{ fontSize: TEXT.md.size, fontWeight: 700, color: C.textPrimary, display: 'flex', alignItems: 'center' }}>
           <PairIcons a={p.tokens[0].label} b={p.tokens[1].label} />{p.label}
           {p.venue !== HOME_VENUE && <span style={{ marginLeft: 8, fontSize: TEXT.caption.size, letterSpacing: '0.1em', textTransform: 'uppercase', color: C.textMuted, fontWeight: 600 }}>{VENUE_NAME[p.venue]}</span>}
-          {p.venue !== 'skeleton' && <Link href={`/pool/${p.contract_addr}`} title='Its own page: liquidity, price impact, fees paid and recent trades' style={{ marginLeft: 8, fontSize: TEXT.xs.size, color: C.textMuted, fontWeight: 500, textDecoration: 'none' }}>details ↗</Link>}
+          {p.venue !== 'skeleton' && <Link href={`/pool/${p.contract_addr}`} title='Liquidity, price impact, fees and recent trades' style={{ marginLeft: 8, fontSize: TEXT.xs.size, color: C.textMuted, fontWeight: 500, textDecoration: 'none' }}>details ↗</Link>}
         </div>
         {badge && <span style={{ fontSize: '0.6rem', letterSpacing: '0.12em', textTransform: 'uppercase', color: badge === 'deepest' ? C.goldLit : C.korea, fontWeight: 800 }}>{badge === 'deepest' ? '🏆 deepest' : '🔥 most traded'}</span>}
         {(() => {
@@ -4015,7 +4012,7 @@ function PoolRow({ p, routePools, onDone, onParty, act, height, firstHand, cryst
             <b style={{ color: C.goldLit }}>{fmtAmount(arb.outAmount)} {arb.outToken.label}</b>
             <span style={{ color: C.textWhisper }}>, about </span>
             <b style={{ color: C.success }}>{fmtUsd(arb.profitUsd)}</b>
-            <span style={{ color: C.textWhisper }}> more than you put in, at reference prices. First come.</span>
+            <span style={{ color: C.textWhisper }}> over reference prices. First come.</span>
           </span>
           <button type='button' style={{ ...ghostBtn, color: C.goldLit, borderColor: C.goldCore, flex: 'none' }} onClick={() => onTake?.(arb)}>
             Take it
@@ -4072,10 +4069,10 @@ function PoolRow({ p, routePools, onDone, onParty, act, height, firstHand, cryst
 
       {mode === 'add' && (
         <div style={{ marginTop: SPACE['3'], display: 'grid', gap: SPACE['2'] }}>
-          {p.empty && <div style={{ fontSize: TEXT.xs.size, color: C.textMuted }}>Empty pool: the ratio you deposit sets the opening price. Choose it deliberately.{p.marketPrice ? <> Market says 1 {t0.label} ≈ <b style={{ color: C.goldLit }}>{fmtPrice(p.marketPrice)} {t1.label}</b>. Start there.</> : null}</div>}
+          {p.empty && <div style={{ fontSize: TEXT.xs.size, color: C.textMuted }}>Empty pool: the ratio you deposit sets the opening price.{p.marketPrice ? <> Market says 1 {t0.label} ≈ <b style={{ color: C.goldLit }}>{fmtPrice(p.marketPrice)} {t1.label}</b>.</> : null}</div>}
           {!p.empty && p.deviation != null && (p.deviation > 1.25 || p.deviation < 0.8) && (
             <div style={{ fontSize: TEXT.xs.size, color: C.alert, lineHeight: 1.5 }}>
-              ⚠ This pool is {(p.deviation > 1 ? p.deviation : 1 / p.deviation).toFixed(1)}× off market. Adding at this ratio hands the difference to whoever arbitrages it. Swap it back toward {fmtPrice(p.marketPrice ?? 0)} {t1.label} per {t0.label} first, or accept that you are the exit liquidity.
+              ⚠ This pool is {(p.deviation > 1 ? p.deviation : 1 / p.deviation).toFixed(1)}× off market. Adding at this ratio hands the difference to whoever arbitrages it. Swap it back toward {fmtPrice(p.marketPrice ?? 0)} {t1.label} per {t0.label} first.
             </div>
           )}
           {/* Zap sizing is constant-product maths, so it is offered on xyk pools only. Not on Skeleton Swap's: its in-pool swap limit is Astroport-shaped. */}
@@ -4140,7 +4137,7 @@ function PoolRow({ p, routePools, onDone, onParty, act, height, firstHand, cryst
           ) : (
             <>
               <div style={{ fontSize: TEXT.xs.size, color: C.textMuted, lineHeight: 1.5 }}>
-                Bring one token. We swap the right slice for the other side and add both in <b style={{ color: C.textPrimary }}>one signature</b>. If any leg fails, nothing moves.
+                Part of one token is swapped for the other side, and both are added in <b style={{ color: C.textPrimary }}>one signature</b>. If any leg fails, nothing moves.
               </div>
               <div style={{ display: 'flex', gap: SPACE['2'] }}>
                 <input style={field} type='number' min='0' step='any' placeholder={`0.0 ${zTok.label}`} value={zAmt} onChange={e => setZAmt(e.target.value)} />
@@ -4459,10 +4456,10 @@ function CreatePanel({ pools, marketPx, onDone, onCreated, onBack, onParty }: { 
       </div>
       <p style={{ fontSize: TEXT.xs.size, color: C.textMuted, lineHeight: 1.6, margin: `${SPACE['2']}px 0 ${SPACE['3']}px` }}>
         {venue === 'astroport'
-          ? <>Astroport&apos;s factory lets anyone open a pool. It costs gas; the pool opens empty and the first deposit fills it. A standard pool spreads liquidity over every price. A concentrated pool uses Astroport&apos;s own settings and starts at the price you give it. Not affiliated with Astroport.</>
+          ? <>Costs gas; the pool opens empty. Standard spreads liquidity over every price. Concentrated uses Astroport&apos;s own settings and starts at the price you give it. Not affiliated with Astroport.</>
           : v2
-            ? <>Terra Swap&apos;s factories have no owner and take no fee: a pool&apos;s fee goes to its liquidity providers. A standard pool spreads liquidity over every price. A concentrated pool keeps it near the price, which suits LUNA against ampLUNA or bLUNA. A stable pool is for two tokens that should trade 1:1. Creating a pool costs gas and nothing else, and it opens empty.</>
-            : <>Terra Swap&apos;s factory has no owner and takes no fee. Creating the pool costs gas and nothing else; it opens empty, and whoever adds liquidity first sets the price.</>}
+            ? <>No owner and no factory fee: a pool&apos;s fee goes to its liquidity providers. Standard spreads liquidity over every price. Concentrated keeps it near the price (LUNA against ampLUNA or bLUNA). Stable is for two tokens that should trade 1:1. Costs gas; the pool opens empty.</>
+            : <>No owner and no factory fee. Costs gas; the pool opens empty, and the first deposit sets the price.</>}
       </p>
       {(venue === 'astroport' || v2) && (
         <div style={{ display: 'flex', gap: SPACE['2'], marginBottom: SPACE['3'] }}>
@@ -4532,7 +4529,7 @@ function Leaderboard({ board, me, onGoSwap, height, crystal, spotlight }: { boar
           <div style={{ display: 'flex', alignItems: 'center', gap: SPACE['3'], flexWrap: 'wrap' }}>
             <div style={{ flex: 1, minWidth: 200 }}>
               <div style={{ fontFamily: TERRA_FONT, fontWeight: 700, color: C.textPrimary }}>You are here. You are not written down yet.</div>
-              <div style={{ fontSize: TEXT.xs.size, color: C.textMuted, marginTop: 3, lineHeight: 1.5 }}>One swap fixes that. Five points, a spot on the board, and the 🐎 if you are quick.</div>
+              <div style={{ fontSize: TEXT.xs.size, color: C.textMuted, marginTop: 3, lineHeight: 1.5 }}>One swap puts you on the board.</div>
             </div>
             <button type='button' onClick={onGoSwap} style={{ ...primaryBtn, width: 'auto', padding: '0.6rem 1rem' }}>Make a move →</button>
           </div>
@@ -4590,7 +4587,7 @@ function Leaderboard({ board, me, onGoSwap, height, crystal, spotlight }: { boar
             {open ? (
               <span>Steady Lad window <b style={{ color: C.goldLit }}>closes in ~{blocksToHuman(left)}</b> · block {board.rules.cutoffHeight.toLocaleString('en-US')} · anyone who moves before then keeps the badge forever</span>
             ) : height > 0 ? (
-              <span>The Steady Lad window has closed. The ones who made it are marked. That is that.</span>
+              <span>The Steady Lad window has closed.</span>
             ) : <span>Steady Lad window: first week from launch.</span>}
           </div>
         )
@@ -4602,7 +4599,7 @@ function Leaderboard({ board, me, onGoSwap, height, crystal, spotlight }: { boar
         {board.rows.length >= 2 && <Podium rows={board.rows} />}
         {board.rows.length === 0 ? (
           <p style={{ fontSize: TEXT.sm.size, color: C.textMuted, margin: `${SPACE['2']}px 0 0`, lineHeight: 1.6 }}>
-            Nobody yet. The first swap, the first pool, the first liquidity: whoever does it goes straight to the top, and stays written down.
+            Nobody yet. The first move goes straight to the top.
           </p>
         ) : (
           <div style={{ display: 'grid', gap: 2, marginTop: SPACE['2'] }}>
@@ -4674,7 +4671,7 @@ function Leaderboard({ board, me, onGoSwap, height, crystal, spotlight }: { boar
           {Object.values(rules.badges).map(b => <BadgeChip key={b.name} b={b} />)}
         </div>
         <p style={{ fontSize: TEXT.xs.size, color: C.textWhisper, margin: `${SPACE['3']}px 0 0`, lineHeight: 1.5 }}>
-          Points are a game and buy nothing. Read straight off the chain, so they can&apos;t be edited, only earned.
+          Points are a game and buy nothing. They are read off the chain and cannot be edited.
         </p>
       </Card>
     </div>
@@ -4695,18 +4692,13 @@ const STEADY_LINES: string[] = [
   'we all said we were early. turns out we were just here first.',
   'gm to everyone who never sold the story.',
   'wen? now. that is the whole answer. now.',
-  'diamond hands was never the flex. still being here is.',
-  'somewhere a spreadsheet says this is a bad idea. deploy anyway.',
   'not financial advice. barely even a suggestion.',
   'hold a Crystal → 1.5× on every point. ✦',
   'first liquidity into a pool is +100 points and a 🌊 nobody can take back.',
   'open a pool for 50 points. permissionless. nobody is asking your permission.',
-  'every point is read straight off the chain. cannot be bought. only done.',
   '🐎 the Steady Lad badge means you were here in week one. the clock is running.',
   'pool fee is 30 bps and all of it goes to whoever provides the liquidity. we keep none.',
-  'the board never lies. it just reads the chain back to you.',
   'you don not need our permission to open a pool. that is sort of the whole point.',
-  'small size. big vibes. this is a beta and proud of it.',
   '"there is also entertainment in watching them die." we chose to be the entertainment.',
   '"i don\'t debate the poor." we do. we are the poor. gm.',
   '"steady lads, deploying more capital." we did. it was twelve dollars.',
@@ -4731,7 +4723,6 @@ const STEADY_LINES: string[] = [
   'the cheat codes work. some of them. try black sheep wall.',
   'click him too many times. go on. he is a unit. units have opinions.',
   'connected? there is a fortune on your card. 오늘의 운세. it changes at midnight.',
-  'to the moon is a destination. steady lads is a lifestyle.',
   'terra finder is a ghost now, still says "searching" forever. so we built terra scan.',
   'terra station used to show you the block. look top right. so do we.',
   'press / to type an amount. press f to flip. you are welcome.',
@@ -4748,7 +4739,7 @@ const STEADY_LINES: string[] = [
   'the steady lad window is a real block number. it is closing. it will not reopen.',
   'there is a speaker in the footer. it is off. it is tiny. it is optional.',
   'the block pill says who proposed it. when it says SOLID, that was us. 🫡',
-  'click THE WIRE. every move, every receipt. nothing hidden, nothing edited.',
+  'click THE WIRE for every move and its receipt.',
   'type moon. type luna. type wen. the page has opinions.',
   '$100 moves it ~x% on every pool row. that is how thin the water is. add to it.',
 ]
@@ -4990,14 +4981,14 @@ type ExploreKey = 'swap' | 'bridge' | 'pools' | 'portfolio' | 'history' | 'lst' 
  */
 function Explore({ pools, gaps, onGo }: { pools: number; gaps: number; onGo: (k: ExploreKey) => void }) {
   const cards: { k: ExploreKey | 'verify' | 'stats'; icon: string; title: string; body: string; cta: string; muted?: boolean }[] = [
-    { k: 'bridge', icon: '🌉', title: 'Bring money in', body: 'USDC from Noble, ATOM from the Cosmos Hub, USDC.inj from Injective, ASTRO and dATOM from Neutron, stLUNA from Stride, already swapped into another token when it lands.', cta: 'Bridge' },
-    { k: 'pools', icon: '💧', title: 'Provide liquidity', body: `${pools} pools with liquidity on Terra Swap and Astroport. Add both sides or zap in with one token, and see what each pool paid its providers.`, cta: 'Pools' },
-    { k: 'portfolio', icon: '🧾', title: 'Everything you hold', body: 'Every position on both sites, closed in one signature, and against simply holding. Sell leftover balances in one go; your history shows each quote beside what arrived.', cta: 'Portfolio' },
+    { k: 'bridge', icon: '🌉', title: 'Bring money in', body: 'From Noble, the Cosmos Hub, Injective, Neutron and Stride, swapped on arrival if you like.', cta: 'Bridge' },
+    { k: 'pools', icon: '💧', title: 'Provide liquidity', body: `${pools} pools on Terra Swap and Astroport. Add both sides, or zap in with one token.`, cta: 'Pools' },
+    { k: 'portfolio', icon: '🧾', title: 'Everything you hold', body: 'Positions on both sites, closed in one signature. Sell leftovers in one go, and see your history.', cta: 'Portfolio' },
     { k: 'lst', icon: '🥩', title: 'Liquid staking against the hubs', body: 'When redeeming ampLUNA or bLUNA at its hub pays more than selling in a pool, and by how much.', cta: 'See the rates' },
-    { k: 'gap', icon: '⚡', title: gaps ? `${gaps} pool${gaps === 1 ? '' : 's'} off the market` : 'Pools off the market', body: 'A pool that drifted from the market, with the round trip that closes the gap in one transaction.', cta: gaps ? 'Close one' : 'None right now', muted: !gaps },
-    { k: 'verify', icon: '✓', title: 'No owner, no admin, no cut', body: "Nobody can change Terra Swap's pools or take a cut. Check every contract from your own browser.", cta: 'Verify' },
-    { k: 'stats', icon: '📊', title: 'The numbers', body: 'Liquidity, what the pools paid their providers, what routing adds, and uptime, read from the chain.', cta: 'Stats' },
-    { k: 'search', icon: '⌕', title: 'Find anything', body: 'Any token to buy or sell, any pool, any part of the site, one search away. ⌘K from anywhere.', cta: 'Search' },
+    { k: 'gap', icon: '⚡', title: gaps ? `${gaps} pool${gaps === 1 ? '' : 's'} off the market` : 'Pools off the market', body: 'A pool that drifted from the market, and the round trip that closes the gap.', cta: gaps ? 'Close one' : 'None right now', muted: !gaps },
+    { k: 'verify', icon: '✓', title: 'No owner, no admin', body: "Nobody can change Terra Swap's pools or take a cut. Check every contract from your browser.", cta: 'Verify' },
+    { k: 'stats', icon: '📊', title: 'The numbers', body: 'Liquidity, fees paid to providers, what routing adds, and uptime.', cta: 'Stats' },
+    { k: 'search', icon: '⌕', title: 'Find anything', body: 'Any token, pool or part of the site. ⌘K from anywhere.', cta: 'Search' },
   ]
   const card: React.CSSProperties = {
     display: 'grid', gridTemplateRows: 'auto 1fr auto', gap: 6, textAlign: 'left', padding: '12px 14px', borderRadius: 14,
@@ -5017,7 +5008,6 @@ function Explore({ pools, gaps, onGo }: { pools: number; gaps: number; onGo: (k:
     <section aria-labelledby='explore-title' style={{ marginTop: SPACE['4'] }}>
       <div style={{ display: 'flex', alignItems: 'baseline', flexWrap: 'wrap', columnGap: SPACE['2'], rowGap: 2, marginBottom: SPACE['2'] }}>
         <h2 id='explore-title' style={{ fontFamily: TERRA_FONT, fontSize: TEXT.md.size, margin: 0, color: C.textPrimary }}>Beyond the swap</h2>
-        <span style={{ fontSize: TEXT.xs.size, color: C.textWhisper }}>every route runs through Terra Swap&apos;s and Astroport&apos;s pools, with no interface fee</span>
       </div>
       <div className='terra-explore' style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(210px, 1fr))', gap: SPACE['2'] }}>
         {cards.map(c => (c.k === 'verify' || c.k === 'stats')
@@ -5549,11 +5539,11 @@ function SwapPageInner() {
   const paletteItems = useMemo<PaletteItem[]>(() => {
     const icon = (e: string) => <span>{e}</span>
     const items: PaletteItem[] = [
-      { id: 'do-bridge-noble', group: 'Do', label: 'Bring USDC in from Noble', hint: 'arrives as USDC, or already swapped into another token', keywords: 'bridge deposit transfer ibc noble usdc move in', icon: icon('🌉'), run: () => openBridge('noble') },
-      { id: 'do-bridge-hub', group: 'Do', label: 'Bring ATOM in from the Cosmos Hub', hint: 'arrives as ATOM, or already swapped into another token', keywords: 'bridge deposit transfer ibc cosmos hub atom move in', icon: icon('⚛️'), run: () => openBridge('cosmoshub') },
-      { id: 'do-bridge-inj', group: 'Do', label: 'Bring USDC.inj in from Injective', hint: 'arrives as USDC.inj, or already swapped into another token', keywords: 'bridge deposit transfer ibc injective usdc.inj move in', icon: icon('🌊'), run: () => openBridge('injective') },
-      { id: 'do-bridge-neutron', group: 'Do', label: 'Bring ASTRO, dATOM or FUEL in from Neutron', hint: 'arrives as itself, or already swapped into another token', keywords: 'bridge deposit transfer ibc neutron astro datom drop fuel move in', icon: icon('⚡'), run: () => openBridge('neutron-astro') },
-      { id: 'do-bridge-stride', group: 'Do', label: 'Bring stLUNA or stATOM in from Stride', hint: 'arrives as itself, or already swapped into another token', keywords: 'bridge deposit transfer ibc stride stluna statom staked move in', icon: icon('🏃'), run: () => openBridge('stride-stluna') },
+      { id: 'do-bridge-noble', group: 'Do', label: 'Bring USDC in from Noble', hint: 'arrives as USDC, or swapped on arrival', keywords: 'bridge deposit transfer ibc noble usdc move in', icon: icon('🌉'), run: () => openBridge('noble') },
+      { id: 'do-bridge-hub', group: 'Do', label: 'Bring ATOM in from the Cosmos Hub', hint: 'arrives as ATOM, or swapped on arrival', keywords: 'bridge deposit transfer ibc cosmos hub atom move in', icon: icon('⚛️'), run: () => openBridge('cosmoshub') },
+      { id: 'do-bridge-inj', group: 'Do', label: 'Bring USDC.inj in from Injective', hint: 'arrives as USDC.inj, or swapped on arrival', keywords: 'bridge deposit transfer ibc injective usdc.inj move in', icon: icon('🌊'), run: () => openBridge('injective') },
+      { id: 'do-bridge-neutron', group: 'Do', label: 'Bring ASTRO, dATOM or FUEL in from Neutron', hint: 'arrives as itself, or swapped on arrival', keywords: 'bridge deposit transfer ibc neutron astro datom drop fuel move in', icon: icon('⚡'), run: () => openBridge('neutron-astro') },
+      { id: 'do-bridge-stride', group: 'Do', label: 'Bring stLUNA or stATOM in from Stride', hint: 'arrives as itself, or swapped on arrival', keywords: 'bridge deposit transfer ibc stride stluna statom staked move in', icon: icon('🏃'), run: () => openBridge('stride-stluna') },
       { id: 'do-lst', group: 'Do', label: 'Liquid staking against the hubs', hint: 'when redeeming ampLUNA or bLUNA at its hub beats selling in the pool', keywords: 'lst stake unstake redeem mint ampluna bluna eris backbone hub', icon: icon('🥩'), run: () => openInPools('lst') },
       ...(arbs[0] ? [{ id: 'do-gap', group: 'Do', label: 'Close the biggest gap', hint: `${arbs[0].pool.label} is ${arbs[0].off.toFixed(1)}× off the market`, keywords: 'arbitrage arb drift gap off market', icon: icon('⚡'), run: () => takeArb(arbs[0]) }] : []),
       { id: 'do-open-pool', group: 'Do', label: 'Open a pool', hint: "on Terra Swap's or Astroport's factory, one signature", keywords: 'create new pair pool list token factory', icon: icon('🏗️'), run: () => openTab('create') },
@@ -5561,12 +5551,12 @@ function SwapPageInner() {
       { id: 'do-keys', group: 'Do', label: 'Keyboard shortcuts', hint: '⌘K search · / amount · f flip the pair', keywords: 'keys hotkeys keyboard', icon: icon('⌨️'), run: () => setShortcuts(true) },
       { id: 'go-swap', group: 'Go to', label: 'Swap', hint: "the best route through Terra Swap's, Astroport's and Skeleton Swap's pools", keywords: 'trade exchange buy sell convert skeleton white whale', icon: icon('🔀'), run: () => openTab('swap') },
       { id: 'go-pools', group: 'Go to', label: 'Pools', hint: `${allPools.length} pools on Terra Swap, Astroport and Skeleton Swap: add, zap in, remove`, keywords: 'liquidity lp provide add remove zap fees skeleton white whale', icon: icon('💧'), run: () => openTab('pools') },
-      { id: 'go-bridge', group: 'Go to', label: 'Bridge', hint: 'USDC from Noble, ATOM from the Cosmos Hub, USDC.inj from Injective, ASTRO and dATOM from Neutron, stLUNA from Stride, and back', keywords: 'transfer ibc deposit withdraw move chains', icon: icon('🌉'), run: () => openTab('transfer') },
-      { id: 'go-positions', group: 'Go to', label: 'Portfolio', hint: 'every position on both sites, staked LP included, and a way out of each', keywords: 'positions lp exit withdraw staked rewards claim holdings', icon: icon('🧾'), run: () => openTab('positions') },
-      { id: 'go-history', group: 'Go to', label: 'History', hint: 'your swaps, liquidity and transfers, each quote beside what arrived', keywords: 'transactions receipts activity past', icon: icon('🕘'), run: () => openTab('history') },
+      { id: 'go-bridge', group: 'Go to', label: 'Bridge', hint: 'Noble, the Cosmos Hub, Injective, Neutron and Stride, both ways', keywords: 'transfer ibc deposit withdraw move chains', icon: icon('🌉'), run: () => openTab('transfer') },
+      { id: 'go-positions', group: 'Go to', label: 'Portfolio', hint: 'positions on both sites, staked LP included', keywords: 'positions lp exit withdraw staked rewards claim holdings', icon: icon('🧾'), run: () => openTab('positions') },
+      { id: 'go-history', group: 'Go to', label: 'History', hint: 'your swaps, liquidity and transfers', keywords: 'transactions receipts activity past', icon: icon('🕘'), run: () => openTab('history') },
       ...(!LITE ? [{ id: 'go-board', group: 'Go to', label: 'Board', hint: 'who was here first, and what they did', keywords: 'leaderboard points badges ranks', icon: icon('🏆'), run: () => openTab('board') }] : []),
       { id: 'page-stats', group: 'Pages', label: 'Stats', hint: 'liquidity, fees paid to providers, liquid staking, routing and uptime', keywords: 'analytics numbers volume tvl uptime data', icon: icon('📊'), run: () => { window.location.href = '/stats' } },
-      { id: 'page-verify', group: 'Pages', label: 'Verify the contracts', hint: 'no owner, no admin, no fee: checked from your own browser', keywords: 'security audit renounced keys checksum trust safe', icon: icon('✓'), run: () => { window.location.href = '/verify' } },
+      { id: 'page-verify', group: 'Pages', label: 'Verify the contracts', hint: 'no owner and no admin, checked from your browser', keywords: 'security audit renounced keys checksum trust safe', icon: icon('✓'), run: () => { window.location.href = '/verify' } },
       { id: 'page-developers', group: 'Pages', label: 'Build with Terra Swap', hint: 'embed a live quote on your site, or call the quote API', keywords: 'developers api embed widget iframe quote integrate', icon: icon('🧩'), run: () => { window.location.href = '/developers' } },
       { id: 'do-alerts', group: 'Do', label: 'Price alerts and favourites', hint: 'kept in this browser; set an alert on any token page', keywords: 'alert notify notification price watch favourite favorite star', icon: icon('🔔'), run: () => openTab('wallet') },
       {
@@ -5774,7 +5764,7 @@ function SwapPageInner() {
                 onNext={(k, key) => { if (k === 'pools') { setVenueFilter('all'); setPoolQuery(key ?? '') } openTab(k) }} />}
               {tab === 'pools' && (
                 allPools.length === 0
-                  ? <Empty title='No pools yet' body={LITE ? 'Could not read the pool list. Try again in a moment.' : 'Open the first one. One signature, gas only. Your name goes to the top of the board and everyone sees it was you.'} />
+                  ? <Empty title='No pools yet' body={LITE ? 'Could not read the pool list. Try again in a moment.' : 'Open the first one. One signature, gas only.'} />
                   : <div style={{ display: 'grid', gap: SPACE['3'] }}>
                     {/* ampLUNA and bLUNA in the pools against their hubs; "swap" opens the trade in the Swap tab, which offers the hub when it is the better side. */}
                     <div style={{ display: 'grid', gap: SPACE['2'] }}>
@@ -5813,12 +5803,12 @@ function SwapPageInner() {
                       )}
                       {(venueFilter === 'all' || venueFilter === 'astroport') && allPools.some(p => p.venue === 'astroport') && (
                         <div style={{ fontSize: TEXT.xs.size, color: C.textWhisper, lineHeight: 1.5 }}>
-                          Astroport&apos;s pools are its own contracts, reached here directly: swaps, deposits and withdrawals go straight to them. Not affiliated with Astroport.
+                          Astroport&apos;s pools are its own contracts, reached directly. Not affiliated with Astroport.
                         </div>
                       )}
                       {(venueFilter === 'all' || venueFilter === 'skeleton') && allPools.some(p => p.venue === 'skeleton') && (
                         <div style={{ fontSize: TEXT.xs.size, color: C.textWhisper, lineHeight: 1.5 }}>
-                          Skeleton Swap&apos;s pools run on White Whale&apos;s pool contracts, reached here directly: swaps, deposits and withdrawals go straight to them. Each pool sets its own fee, part of it to White Whale, and its owner can change fees and pause swaps, deposits or withdrawals. Not affiliated with Skeleton Swap or White Whale.
+                          Skeleton Swap&apos;s pools run on White Whale&apos;s pool contracts, reached directly. Each sets its own fee, part of it to White Whale, and its owner can change fees and pause swaps, deposits or withdrawals. Not affiliated with Skeleton Swap or White Whale.
                         </div>
                       )}
                     </div>
@@ -5891,8 +5881,7 @@ function SwapPageInner() {
           {data?.live && LITE && (
             <p style={{ color: C.textMuted, margin: `${SPACE['4']}px 0 0`, fontSize: TEXT.xs.size, lineHeight: 1.6 }}>
               An unofficial, open-source interface to Astroport&apos;s pool contracts on Terra. Not affiliated with Astroport.
-              It adds no fee and holds nothing: every swap and deposit goes straight to the pool contract, and pool fees are whatever that contract charges.
-              Every Astroport token with real liquidity, pool creation, and a Portfolio tab that finds and exits LP anywhere on Terra Swap or Astroport, staked LP and old ASTRO included. The code is MIT and anyone can host their own copy.
+              It adds no fee and holds nothing: every swap and deposit goes straight to the pool contract. The code is MIT and anyone can host their own copy.
             </p>
           )}
           {data?.live && !LITE && tab === 'swap' && (
@@ -5909,15 +5898,14 @@ function SwapPageInner() {
           )}
           {data?.live && !LITE && (
             <p style={{ color: C.textWhisper, margin: `${SPACE['3']}px 0 0`, fontSize: TEXT.xs.size, lineHeight: 1.6 }}>
-              A decentralized exchange on Terra, open source and experimental. Pools run Astroport&apos;s audited contract code; pool fee {(data.poolFeeBps / 100).toFixed(1)}% on Terra Swap&apos;s pools, all to liquidity providers, and no interface fee. Swaps also route through Astroport&apos;s pools and Skeleton Swap&apos;s (White Whale&apos;s pool contracts) when they price better. Independent, not affiliated with Terraswap (app.terraswap.io), Astroport, Skeleton Swap or White Whale. Amounts are small: trade what you are happy to lose.
+              Open source and experimental. Terra Swap&apos;s pools run Astroport&apos;s audited contract code, with a {(data.poolFeeBps / 100).toFixed(1)}% pool fee, all to liquidity providers. Swaps also route through Astroport&apos;s and Skeleton Swap&apos;s pools when they price better. Not affiliated with Terraswap (app.terraswap.io), Astroport, Skeleton Swap or White Whale. Amounts are small: trade what you are happy to lose.
             </p>
           )}
           {data?.live && !LITE && <div style={{ marginTop: SPACE['5'] }}><StatBand data={data} board={board} /></div>}
           {data?.live && !LITE && <Wire board={board} pools={data.pools} onOpen={() => setLedgerOpen(true)} />}
           {data?.live && !LITE && (
             <p style={{ fontSize: TEXT.xs.size, color: C.goldLit, lineHeight: 1.6, margin: `0 0 ${SPACE['3']}px`, paddingLeft: SPACE['3'], letterSpacing: '0.02em' }}>
-              ✦ We keep a list of who was here first. The earliest hands in the earliest pools get remembered.
-              What that comes to mean, you find out. Nobody knows what happens next. That is the fun.
+              ✦ The board keeps a list of who was here first.
             </p>
           )}
           {data?.live && !LITE && <Ticker extra={data.pools.every(p => p.empty) ? ['0 pools with liquidity. the board is blank. move first and own the top of it.'] : undefined} />}
@@ -6250,8 +6238,8 @@ export const getStaticProps: GetStaticProps = async () => ({
       image: LITE ? `${SITE_URL}/img/openfields-x.png` : `${SITE_URL}/api/og/swap`,
       contract: '', token: '',
       description: LITE
-        ? `An unofficial, open-source interface to Astroport's pool contracts on Terra. No fee, no keys, self-hostable. Not affiliated with Astroport.`
-        : 'A DEX for Terra, shipped overnight on audited pool code, with every fee handed back to the people who show up. No permission. Not affiliated with Terraswap. Steady lads.',
+        ? `An unofficial, open-source interface to Astroport's pools on Terra, with no fee. Not affiliated with Astroport.`
+        : 'The best route over Terra Swap and Astroport pools on Terra, with no interface fee. Not affiliated with Terraswap.',
       url: `${SITE_URL}/`,
       type: 'website',
     },

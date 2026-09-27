@@ -135,7 +135,7 @@ export default function TxPage({ hash, receipt }: { hash: string; receipt: Recei
         <a href={terrascope} target='_blank' rel='noreferrer' style={linkBtn()}>Terra Scan ↗</a>
       </div>
 
-      <Panel title='What moved' note={r.ok ? "Read from the chain's own transfer events: what left the wallet and what arrived, with the network fee on its own." : 'It failed, so nothing moved but the network fee.'}>
+      <Panel title='What moved' note={r.ok ? undefined : 'It failed, so nothing moved but the network fee.'}>
         {r.out.length > 0 && <div style={row}><span>Left</span>{moved(r.out)}</div>}
         {r.in.length > 0 && <div style={row}><span>Arrived</span>{moved(r.in)}</div>}
         <div style={row}><span>Network fee</span><span style={{ color: C.textSecondary }}>{r.feeUluna !== '0' ? `${fromMicro(r.feeUluna, 6, 4)} LUNA` : 'paid by the relayer'}</span></div>
@@ -143,7 +143,7 @@ export default function TxPage({ hash, receipt }: { hash: string; receipt: Recei
       </Panel>
 
       {r.quote && (
-        <Panel title='Against the quote' note="A swap signed on Terra Swap writes its quote into the transaction's memo, so what it was quoted can be set beside what the chain delivered.">
+        <Panel title='Against the quote' note="Terra Swap writes the quote into the transaction's memo.">
           <div style={row}><span>Quoted</span><span style={{ color: C.textSecondary }}>{fmtAmount(r.quote.amount)} {r.quote.label}</span></div>
           {vs != null && <div style={row}><span>Arrived against the quote</span><span style={{ color: vs >= -0.05 ? C.success : C.ember }}>{vs >= 0 ? '+' : ''}{vs.toFixed(2)}%</span></div>}
           {r.quote.gainPct != null && <div style={row}><span>Routing added</span><span style={{ color: r.quote.gainPct >= 0.005 ? C.success : C.textSecondary }}>{r.quote.gainPct >= 0 ? '+' : ''}{r.quote.gainPct.toFixed(2)}% over the best path through up to two pools</span></div>}
@@ -152,7 +152,7 @@ export default function TxPage({ hash, receipt }: { hash: string; receipt: Recei
       )}
 
       {r.hops.length > 0 && (
-        <Panel title='Route' note='Each swap in the order the pools executed it, with what the pool took in and paid out.'>
+        <Panel title='Route' note='In the order the pools executed it.'>
           {r.hops.map((h, i) => (
             <div key={i} style={row}>
               <span style={{ color: C.textSecondary }}>{show(h.offer)} → {show(h.ask)}</span>

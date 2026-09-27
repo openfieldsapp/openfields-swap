@@ -50,11 +50,11 @@ function previewCard(request: NextRequest): Response | null {
   if (ADDRESS.test(who)) {
     const short = `${who.slice(0, 9)}…${who.slice(-4)}`
     title = `${short} on Terra Swap`
-    description = `${short} is written down on the Terra Swap board. A DEX for Terra built in a night for the price of gas. Steady lads.`
+    description = `${short}'s points, badges and moves on the Terra Swap board.`
     query = `?who=${who}`
   } else if (TOKEN.test(from) && TOKEN.test(to) && from.toLowerCase() !== to.toLowerCase()) {
     title = `Swap ${amount ? `${amount} ` : ''}${from} for ${to} on Terra Swap`
-    description = "Opens Terra Swap with this swap filled in. The route is priced across Terra Swap's and Astroport's pools when the page opens. No interface fee."
+    description = 'Opens this swap on Terra Swap, priced across Terra Swap and Astroport pools, with no interface fee.'
     query = `?from=${encodeURIComponent(from)}&to=${encodeURIComponent(to)}${amount ? `&amount=${amount}` : ''}`
   } else return null
   const url = `${origin}/${query}`, image = `${origin}/api/og/swap${query}`

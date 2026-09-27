@@ -115,7 +115,7 @@ function Embed() {
             Swap on Terra Swap ↗
           </a>
           <div style={{ fontSize: 10.5, lineHeight: 1.5, color: C.whisper, textAlign: 'center' }}>
-            No interface fee · routes over Terra Swap&apos;s and Astroport&apos;s pools · a quote, not an offer: prices move with every trade
+            No interface fee · a quote, not an offer: prices move with every trade
           </div>
         </div>
       </div>

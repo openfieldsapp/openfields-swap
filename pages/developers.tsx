@@ -37,7 +37,7 @@ export const getStaticProps: GetStaticProps = async () => {
       base,
       og: {
         title: 'Build with Terra Swap: embed a quote, or call the open APIs',
-        description: "A swap quote any site can frame, and open APIs for the best route over Terra Swap's and Astroport's pools, price history, size before the price moves, token control and market data. No key, no fee.",
+        description: 'Embed a live Terra Swap quote, or call open APIs for routes, depth, price history, token control and market data. No key, no fee.',
         image: `${base}/api/og/swap`, url: `${base}/developers`, type: 'website',
       },
     },
@@ -69,11 +69,11 @@ export default function Developers({ base }: { base: string }) {
           <span style={{ fontWeight: 700, color: C.goldLit }}>Build</span> <span style={{ fontWeight: 300 }}>with Terra Swap</span>
         </h1>
         <p style={{ fontSize: TEXT.sm.size, color: C.textSecondary, lineHeight: 1.65, margin: 0 }}>
-          Put a live swap quote on your own site, or ask for what you need yourself. Quotes use the routing the swap page signs: every pool on Terra Swap&apos;s and Astroport&apos;s factories, paths through up to three pools, and a split over two paths when that delivers more. No key, no sign-up, no fee, open to any origin.
+          Put a live swap quote on your site, or call the APIs. Quotes use the routing the swap page signs: every pool on Terra Swap&apos;s and Astroport&apos;s factories, paths through up to three pools, and a split over two paths when that delivers more. No key and no fee, open to any origin.
         </p>
       </header>
 
-      <Panel title='Embed a quote' note='A small card that prices a pair as people type. Its button opens the swap on Terra Swap in a new tab, where they sign in their own wallet. The card holds no wallet and signs nothing.'>
+      <Panel title='Embed a quote' note='Prices a pair as people type. Its button opens the swap on Terra Swap in a new tab, where people sign in their own wallet. The card signs nothing.'>
         <Code>{embedSnippet}</Code>
         <div style={{ ...row, marginTop: SPACE['2'] }}><span>Parameters</span><span style={{ color: C.textSecondary }}>from, to (tickers below) and amount, all optional</span></div>
         <div style={{ marginTop: SPACE['3'], display: 'flex', justifyContent: 'center' }}>
@@ -81,7 +81,7 @@ export default function Developers({ base }: { base: string }) {
         </div>
       </Panel>
 
-      <Panel title='Quote' note='What a swap would deliver right now, or what to pay for an amount to arrive. Amounts are in whole tokens, the way people write them.'>
+      <Panel title='Quote' note='What a swap delivers right now, or what to pay for an amount to arrive. Amounts are in whole tokens.'>
         <Code>{`curl "${base}/api/quote?from=LUNA&to=USDC&amount=100"
 curl "${base}/api/quote?from=LUNA&to=USDC&receive=5"
 curl "${base}/api/quote?from=LUNA&to=USDC&amount=100&tx=1&sender=terra1…&slippage=0.5"`}</Code>
@@ -107,7 +107,7 @@ curl "${base}/api/depth?pool=terra1…"`}</Code>
         </div>
       </Panel>
 
-      <Panel title='Price history' note="The site's own record: every listed token's market reference each ten minutes, and every pool with liquidity each hour, from the day recording began. Nothing before that is filled in.">
+      <Panel title='Price history' note="Every listed token's market reference each ten minutes, and every pool with liquidity each hour, since recording began.">
         <Code>{`curl "${base}/api/price-history?token=LUNA&range=7d"
 curl "${base}/api/price-history?pool=terra1…&base=LUNA&quote=USDC&range=30d"`}</Code>
         <div style={{ marginTop: SPACE['2'] }}>
@@ -122,7 +122,7 @@ curl "${base}/api/price-history?pool=terra1…&base=LUNA&quote=USDC&range=30d"`}
         <Code>{`curl "${base}/api/token-check?token=ampLUNA"`}</Code>
       </Panel>
 
-      <Panel title='Market data for listing sites' note="Terra Swap's own pools only, in the shapes CoinGecko's and CoinMarketCap's integration specs ask for. Pools are constant-product, so the order book is the curve itself. Swaps routed through Astroport's pools are Astroport's markets and are not counted here.">
+      <Panel title='Market data for listing sites' note="Terra Swap's own pools only, in CoinGecko's and CoinMarketCap's integration formats. Pools are constant-product, so the order book is the curve itself. Swaps routed through Astroport's pools are not counted.">
         <Code>{`${base}/api/coingecko/pairs
 ${base}/api/coingecko/tickers
 ${base}/api/coingecko/orderbook?ticker_id=<base>_<target>&depth=100
@@ -147,10 +147,10 @@ ${base}/api/volume?date=2026-09-20`}</Code>
         </p>
       </Panel>
 
-      <Panel title='What it is, and what it is not'>
+      <Panel title='Notes'>
         <ul style={{ fontSize: TEXT.xs.size, color: C.textSecondary, lineHeight: 1.7, margin: 0, paddingLeft: 18 }}>
-          <li>A quote is what the pools would deliver at the moment it is read. It is not an offer and not advice, and it moves with every trade. The same goes for sizes, prices and market data: what the chain said when it was read.</li>
-          <li>Nothing is signed, held or charged here. A swap opens Terra Swap, where the person signs it in their own wallet, and where the site&apos;s regional restrictions apply as they do anywhere else on it.</li>
+          <li>A quote is what the pools would deliver when it is read. It is not an offer and not advice, and it moves with every trade. The same goes for sizes, prices and market data.</li>
+          <li>Nothing is signed, held or charged here. A swap opens Terra Swap, where the person signs in their own wallet and the site&apos;s regional restrictions apply.</li>
           <li>USDC from Noble and USDC.inj are separate tokens and are never quoted against each other.</li>
           <li>Please cache on your side: quotes are kept about 20 seconds here, and each server answers about 120 fresh quotes a minute.</li>
           <li>The code is open source under MIT. <a href={REPO} target='_blank' rel='noreferrer' style={{ color: C.goldLit }}>Run your own copy</a>; the pools and the router on chain have no owner and no admin.</li>

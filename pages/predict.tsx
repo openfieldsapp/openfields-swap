@@ -172,11 +172,11 @@ function MarketCard({ m, now, spot, twapNow, me, pos, claimable, feeBps, bountyB
         ) : <div className='terra-connect-cta'><WalletButton /></div>)}
 
         {phase === 'observe' && (me
-          ? <button type='button' disabled={busy} style={primaryBtn} onClick={() => run(() => observe.mutateAsync({ sender: me, marketId: m.id }), 'Observed. Half the bounty is yours at settlement.')}>Observe the window · earns half the bounty</button>
+          ? <button type='button' disabled={busy} style={primaryBtn} onClick={() => run(() => observe.mutateAsync({ sender: me, marketId: m.id }), 'Observed. Half the bounty is yours at settlement.')}>Observe the window · half the bounty</button>
           : <div className='terra-connect-cta'><WalletButton /></div>)}
 
         {phase === 'resolve' && (me
-          ? <button type='button' disabled={busy} style={primaryBtn} onClick={() => run(() => settle.mutateAsync({ sender: me, marketId: m.id }), 'Settled by the chain.')}>{m.observation ? 'Settle · earns half the bounty' : 'Settle as void · refunds everyone'}</button>
+          ? <button type='button' disabled={busy} style={primaryBtn} onClick={() => run(() => settle.mutateAsync({ sender: me, marketId: m.id }), 'Settled by the chain.')}>{m.observation ? 'Settle · half the bounty' : 'Settle as void · refunds everyone'}</button>
           : <div className='terra-connect-cta'><WalletButton /></div>)}
 
         {voidable && me && (
@@ -229,7 +229,7 @@ function CreatePanel({ me, spot, minWindow, onDone, onToast }: { me: string; spo
         sender: me, question: q, pair: LUNA_USDC_PAIR, base: LUNA, quote: USDC, baseDecimals: 6, quoteDecimals: 6,
         threshold: threshold.trim(), denom: 'uluna', minBetMicro: mb, closeAt, resolveAt: closeAt + windowS, twapWindow: windowS,
       })
-      onToast('Market open. It is on the chain now.')
+      onToast('Market open.')
       setQuestion(''); setTimeout(onDone, 2500)
     } catch (e) { setErr(humanizeTxError(e)) }
   }
@@ -238,7 +238,7 @@ function CreatePanel({ me, spot, minWindow, onDone, onToast }: { me: string; spo
     <Card>
       <div style={{ fontFamily: TERRA_FONT, fontWeight: 700, fontSize: TEXT.md.size, color: C.textPrimary, marginBottom: 4 }}>Open a market</div>
       <p style={{ fontSize: TEXT.xs.size, color: C.textMuted, lineHeight: 1.6, margin: `0 0 ${SPACE['3']}px` }}>
-        Yes or no on the LUNA price in USDC, settled by the average price on Astroport&apos;s LUNA/USDC pool over the window after betting closes. Anyone can open one; it costs gas and nothing else.
+        Yes or no on the LUNA price in USDC, settled by the average on Astroport&apos;s LUNA/USDC pool over the window after betting closes. Anyone can open one for the cost of gas.
       </p>
       <div style={{ display: 'grid', gap: SPACE['3'], gridTemplateColumns: 'repeat(auto-fit, minmax(150px, 1fr))' }}>
         <div><label style={label}>YES if 1 LUNA ≥ (USDC)</label><input style={field} type='number' min='0' step='any' value={threshold} onChange={e => setThreshold(e.target.value)} placeholder={spot ? spot.toFixed(4) : '0.05'} /></div>
@@ -358,7 +358,7 @@ function PredictPageInner() {
               {tab === 'create' && <CreatePanel me={me} spot={spotLuna} minWindow={data.config?.min_window ?? 600} onDone={refresh} onToast={showToast} />}
               {tab !== 'create' && (
                 (tab === 'live' ? live : settled).length === 0
-                  ? <Empty title={tab === 'live' ? 'No open markets' : 'Nothing settled yet'} body={tab === 'live' ? 'Open the first one. A question, a price, a deadline. The chain does the rest.' : 'Settled markets show up here with the price they settled at.'} />
+                  ? <Empty title={tab === 'live' ? 'No open markets' : 'Nothing settled yet'} body={tab === 'live' ? 'Open the first one.' : 'Settled markets show up here with the price they settled at.'} />
                   : <div style={{ display: 'grid', gap: SPACE['3'] }}>
                       {(tab === 'live' ? live : settled).map(m => (
                         <MarketCard key={m.id} m={m} now={now} spot={data.spot[m.pair]} twapNow={data.twap[m.id]?.twap ?? null} me={me}
@@ -368,8 +368,8 @@ function PredictPageInner() {
               )}
               <div style={{ marginTop: SPACE['4'], fontSize: TEXT.xs.size, color: C.textWhisper, lineHeight: 1.7, borderTop: `1px solid ${C.divider}`, paddingTop: SPACE['3'] }}>
                 Parimutuel: winners split the losing pool. The {feeBps / 100}% fee and the {bountyBps / 100}% bounty come from the losing side only.
-                The price is the time-weighted average from Astroport&apos;s pool over the window, read by whoever shows up: half the bounty for the first to observe the window, half for whoever settles.
-                No observer, no fee, no loser: the market is void and every stake is refundable. There is no admin and no way to change any of this.
+                The price is the time-weighted average on Astroport&apos;s pool over the window: half the bounty to the first observer, half to whoever settles.
+                With no observer, the market is void and every stake is refundable. No admin can change any of this.
               </div>
             </>
           )}

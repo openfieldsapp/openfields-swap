@@ -32,8 +32,8 @@ export default function AppSwitcher() {
     { key: 'gov', word: 'Gov', glyph: '§', description: t('Proposals, votes and the community pool'), url: GOV_URL, here: false },
     { key: 'status', word: 'Status', glyph: '●', description: t('Blocks, validators, bridges and endpoints, live'), url: STATUS_URL, here: false },
     { key: 'stake', word: 'Stake', glyph: '⬢', description: t('Stake LUNA, move it, collect rewards'), url: STAKE_URL, here: false },
-    { key: 'data', word: 'Data', glyph: '▦', description: t('How the apps on Terra are actually used'), url: DATA_URL, here: false },
-    { key: 'scan', word: 'Scan', glyph: '⌕', description: t('Transactions, addresses and blocks, in plain words'), url: SCAN_URL, here: false },
+    { key: 'data', word: 'Data', glyph: '▦', description: t('How the apps on Terra are used'), url: DATA_URL, here: false },
+    { key: 'scan', word: 'Scan', glyph: '⌕', description: t('Transactions, addresses and blocks'), url: SCAN_URL, here: false },
     { key: 'daily', word: 'Daily', glyph: '◷', description: t('A daily move, a calm minute and five Terra questions'), url: DAILY_URL, here: false },
   ]
 

@@ -55,7 +55,7 @@ export default function RegionBanner() {
         {country && (
           <span style={{ color: PALETTE.textMuted }}> · region {country}</span>
         )}
-        {' — '}
+        {'. '}
         <span style={{ color: PALETTE.textMuted }}>
           {reason ?? 'Wallet actions are not available in your region. Everything else stays open.'}
         </span>

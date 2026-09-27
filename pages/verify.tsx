@@ -63,8 +63,8 @@ const GROUPS: { key: string; title: string; address?: string; blurb: string }[] 
   ...(TERRA_SWAP_FACTORY_V2 ? [{ key: 'factory2', title: "Terra Swap's factory v2", address: TERRA_SWAP_FACTORY_V2, blurb: 'Opens concentrated and stable pools (contracts/factory-v2). The same factory code with no fee address, its ownership in its own owner sink, and nobody can migrate it.' }] : []),
   { key: 'pools', title: 'Every pool', blurb: "Astroport's xyk pair code. 0.3% per swap, all of it to liquidity providers. No pool can be migrated: the pools that existed at the renounce had their admin cleared, and pools opened since carry the owner sink as admin, which has no way to migrate anything." },
   { key: 'router', title: "Terra Swap's router", address: TERRA_SWAP_ROUTER, blurb: 'One transaction through pools on both factories, and the swap on arrival over IBC (contracts/router). No owner, no admin, no fee.' },
-  { key: 'astroport', title: "Astroport's contracts this page also uses", blurb: "Not Terra Swap's. Swaps and positions can go through them, and Astroport can upgrade them; shown so that is plain." },
-  { key: 'skeleton', title: "Skeleton Swap's pools this page also routes through", blurb: "Not Terra Swap's. Swaps can go through Skeleton Swap's pools, which run on White Whale's pool contracts. Their factory's owner can change the pools' fees and pause swaps; shown so that is plain." },
+  { key: 'astroport', title: "Astroport's contracts this page also uses", blurb: "Not Terra Swap's. Swaps and positions can go through them, and Astroport can upgrade them." },
+  { key: 'skeleton', title: "Skeleton Swap's pools this page also routes through", blurb: "Not Terra Swap's. Swaps can go through Skeleton Swap's pools, which run on White Whale's pool contracts. Their factory's owner can change the pools' fees and pause swaps." },
 ]
 
 async function run(push: (c: Check) => void): Promise<void> {
@@ -190,7 +190,7 @@ export default function VerifyPage() {
             <span style={{ fontWeight: 700, color: C.goldLit }}>Verify</span> <span style={{ fontWeight: 300 }}>the contracts</span>
           </h1>
           <p style={{ fontSize: TEXT.sm.size, color: C.textSecondary, lineHeight: 1.65, margin: `0 0 ${SPACE['3']}px` }}>
-            Everything below is read from Terra when this page opens, by your browser, from a public endpoint. Nothing comes from this site&apos;s server. The contracts written for Terra Swap are compared with the reproducible builds in <a href={REPO} target='_blank' rel='noreferrer' style={{ color: C.goldLit }}>the repository</a>; the factory and the pools run Astroport&apos;s own code. From a terminal, <code>contracts/owner-sink/verify.sh</code> and <code>contracts/router/verify.sh</code> check the same things.
+            Read by your browser from a public Terra endpoint when this page opens, not from this site&apos;s server. Terra Swap&apos;s own contracts are compared with the reproducible builds in <a href={REPO} target='_blank' rel='noreferrer' style={{ color: C.goldLit }}>the repository</a>; the factory and the pools run Astroport&apos;s code. From a terminal, <code>contracts/owner-sink/verify.sh</code> and <code>contracts/router/verify.sh</code> check the same things.
           </p>
           <div style={{ display: 'flex', alignItems: 'center', gap: SPACE['2'], flexWrap: 'wrap', margin: `0 0 ${SPACE['3']}px` }}>
             <span style={{ fontSize: TEXT.sm.size, fontWeight: 700, color: running ? C.textMuted : bad ? C.alert : C.success }}>

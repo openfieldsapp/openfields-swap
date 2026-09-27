@@ -96,7 +96,7 @@ export default function WalletButton({ className, onClick }: { className?: strin
     return (
       <button
         type='button' className={className} style={{ ...pill, cursor: 'help', opacity: 0.65 }}
-        title={`Wallet actions are not available in ${country ?? 'your region'}. Everything else stays open. The contracts are permissionless and reachable with any Terra wallet.`}
+        title={`Wallet actions are not available in ${country ?? 'your region'}.`}
         onClick={() => { /* explanation lives in the title and the banner */ }}
       >
         ⓘ {t('Browse-only')}
@@ -117,7 +117,7 @@ export default function WalletButton({ className, onClick }: { className?: strin
               <h3 style={{ margin: 0, fontSize: '1.05rem', fontWeight: 700 }}>{t('Connect a wallet')}</h3>
               <button type='button' onClick={() => setOpen(false)} aria-label='Close' style={{ background: 'transparent', border: 'none', color: '#9a927f', fontSize: '1.2rem', cursor: 'pointer' }}>×</button>
             </div>
-            <p style={{ margin: '0 0 12px', fontSize: '0.8rem', color: '#9a927f', lineHeight: 1.5 }}>{t('Terra, phoenix-1. Nothing is stored; the wallet signs, the chain does the rest.')}</p>
+            <p style={{ margin: '0 0 12px', fontSize: '0.8rem', color: '#9a927f', lineHeight: 1.5 }}>{t('Terra, phoenix-1. Nothing is stored; your wallet signs.')}</p>
             <div style={{ display: 'grid', gap: 8 }}>
               {wallets.length === 0 && <div style={{ fontSize: '0.8rem', color: '#9a927f' }}>No wallet available in this browser. Open this page inside Keplr Mobile, or use a desktop browser with the Keplr extension.</div>}
               {wallets.map(w => <WalletRow key={w.walletName} wallet={w} onDone={() => setOpen(false)} />)}

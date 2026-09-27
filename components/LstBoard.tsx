@@ -54,7 +54,7 @@ export default function LstBoard({ onTrade }: {
         {data && <span style={{ fontSize: TEXT.xs.size, color: C.textWhisper }}>priced {new Date(data.at).toLocaleTimeString('en-GB', { hour: '2-digit', minute: '2-digit' })}</span>}
       </div>
       <p style={{ fontSize: TEXT.xs.size, color: C.textMuted, lineHeight: 1.6, margin: '4px 0 10px' }}>
-        ampLUNA and bLUNA are minted and redeemed by their hubs at an exchange rate, and the pools drift from it. For a $100 and a $5,000 trade, through the best route on Terra Swap&apos;s and Astroport&apos;s pools: selling beside redeeming at the hub, and buying beside minting there.
+        ampLUNA and bLUNA are minted and redeemed at their hub&apos;s rate, and the pools drift from it. A $100 and a $5,000 trade through the best route, against redeeming or minting at the hub.
       </p>
       {!data && <div style={{ fontSize: TEXT.xs.size, color: C.textMuted }}>{failed ? 'The hubs did not answer. Try again in a moment.' : 'Pricing both ways through both sites…'}</div>}
       <div style={{ display: 'grid', gap: SPACE['3'] }}>
@@ -102,7 +102,7 @@ export default function LstBoard({ onTrade }: {
       </div>
       {data && (
         <div style={{ fontSize: TEXT.xs.size, color: C.textWhisper, lineHeight: 1.6, marginTop: SPACE['2'] }}>
-          Pool fees included, gas not. A negative figure on selling means redeeming at the hub pays more, once unbonding is over; a positive figure on buying means the pool gives more than minting. The swap panel offers the hub whenever it is the better side. Pools move with every trade and a hub&apos;s rate with its staking rewards, so these are today&apos;s numbers, not a forecast.
+          Pool fees included, gas not. Negative on selling: redeeming at the hub pays more, after unbonding. Positive on buying: the pool gives more than minting. Today&apos;s numbers, not a forecast.
         </div>
       )}
     </section>

@@ -124,8 +124,8 @@ export default function PriceHistoryChart({ query, unit, marketName = 'Market' }
             : !data
               ? 'Reading the price record…'
               : data.since
-                ? `The site has written prices down since ${new Date(`${data.since}T00:00:00Z`).toLocaleDateString('en-GB', { day: 'numeric', month: 'long', year: 'numeric' })}, a point every ten minutes. This range fills in as it goes.`
-                : 'The site writes prices down every ten minutes from its first recording on. Nothing before that is filled in, so the chart starts empty.'}
+                ? `Recorded every ten minutes since ${new Date(`${data.since}T00:00:00Z`).toLocaleDateString('en-GB', { day: 'numeric', month: 'long', year: 'numeric' })}. This range fills in as it goes.`
+                : 'Prices are recorded every ten minutes from the first recording on, so the chart starts empty.'}
         </div>
       )}
     </div>

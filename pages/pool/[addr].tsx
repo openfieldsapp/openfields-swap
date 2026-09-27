@@ -68,7 +68,7 @@ export const getStaticProps: GetStaticProps = async ctx => {
       label,
       og: {
         title: label ? `${label} pool on Terra` : 'A pool on Terra',
-        description: `${label ? `The ${label} pool: its` : 'Its'} liquidity, price over time against the market, how much trades before its price moves, what it paid its providers and its recent trades, read from the chain.`,
+        description: `${label ? `The ${label} pool's` : 'Its'} liquidity, price, depth, fees paid to providers and recent trades.`,
         image: `${base}/api/og/swap${share}`,
         url: `${base}/pool/${addr}`,
         type: 'website',
@@ -125,7 +125,7 @@ export default function PoolPage({ addr, label }: { addr: string; label: string 
         <Panel title={done ? 'Not listed here' : 'Reading the pool…'}>
           {done && (
             <p style={{ fontSize: TEXT.xs.size, color: C.textMuted, lineHeight: 1.6, margin: 0 }}>
-              This site lists pools on Terra Swap&apos;s factory and Astroport&apos;s pools of the tokens it trades. This one is not among them, or the chain did not answer just now.{' '}
+              Not a pool this site lists, or the chain did not answer just now.{' '}
               <a href={`https://scan.openfields.app/address/${addr}`} target='_blank' rel='noreferrer' style={{ color: C.goldLit }}>See it on Terra Scan ↗</a>
             </p>
           )}
@@ -189,19 +189,19 @@ export default function PoolPage({ addr, label }: { addr: string; label: string 
       </Panel>
 
       {!pool.empty && (
-        <Panel title='Candlesticks' note='Open, high, low and close of this pool’s price, with the volume traded each candle. Drawn from this site’s own record; it deepens over time.'>
+        <Panel title='Candlesticks' note='From this site’s own record, which grows over time.'>
           <CandleChart pair={pool.contract_addr} base={t0.label} quote={t1.label} />
         </Panel>
       )}
 
       {charted && !pool.empty && (
-        <Panel title='Price over time' note={`${t1.label} per ${t0.label}: this pool's own price each hour, beside the market for the same pair from the two tokens' reference prices, both as this site wrote them down. Where the lines part, the pool drifted.`}>
+        <Panel title='Price over time' note={`${t1.label} per ${t0.label}, hourly, beside the market price from both tokens' references. Where the lines part, the pool drifted.`}>
           <PriceHistoryChart query={`pool=${pool.contract_addr}&base=${enc(t0.key)}&quote=${enc(t1.key)}`} unit={t1.label} marketName='Market' />
         </Panel>
       )}
 
       {!pool.empty && (
-        <Panel title='How much trades before the price moves' note="Selling each side into this pool alone, from its own simulation, with the fee added back so the number is the move. The swap page routes around a thin pool; this is the pool by itself.">
+        <Panel title='How much trades before the price moves' note="Selling each side into this pool alone, fee added back. The swap page routes around a thin pool.">
           {depth === null && <div style={{ fontSize: TEXT.xs.size, color: C.textMuted }}>Pricing a dozen sizes…</div>}
           {depth === 'failed' && <div style={{ fontSize: TEXT.xs.size, color: C.textMuted }}>No market price for its tokens right now.</div>}
           {sides && (
@@ -217,7 +217,7 @@ export default function PoolPage({ addr, label }: { addr: string; label: string 
         </Panel>
       )}
 
-      <Panel title='Paid to its providers' note="What this pool's swaps paid its liquidity providers, less Astroport's share on Astroport's pools, at today's prices. Past fees, not a forecast.">
+      <Panel title='Paid to its providers' note="Less Astroport's share on Astroport's pools, at today's prices. Past fees, not a forecast.">
         {!fees && !feesFailed && <div style={{ fontSize: TEXT.xs.size, color: C.textMuted }}>Reading its swaps…</div>}
         {feesFailed && <div style={{ fontSize: TEXT.xs.size, color: C.textMuted }}>The chain&apos;s history did not answer. Try again in a moment.</div>}
         {fees && fees.day30.swaps === 0 && <div style={{ fontSize: TEXT.xs.size, color: C.textMuted }}>No swaps in the last 30 days.</div>}
@@ -229,7 +229,7 @@ export default function PoolPage({ addr, label }: { addr: string; label: string 
         )}
       </Panel>
 
-      <Panel title='Recent trades' note={`Execution prices of its last trades, ${t1.label} per ${t0.label}, read from the chain.`}>
+      <Panel title='Recent trades' note={`${t1.label} per ${t0.label}.`}>
         {!prices && <div style={{ fontSize: TEXT.xs.size, color: C.textMuted }}>Reading trades…</div>}
         {prices && prices.tape.length === 0 && <div style={{ fontSize: TEXT.xs.size, color: C.textMuted }}>No trades found in its recent history.</div>}
         <Spark points={series} />

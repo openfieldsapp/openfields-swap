@@ -95,16 +95,16 @@ export function humanizeTxError(err: unknown): string {
     return "Offer hasn't expired yet."
   }
   if (/NFT already listed/.test(raw)) {
-    return 'This NFT is already listed. Cancel the existing listing first.'
+    return 'This item is already listed. Cancel the existing listing first.'
   }
   if (/Cannot buy your own listing/.test(raw)) {
     return "You can't buy your own listing."
   }
   if (/Listing not found/.test(raw)) {
-    return 'Listing not found — it may have been bought or cancelled.'
+    return 'Listing not found. It may have been bought or cancelled.'
   }
   if (/Offer not found/.test(raw)) {
-    return 'Offer not found — it may have been cancelled or settled.'
+    return 'Offer not found. It may have been cancelled or settled.'
   }
   if (/Collection not allowlisted/.test(raw)) {
     return 'This collection is not on the Atrium allowlist. Only curated collections can be listed.'
@@ -127,7 +127,7 @@ export function humanizeTxError(err: unknown): string {
     return 'This collection has reached its launch-cap. Wait for sales/cancels or for the admin to raise the cap.'
   }
   if (/active-offer cap/.test(raw)) {
-    return 'This NFT has too many open offers right now. Wait for one to settle or expire.'
+    return 'This item has too many open offers right now. Wait for one to settle or expire.'
   }
   if (/Insufficient payment/.test(raw)) {
     return 'Payment amount must match the listing price exactly.'
@@ -167,7 +167,7 @@ export function humanizeTxError(err: unknown): string {
 
   // ─── Out of gas ───────────────────────────────────────────────────
   if (/out of gas/i.test(raw)) {
-    return 'Transaction ran out of gas. Try again — gas estimate may have been low.'
+    return 'Transaction ran out of gas. The gas estimate may have been low; try again.'
   }
 
   // ─── Fallback: trim cosmos-sdk file-path noise ────────────────────

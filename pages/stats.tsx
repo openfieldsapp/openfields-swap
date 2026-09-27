@@ -119,11 +119,11 @@ export default function StatsPage() {
               <span style={{ fontWeight: 700, color: C.goldLit }}>Stats</span> <span style={{ fontWeight: 300 }}>for Terra&apos;s pools</span>
             </h1>
             <p style={{ fontSize: TEXT.sm.size, color: C.textSecondary, lineHeight: 1.65, margin: 0 }}>
-              Liquidity on Terra Swap and Astroport, what the pools paid their providers, liquid staking against the hubs, pools off the market, what the routing does, and uptime. Read from the chain and from the <a href={`${REPO}/tree/status`} target='_blank' rel='noreferrer' style={{ color: C.goldLit }}>public status log</a>; every contract can be checked on <Link href='/verify' style={{ color: C.goldLit }}>/verify</Link>, and the <a href={`${REPO}/tree/status/reports`} target='_blank' rel='noreferrer' style={{ color: C.goldLit }}>monthly reports</a> go deeper.
+              From the chain and the <a href={`${REPO}/tree/status`} target='_blank' rel='noreferrer' style={{ color: C.goldLit }}>public status log</a>. Every contract can be checked on <Link href='/verify' style={{ color: C.goldLit }}>/verify</Link>; the <a href={`${REPO}/tree/status/reports`} target='_blank' rel='noreferrer' style={{ color: C.goldLit }}>monthly reports</a> go deeper.
             </p>
           </div>
 
-          <Panel title='Liquidity' note="Pools with liquidity on both factories, valued at Astroport's deepest markets. Fees are what each pool's swaps paid its providers, less Astroport's maker share, at today's prices.">
+          <Panel title='Liquidity' note="Valued at Astroport's deepest markets. Fees are what each pool's swaps paid its providers, less Astroport's maker share, at today's prices.">
             <div style={{ display: 'flex', gap: SPACE['4'], flexWrap: 'wrap', marginBottom: SPACE['3'] }}>
               <Figure label="Terra Swap" value={dex ? fmtUsd(tvl('terraswap')) : '…'} sub={dex ? `${all.filter(p => p.venue === 'terraswap').length} pools` : undefined} />
               <Figure label="Astroport (listed tokens)" value={venue ? fmtUsd(tvl('astroport')) : '…'} sub={venue ? `${all.filter(p => p.venue === 'astroport').length} pools` : undefined} />
@@ -147,7 +147,7 @@ export default function StatsPage() {
 
           <LstBoard />
 
-          <Panel title='Pools off the market' note="Terra Swap pools whose price has drifted from Astroport's deepest market, with the trade that closes the gap and what it is worth at reference prices. First come: anyone can take one, and it moves on every trade.">
+          <Panel title='Pools off the market' note="Terra Swap pools that drifted from Astroport's deepest market, with the trade that closes the gap. First come; it moves on every trade.">
             {!px && <div style={{ fontSize: TEXT.xs.size, color: C.textMuted }}>Reading the market…</div>}
             {px && gaps.length === 0 && <div style={{ fontSize: TEXT.xs.size, color: C.textMuted }}>Every Terra Swap pool is within a few percent of the market right now.</div>}
             <div style={{ display: 'grid', gap: 6 }}>
@@ -162,7 +162,7 @@ export default function StatsPage() {
             </div>
           </Panel>
 
-          <Panel title="Terra Swap's router" note={<>The last 30 days of <Link href='/verify' style={{ color: C.goldLit }}>the router</Link>: swaps signed on the interface, deposits swapped on arrival over IBC, and anyone else calling it. Swaps signed on the interface carry their quote and what paths through three pools and splitting added over the best path through up to two pools; the chain shows what arrived.</>}>
+          <Panel title="Terra Swap's router" note={<>The last 30 days of <Link href='/verify' style={{ color: C.goldLit }}>the router</Link>: swaps signed on Terra Swap, deposits swapped on arrival over IBC, and anyone else calling it. Swaps signed on Terra Swap carry their quote and what three-pool paths and splitting added over the best two-pool path.</>}>
             {!stats && <div style={{ fontSize: TEXT.xs.size, color: C.textMuted }}>{statsFailed ? 'The chain did not answer in time. Try again in a moment.' : 'Reading 30 days of transactions…'}</div>}
             {r && r.read === false && <div style={{ fontSize: TEXT.xs.size, color: C.textMuted }}>The chain&apos;s transaction history did not answer in time. Reload in a minute.</div>}
             {r && t && r.read !== false && (
@@ -200,7 +200,7 @@ export default function StatsPage() {
             )}
           </Panel>
 
-          <Panel title='Uptime' note={<>Checked every ten minutes from GitHub&apos;s machines: a site is up when its page loads and its data answers with live data. The log is public on the repository&apos;s <a href={`${REPO}/tree/status/uptime`} target='_blank' rel='noreferrer' style={{ color: C.goldLit }}>status branch</a>.</>}>
+          <Panel title='Uptime' note={<>Checked every ten minutes from GitHub&apos;s machines: up means the page loads and its data is live. The log is on the <a href={`${REPO}/tree/status/uptime`} target='_blank' rel='noreferrer' style={{ color: C.goldLit }}>status branch</a>.</>}>
             {!stats && <div style={{ fontSize: TEXT.xs.size, color: C.textMuted }}>…</div>}
             {stats && !stats.uptime && <div style={{ fontSize: TEXT.xs.size, color: C.textMuted }}>This month&apos;s log could not be read.</div>}
             <div style={{ display: 'flex', gap: SPACE['4'], flexWrap: 'wrap' }}>

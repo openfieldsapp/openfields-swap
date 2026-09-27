@@ -75,7 +75,7 @@ export const getStaticProps: GetStaticProps = async ctx => {
       symbol: t.key,
       og: {
         title: `${t.label} on Terra: price, pools and a swap`,
-        description: `${meta ? `${meta.name}, from ${meta.origin}. ` : ''}Its price over time, who controls it, every pool on Terra Swap and Astroport that holds ${t.label}, and a swap priced across all of them. No interface fee.`,
+        description: `${meta ? `${meta.name}, from ${meta.origin}. ` : ''}Price history, who controls it and its pools on Terra, with a swap one click away.`,
         image: `${base}/api/og/swap?from=${encodeURIComponent(counterpart(t.key))}&to=${encodeURIComponent(t.key)}`,
         url: `${base}/token/${encodeURIComponent(t.key)}`,
         type: 'website',
@@ -265,7 +265,7 @@ export default function TokenPage({ symbol }: { symbol: string }) {
         {HUB_RATE.has(token.key) && <Link href='/stats' style={linkBtn()}>Hub rate against the pools</Link>}
       </div>
 
-      <Panel title='Price' note="The market reference: Astroport's deepest markets on Terra, written down by this site every ten minutes. Past prices, not a forecast.">
+      <Panel title='Price' note="Astroport's deepest markets on Terra, recorded every ten minutes. Past prices, not a forecast.">
         <PriceHistoryChart query={`token=${encodeURIComponent(token.key)}`} unit='$' />
         <div style={{ display: 'flex', gap: SPACE['4'], flexWrap: 'wrap', marginTop: SPACE['3'] }}>
           <Figure label='Now' value={price ? `$${fmtNum(price)}` : done ? '—' : '…'} />
@@ -273,15 +273,15 @@ export default function TokenPage({ symbol }: { symbol: string }) {
         </div>
       </Panel>
 
-      <Panel title='How much trades before the price moves' note="Price impact by size, through the best route over both sites' pools, the way the swap signs it. It is what the pools would do right now; the next trade changes it.">
+      <Panel title='How much trades before the price moves' note="Price impact by size through the best route, as the swap signs it. The next trade changes it.">
         <Sizes token={token} other={other} />
       </Panel>
 
-      <Panel title={`Who controls ${token.label}`} note='Whether more can be made and by whom, whether its contract can be changed, and what stands behind it, read from the chain.'>
+      <Panel title={`Who controls ${token.label}`}>
         <Controls token={token} />
       </Panel>
 
-      <Panel title={`Watch ${token.label}`} note='An alert goes off once, when the market reference crosses its level: on an open Terra Swap page, and with the option below, as a notification with the page closed.'>
+      <Panel title={`Watch ${token.label}`} note='An alert goes off once, when the market reference crosses its level.'>
         <div style={{ display: 'flex', gap: SPACE['2'], flexWrap: 'wrap', alignItems: 'center' }}>
           <button type='button' onClick={() => toggleFavorite(id)} style={{ ...linkBtn(), cursor: 'pointer', color: starred ? C.goldLit : C.textSecondary }}>{starred ? '★ Starred' : '☆ Star'}</button>
           <span style={{ fontSize: TEXT.xs.size, color: C.textMuted }}>Tell me when it is</span>
@@ -323,7 +323,7 @@ export default function TokenPage({ symbol }: { symbol: string }) {
         )}
       </Panel>
 
-      <Panel title={`Pools with ${token.label}`} note='Every pool with liquidity on both factories that holds it, deepest first. A swap here goes through whichever pools deliver the most, on either site.'>
+      <Panel title={`Pools with ${token.label}`} note='Deepest first. A swap goes through whichever pools deliver the most.'>
         {!done && <div style={{ fontSize: TEXT.xs.size, color: C.textMuted }}>Reading the pools…</div>}
         {done && pools.length === 0 && <div style={{ fontSize: TEXT.xs.size, color: C.textMuted }}>No pool with liquidity holds {token.label} right now.</div>}
         {pools.length > 0 && (
