@@ -20,7 +20,6 @@ input[type='number']::-webkit-outer-spin-button,
 input[type='number']::-webkit-inner-spin-button { -webkit-appearance: none; margin: 0; }
 
 /* Who does not stand behind this. Stated under the wordmark, not only in the footer. */
-.tl-independent { margin: 8px 0 0; max-width: 46rem; font-size: 0.72rem; line-height: 1.55; color: var(--tl-whisper); }
 
 /* The address under the wordmark. Small on purpose: it names the place, it is not the brand. */
 .tl-domain { margin: 2px 0 0; font-size: 0.72rem; letter-spacing: 0.12em; color: var(--tl-muted, #9a927f); }

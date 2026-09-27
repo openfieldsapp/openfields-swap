@@ -587,6 +587,10 @@ function LedgerOverlay({ board, pools, onClose }: { board: BoardResponse | null;
   )
 }
 
+/** Who does not stand behind this, on every view, in the footer. */
+const INDEPENDENT = 'An independent project, not an official Terra product. Not affiliated with, endorsed by or connected to Terraform Labs, Phoenix Foundation or the Phoenix Directive.'
+const independentStyle = { flexBasis: '100%', textTransform: 'none', letterSpacing: 0, fontSize: '0.72rem', lineHeight: 1.55, color: C.textWhisper } as const
+
 function Footer({ height, soundOn, onToggleSound, onSecret, seoul }: { height?: number; soundOn: boolean; onToggleSound: () => void; onSecret: () => void; seoul?: { temp: number; code: number } | null }) {
   const m = moonPhase()
   const taps = useRef<number[]>([])
@@ -625,6 +629,7 @@ function Footer({ height, soundOn, onToggleSound, onSecret, seoul }: { height?: 
         color: soundOn ? C.goldLit : C.textWhisper, cursor: 'pointer', fontFamily: 'inherit', fontSize: '0.7rem',
       }}>{soundOn ? '🔊' : '🔇'}</button>
       <span style={{ color: C.textWhisper }} title='press ? for keys'>steady lads</span>
+      <span style={independentStyle}>{INDEPENDENT}</span>
     </div>
   )
 }
@@ -5107,11 +5112,6 @@ function Hero({ poolFeeBps, onReplay, onHome, onToast, me, right }: { poolFeeBps
         </Link>
       </h1>
       <div style={{ margin: '2px 0 0.6rem', fontSize: '0.72rem', letterSpacing: '0.12em', color: '#9a927f' }}>openfields.app</div>
-      {/* Above the fold on purpose: nobody should have to reach the footer to learn who does not stand behind this. */}
-      <p className='tl-independent' style={{ margin: '0 0 0.6rem', maxWidth: '46rem', fontSize: '0.72rem', lineHeight: 1.55, color: '#9a927f' }}>
-        An independent project, not an official Terra product. Not affiliated with, endorsed by or connected to
-        Terraform Labs, Phoenix Foundation or the Phoenix Directive.
-      </p>
      </div>
       {right && (
         <div className='terra-hero-right' style={{ display: 'flex', alignItems: 'center', gap: SPACE['2'], flex: 'none', marginBottom: '0.6rem' }}>
@@ -5916,6 +5916,7 @@ function SwapPageInner() {
               <span>phoenix-1{data?.height ? ` #${data.height.toLocaleString('en-US')}` : ''}</span>
               <span>·</span>
               <a href='https://github.com/solid-online/terra-swap' target='_blank' rel='noreferrer' style={{ color: C.textMuted }}>source · MIT ↗</a>
+              <span style={independentStyle}>{INDEPENDENT}</span>
             </div>
           ) : (
             <Footer height={data?.height} seoul={data?.seoul} soundOn={soundOn} onToggleSound={toggleSound} onSecret={() => setParty({ emoji: '🐎', title: 'STEADY LADS', sub: 'Seven taps on the moon. You found the thumb code. 🫡' })} />
