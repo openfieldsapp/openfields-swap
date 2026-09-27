@@ -14281,3 +14281,13 @@
 {"t":"2026-09-27T02:40Z","site":"daily.openfields.app","ok":false,"ms":26,"detail":"https://daily.openfields.app/ answered 402"}
 {"t":"2026-09-27T02:40Z","site":"scan.openfields.app","ok":false,"ms":28,"detail":"https://scan.openfields.app/ answered 402"}
 {"t":"2026-09-27T02:40Z","site":"atrium.markets","ok":false,"ms":36,"detail":"https://atrium.markets/ answered 402"}
+{"t":"2026-09-27T02:50Z","site":"swap.openfields.app","ok":false,"ms":41,"detail":"https://swap.openfields.app/ answered 402"}
+{"t":"2026-09-27T02:50Z","site":"nft.openfields.app","ok":false,"ms":77,"detail":"https://nft.openfields.app/ answered 402"}
+{"t":"2026-09-27T02:50Z","site":"gov.openfields.app","ok":false,"ms":28,"detail":"https://gov.openfields.app/ answered 402"}
+{"t":"2026-09-27T02:50Z","site":"openfields.app","ok":false,"ms":38,"detail":"https://openfields.app/ answered 402"}
+{"t":"2026-09-27T02:50Z","site":"status.openfields.app","ok":false,"ms":59,"detail":"https://status.openfields.app/ answered 402"}
+{"t":"2026-09-27T02:50Z","site":"stake.openfields.app","ok":false,"ms":27,"detail":"https://stake.openfields.app/ answered 402"}
+{"t":"2026-09-27T02:50Z","site":"data.openfields.app","ok":false,"ms":81,"detail":"https://data.openfields.app/ answered 402"}
+{"t":"2026-09-27T02:50Z","site":"daily.openfields.app","ok":false,"ms":23,"detail":"https://daily.openfields.app/ answered 402"}
+{"t":"2026-09-27T02:50Z","site":"scan.openfields.app","ok":false,"ms":28,"detail":"https://scan.openfields.app/ answered 402"}
+{"t":"2026-09-27T02:50Z","site":"atrium.markets","ok":false,"ms":33,"detail":"https://atrium.markets/ answered 402"}
