@@ -89,6 +89,14 @@ const TARGETS = [
     ],
   },
   {
+    // The conversation itself is not asked for: every question costs a model call. The page and its API answering is the check.
+    site: 'ask.openfields.app',
+    checks: [
+      { url: 'https://ask.openfields.app/', expect: (r) => r.status === 200 },
+      { url: 'https://ask.openfields.app/api/geo', json: true, expect: (r, j) => r.status === 200 && typeof j?.tx_allowed === 'boolean' },
+    ],
+  },
+  {
     site: 'atrium.markets',
     checks: [
       { url: 'https://atrium.markets/', expect: (r) => r.status === 200 },
