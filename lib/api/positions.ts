@@ -49,6 +49,8 @@ function terraAddress(v: unknown): string | null {
 }
 
 export default async function handler(req: NextApiRequest, res: NextApiResponse<PositionsResponse | { error: string }>) {
+  // Readable from any site (public chain data): Terra Home shows a wallet's pool positions with it.
+  res.setHeader('Access-Control-Allow-Origin', '*')
   const address = terraAddress(req.query.address)
   if (!address) return res.status(400).json({ error: 'address required' })
   res.setHeader('Cache-Control', 'no-store')
