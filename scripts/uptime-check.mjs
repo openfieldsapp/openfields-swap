@@ -97,6 +97,14 @@ const TARGETS = [
     ],
   },
   {
+    // The page is static; /api/h/health answers from Terra Home's reader on our own server, through the site's rewrite, so it checks the whole way.
+    site: 'home.openfields.app',
+    checks: [
+      { url: 'https://home.openfields.app/', expect: (r) => r.status === 200 },
+      { url: 'https://home.openfields.app/api/h/health', json: true, expect: (r, j) => r.status === 200 && j?.ok === true },
+    ],
+  },
+  {
     site: 'atrium.markets',
     checks: [
       { url: 'https://atrium.markets/', expect: (r) => r.status === 200 },

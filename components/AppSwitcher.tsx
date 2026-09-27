@@ -22,6 +22,8 @@ export const DATA_URL = trim(process.env.NEXT_PUBLIC_DATA_URL || 'https://data.o
 export const SCAN_URL = trim(process.env.NEXT_PUBLIC_SCAN_URL || 'https://scan.openfields.app')
 export const DAILY_URL = trim(process.env.NEXT_PUBLIC_DAILY_URL || 'https://daily.openfields.app')
 export const ASK_URL = trim(process.env.NEXT_PUBLIC_ASK_URL || 'https://ask.openfields.app')
+/** Terra Home: one wallet on one page (not the openfields.app hub, which is HOME_URL) */
+export const TERRA_HOME_URL = trim(process.env.NEXT_PUBLIC_TERRA_HOME_URL || 'https://home.openfields.app')
 export const HOME_URL = trim(process.env.NEXT_PUBLIC_HOME_URL || 'https://openfields.app')
 
 export default function AppSwitcher() {
@@ -37,6 +39,7 @@ export default function AppSwitcher() {
     { key: 'scan', word: 'Scan', glyph: '⌕', description: t('Transactions, addresses and blocks'), url: SCAN_URL, here: false },
     { key: 'daily', word: 'Daily', glyph: '◷', description: t('A daily move, a calm minute and five Terra questions'), url: DAILY_URL, here: false },
     { key: 'ask', word: 'Ask', glyph: '✦', description: t('Say what you want to do on Terra, approve it in your wallet'), url: ASK_URL, here: false },
+    { key: 'home', word: 'Home', glyph: '⌂', description: t('Everything your wallet holds, stakes, owes and votes on'), url: TERRA_HOME_URL, here: false },
   ]
 
   return (
