@@ -71,6 +71,7 @@ import { GAS_DROP_BELOW_MICRO, LUNA, gasDropMicro, planGasDrop } from 'lib/gasDr
 import { askNotifications, fmtUsdPrice, notificationsAllowed, removeAlert, toggleFavorite, useAlertWatcher, usePrefs } from 'lib/alerts'
 import { MONTSERRAT, TERRA_FONT } from 'lib/font'
 import { poll } from 'lib/pageActive'
+import { withCpuSsr } from 'lib/cpuLog'
 
 /**
  * How often an open page reads each of the site's lists, and only while someone
@@ -6239,7 +6240,7 @@ export default function SwapPage() {
  * server-rendered Head so crawlers get a Terra Swap card instead of Atrium's
  * default Crystal. With ?who=terra1… the image and copy become that person's.
  */
-export const getServerSideProps: GetServerSideProps = async (ctx) => {
+const ssp: GetServerSideProps = async (ctx) => {
   // Nothing here depends on who asks (the region check is the middleware's and /api/geo's), so the CDN keeps it:
   // rendering this page is most of what a cold function costs.
   ctx.res.setHeader('Cache-Control', 'public, s-maxage=3600, stale-while-revalidate=86400')
@@ -6273,3 +6274,6 @@ export const getServerSideProps: GetServerSideProps = async (ctx) => {
     },
   }
 }
+
+// TEMPORARY: CPU per page (lib/cpuLog).
+export const getServerSideProps = withCpuSsr('page/', ssp)

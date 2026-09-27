@@ -16,6 +16,7 @@ import { TokenIcon } from 'components/TokenIcon'
 import { KNOWN_TOKENS, fromMicro, tokenFor, type KnownToken } from 'lib/dex'
 import { fmtAmount } from 'lib/arb'
 import { TX_HASH, readReceipt, type Receipt } from 'lib/txReceipt'
+import { withCpuSsr } from 'lib/cpuLog'
 
 const KIND: Record<string, string> = {
   swap: 'Swap', zap: 'Zap', 'add liquidity': 'Added liquidity', 'remove liquidity': 'Removed liquidity', stake: 'Staked LP', unstake: 'Unstaked LP',
@@ -44,7 +45,7 @@ function vsQuote(r: Receipt): number | null {
   return got ? (amountOf(got).n / q.amount - 1) * 100 : null
 }
 
-export const getServerSideProps: GetServerSideProps = async ctx => {
+const ssp: GetServerSideProps = async ctx => {
   const raw = String(ctx.params?.hash ?? '')
   if (!TX_HASH.test(raw)) return { notFound: true }
   const hash = raw.toUpperCase()
@@ -162,3 +163,6 @@ export default function TxPage({ hash, receipt }: { hash: string; receipt: Recei
     </Page>
   )
 }
+
+// TEMPORARY: CPU per page (lib/cpuLog).
+export const getServerSideProps = withCpuSsr('page/tx', ssp)

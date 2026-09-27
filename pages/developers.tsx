@@ -12,6 +12,7 @@ import type { GetServerSideProps } from 'next'
 import { SPACE, TEXT } from 'components/tokens'
 import { C, Page, Panel, row } from 'components/PageShell'
 import { KNOWN_TOKENS } from 'lib/dex'
+import { withCpuSsr } from 'lib/cpuLog'
 
 const mono = 'ui-monospace, SFMono-Regular, Menlo, monospace'
 const REPO = 'https://github.com/solid-online/terra-swap'
@@ -28,7 +29,7 @@ function Param({ k, v }: { k: string; v: React.ReactNode }) {
   return <div style={row}><span style={{ fontFamily: mono }}>{k}</span><span style={{ color: C.textSecondary, textAlign: 'right', maxWidth: '70%' }}>{v}</span></div>
 }
 
-export const getServerSideProps: GetServerSideProps = async ctx => {
+const ssp: GetServerSideProps = async ctx => {
   ctx.res.setHeader('Cache-Control', 'public, s-maxage=3600, stale-while-revalidate=86400')
   const base = `https://${ctx.req.headers.host ?? 'swap.openfields.app'}`
   return {
@@ -158,3 +159,6 @@ ${base}/api/volume?date=2026-09-20`}</Code>
     </Page>
   )
 }
+
+// TEMPORARY: CPU per page (lib/cpuLog).
+export const getServerSideProps = withCpuSsr('page/developers', ssp)

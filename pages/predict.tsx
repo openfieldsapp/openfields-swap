@@ -27,6 +27,7 @@ import { useBet, useClaim, useCreateMarket, useObserve, useResolve, useVoidMarke
 import { humanizeTxError } from 'lib/errors'
 import { TERRA_FONT } from 'lib/font'
 import { poll } from 'lib/pageActive'
+import { withCpuSsr } from 'lib/cpuLog'
 
 
 const C = {
@@ -395,7 +396,7 @@ export default function PredictPage() {
   return <PredictPageInner />
 }
 
-export const getServerSideProps: GetServerSideProps = async (ctx) => {
+const ssp: GetServerSideProps = async (ctx) => {
   ctx.res.setHeader('Cache-Control', 'public, s-maxage=3600, stale-while-revalidate=86400')
   const base = `https://${ctx.req.headers.host ?? 'localhost:3000'}`
   return ({
@@ -411,3 +412,6 @@ export const getServerSideProps: GetServerSideProps = async (ctx) => {
   },
 })
 }
+
+// TEMPORARY: CPU per page (lib/cpuLog).
+export const getServerSideProps = withCpuSsr('page/predict', ssp)

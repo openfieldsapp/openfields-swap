@@ -27,6 +27,7 @@ import type { DexResponse } from 'lib/api/dex'
 import type { VenueResponse } from 'lib/api/dex-venue'
 import type { DepthResponse } from 'lib/api/depth'
 import { pageActive } from 'lib/pageActive'
+import { withCpuSsr } from 'lib/cpuLog'
 
 /** Bought with and sold for USDC from Noble; USDC itself, and USDC.inj, which never meets it, trade against LUNA. */
 const counterpart = (key: string) => (key === 'USDC' || key === 'USDC.inj' ? 'LUNA' : 'USDC')
@@ -51,7 +52,7 @@ function kindOf(t: KnownToken): string {
   return 'native token'
 }
 
-export const getServerSideProps: GetServerSideProps = async ctx => {
+const ssp: GetServerSideProps = async ctx => {
   const raw = String(ctx.params?.symbol ?? '')
   const t = KNOWN_TOKENS.find(x => x.key.toLowerCase() === raw.toLowerCase())
   if (!t) return { notFound: true }
@@ -362,3 +363,6 @@ export default function TokenPage({ symbol }: { symbol: string }) {
     </Page>
   )
 }
+
+// TEMPORARY: CPU per page (lib/cpuLog).
+export const getServerSideProps = withCpuSsr('page/token', ssp)

@@ -27,12 +27,13 @@ import type { VenueResponse } from 'lib/api/dex-venue'
 import type { PoolFeesResponse } from 'lib/api/pool-fees'
 import type { PricesResponse } from 'lib/api/dex-prices'
 import type { DepthResponse } from 'lib/api/depth'
+import { withCpuSsr } from 'lib/cpuLog'
 
 const ADDR = /^terra1[02-9ac-hj-np-z]{38,58}$/
 const enc = encodeURIComponent
 const mono = 'ui-monospace, SFMono-Regular, Menlo, monospace'
 
-export const getServerSideProps: GetServerSideProps = async ctx => {
+const ssp: GetServerSideProps = async ctx => {
   const addr = String(ctx.params?.addr ?? '')
   if (!ADDR.test(addr)) return { notFound: true }
   const base = `https://${ctx.req.headers.host ?? 'swap.openfields.app'}`
@@ -256,3 +257,6 @@ export default function PoolPage({ addr, label }: { addr: string; label: string 
     </Page>
   )
 }
+
+// TEMPORARY: CPU per page (lib/cpuLog).
+export const getServerSideProps = withCpuSsr('page/pool', ssp)
