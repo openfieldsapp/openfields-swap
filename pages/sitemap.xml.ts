@@ -8,13 +8,12 @@
 import type { GetServerSideProps } from 'next'
 import { KNOWN_TOKENS, assetId } from 'lib/dex'
 import { sitePools } from 'lib/sitePools'
-import { withCpuSsr } from 'lib/cpuLog'
 
 export const config = { maxDuration: 60 }
 
 const esc = (s: string) => s.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;')
 
-const ssp: GetServerSideProps = async ({ req, res }) => {
+export const getServerSideProps: GetServerSideProps = async ({ req, res }) => {
   const base = `https://${req.headers.host ?? 'swap.openfields.app'}`
   const urls = ['/', '/?tab=pools', '/?tab=bridge', '/stats', '/verify']
   let tokens = KNOWN_TOKENS.map(t => t.key)
@@ -37,6 +36,3 @@ const ssp: GetServerSideProps = async ({ req, res }) => {
 export default function Sitemap() {
   return null
 }
-
-// TEMPORARY: CPU per page (lib/cpuLog).
-export const getServerSideProps = withCpuSsr('page/sitemap', ssp)

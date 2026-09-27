@@ -19,7 +19,6 @@
 
 import type { NextApiHandler, NextApiRequest, NextApiResponse } from 'next'
 import { BadBody, readJsonBody } from 'lib/jsonBody'
-import { withCpu } from 'lib/cpuLog'
 
 export const config = { api: { bodyParser: false }, maxDuration: 60 }
 
@@ -57,7 +56,7 @@ const ROUTES: Record<string, { load: () => Promise<{ default: NextApiHandler }>;
 /** What Next's body parser allowed by default. */
 const JSON_LIMIT = 1_000_000
 
-async function api(req: NextApiRequest, res: NextApiResponse) {
+export default async function api(req: NextApiRequest, res: NextApiResponse) {
   const name = String(req.query.route ?? '')
   const route = Object.prototype.hasOwnProperty.call(ROUTES, name) ? ROUTES[name] : undefined
   if (!route) return res.status(404).json({ error: 'no such endpoint' })
@@ -72,9 +71,4 @@ async function api(req: NextApiRequest, res: NextApiResponse) {
   }
   const { default: handler } = await route.load()
   return handler(req, res)
-}
-
-// TEMPORARY: CPU per route (lib/cpuLog).
-export default async function logged(req: NextApiRequest, res: NextApiResponse) {
-  return withCpu(`api/${String(req.query.route ?? '')}`, api)(req, res)
 }
