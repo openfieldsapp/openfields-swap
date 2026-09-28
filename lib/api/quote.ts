@@ -81,16 +81,19 @@ const cache = new Map<string, { body: QuoteResponse; trade: TradePlan; pay: stri
 let windowAt = 0
 let windowReads = 0
 
+const LOOPBACK = new Set(['127.0.0.1', '::1', '::ffff:127.0.0.1'])
+
 /**
- * A caller on this machine (Terra Ask runs next to the swap on the Openfields server): it comes from the
- * loopback address without the mark the server's proxy puts on every visitor's request (X-Of-Proxy) or any
- * forwarding header. Its quotes are left out of the window outside callers share, which since the move to
- * one server is one counter for the whole site; Ask limits its own users.
+ * A caller on this machine (Terra Ask runs next to the swap on the Openfields server). The app listens on
+ * the loopback address only, so visitors reach it through the server's proxy, which marks every request
+ * (X-Of-Proxy) whatever headers the visitor sends; a caller on the machine has no mark, and Next's own server
+ * fills in its loopback address as x-forwarded-for. Its quotes are left out of the window outside callers
+ * share, which since the move to one server is one counter for the whole site; Ask limits its own users.
  */
 const sameMachine = (req: NextApiRequest): boolean => {
-  const addr = req.socket?.remoteAddress ?? ''
-  const loopback = addr === '127.0.0.1' || addr === '::1' || addr === '::ffff:127.0.0.1'
-  return loopback && !req.headers['x-of-proxy'] && !req.headers['x-forwarded-for'] && !req.headers['x-real-ip']
+  if (req.headers['x-of-proxy'] || req.headers['x-real-ip']) return false
+  const from = String(req.headers['x-forwarded-for'] ?? req.socket?.remoteAddress ?? '').split(',').map(s => s.trim())
+  return from.length === 1 && LOOPBACK.has(from[0])
 }
 
 const find = (v: unknown): KnownToken | undefined =>
