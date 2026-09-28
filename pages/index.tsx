@@ -6122,6 +6122,17 @@ function SwapPageInner() {
         .terra-article { max-width: 640px; }
         @media (min-width: 1100px) { .terra-article { max-width: 760px; zoom: 1.15; } }
         @media (min-width: 1600px) { .terra-article { max-width: 780px; zoom: 1.3; } }
+        /* What reaches past the column is unscaled again: the full-width strip ends at the window's edge
+           instead of scrolling the page sideways, and the apps list in the footer is the same size as in
+           every other app. */
+        @media (min-width: 1100px) {
+          .terra-article .kwon-stage { width: calc(100vw / 1.15); margin-left: calc(50% - 50vw / 1.15); }
+          .terra-article .tl-footer-apps { zoom: 0.869565; }
+        }
+        @media (min-width: 1600px) {
+          .terra-article .kwon-stage { width: calc(100vw / 1.3); margin-left: calc(50% - 50vw / 1.3); }
+          .terra-article .tl-footer-apps { zoom: 0.769231; }
+        }
         /* ── Small screens: the swap must fit without scrolling. Every rule here removes something that is not the swap. ── */
         @media (max-width: 640px) {
           .terra-chainpill, .terra-strike, .terra-kbd { display: none !important; }
