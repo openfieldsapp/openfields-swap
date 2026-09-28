@@ -42,7 +42,8 @@ const esc = (v: string) => v.replace(/&/g, '&amp;').replace(/"/g, '&quot;').repl
 function previewCard(request: NextRequest): Response | null {
   if (request.nextUrl.pathname !== '/' || !PREVIEW_BOTS.test(request.headers.get('user-agent') ?? '')) return null
   const q = request.nextUrl.searchParams
-  const origin = request.nextUrl.origin
+  // Behind the host proxy the app's own URL can read as http on the internal hop; the site is always https.
+  const origin = `https://${request.headers.get('x-forwarded-host') ?? request.nextUrl.host}`
   const who = q.get('who') ?? ''
   const from = q.get('from') ?? '', to = q.get('to') ?? ''
   const amount = AMOUNT.test(q.get('amount') ?? '') && Number(q.get('amount')) > 0 ? q.get('amount')! : ''
@@ -80,7 +81,10 @@ export function middleware(request: NextRequest) {
     }
     if (request.cookies.get(BYPASS_COOKIE)?.value === BYPASS_SECRET) return withRegion(NextResponse.next(), true, 'XX')
   }
-  const country = request.geo?.country || 'XX'
+  // Unknown when the app runs on our own server behind the host proxy: no cookie then, so the page
+  // asks /api/geo, which the host answers with the visitor's country.
+  const country = request.geo?.country
+  if (!country) return NextResponse.next()
   return withRegion(NextResponse.next(), !BLOCKED.has(country), country)
 }
 

@@ -8,6 +8,8 @@ const aliases = (process.env.REDIRECT_HOSTS || '').split(',').map(s => s.trim())
 
 const nextConfig = {
   reactStrictMode: true,
+  // A self-contained server build when the app runs on our own server (openfields-ops); unset on Vercel.
+  output: process.env.NEXT_OUTPUT === 'standalone' ? 'standalone' : undefined,
   swcMinify: true,
   images: { unoptimized: true },
   // Fewer script files per page in the browser. Next splits shared code into many
