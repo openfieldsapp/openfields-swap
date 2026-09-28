@@ -81,6 +81,18 @@ const cache = new Map<string, { body: QuoteResponse; trade: TradePlan; pay: stri
 let windowAt = 0
 let windowReads = 0
 
+/**
+ * A caller on this machine (Terra Ask runs next to the swap on the Openfields server): it comes from the
+ * loopback address without the mark the server's proxy puts on every visitor's request (X-Of-Proxy) or any
+ * forwarding header. Its quotes are left out of the window outside callers share, which since the move to
+ * one server is one counter for the whole site; Ask limits its own users.
+ */
+const sameMachine = (req: NextApiRequest): boolean => {
+  const addr = req.socket?.remoteAddress ?? ''
+  const loopback = addr === '127.0.0.1' || addr === '::1' || addr === '::ffff:127.0.0.1'
+  return loopback && !req.headers['x-of-proxy'] && !req.headers['x-forwarded-for'] && !req.headers['x-real-ip']
+}
+
 const find = (v: unknown): KnownToken | undefined =>
   typeof v === 'string' ? KNOWN_TOKENS.find(t => t.key.toLowerCase() === v.toLowerCase() || assetId(t.info) === v) : undefined
 const plain = (micro: string, decimals: number) => fromMicro(micro, decimals, Math.min(decimals, 8)).replace(/,/g, '')
@@ -121,10 +133,12 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse<
     res.setHeader('Cache-Control', 'public, s-maxage=60, stale-while-revalidate=120')
     return res.status(200).json(hit.body)
   }
-  const now = Date.now()
-  if (now - windowAt > 60_000) { windowAt = now; windowReads = 0 }
-  if (windowReads >= PER_MINUTE) return res.status(429).json({ error: 'busy, try again in a moment' })
-  windowReads += exactOut ? 4 : 1
+  if (!sameMachine(req)) {
+    const now = Date.now()
+    if (now - windowAt > 60_000) { windowAt = now; windowReads = 0 }
+    if (windowReads >= PER_MINUTE) return res.status(429).json({ error: 'busy, try again in a moment' })
+    windowReads += exactOut ? 4 : 1
+  }
 
   try {
     const pools = await routingPools()
