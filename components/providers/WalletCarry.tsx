@@ -20,6 +20,8 @@ const EXTENSION = 'keplr-extension'
 const OFF = 'none'
 /** How long after the kit starts to wait for it to restore this app's own session. */
 const SETTLE_MS = 700
+/** Where the wallet kit keeps this app's own session (cosmos-kit 2). */
+const SAVED = 'cosmos-kit@2:core//current-wallet'
 
 export function readCarried(): string | null {
   const m = document.cookie.match(/(?:^|;\s*)of_wallet=([^;]*)/)
@@ -36,29 +38,45 @@ function carry(value: string) {
 export default function WalletCarry({ chain = 'terra2' }: { chain?: string }) {
   const { status, wallet, disconnect } = useChain(chain)
   const extension = useChainWallet(chain, EXTENSION)
-  const now = useRef({ status, disconnect, connect: extension.connect })
-  now.current = { status, disconnect, connect: extension.connect }
+  const now = useRef({ status, wallet, disconnect, connect: extension.connect })
+  now.current = { status, wallet, disconnect, connect: extension.connect }
   const was = useRef(status)
-  const settled = useRef(false)
+  const waited = useRef(false)
+  const decided = useRef(false)
 
-  // Remember the wallet on every connect, and a disconnect the person chose (after the start, not the kit's own first state)
+  // Once the kit has restored whatever this app had: follow what was chosen in the others. Until then
+  // nothing is written, so this app's own old session cannot overwrite a disconnect made elsewhere.
+  const decide = () => {
+    const { status: s, wallet: w, disconnect: off, connect } = now.current
+    // The kit has a session of its own saved here that it has not restored yet: wait for it
+    if (s !== 'Connected' && s !== 'Error' && localStorage.getItem(SAVED)) return
+    decided.current = true
+    const wanted = readCarried()
+    if (s === 'Connected') {
+      if (wanted === OFF) off()
+      else if (w?.name) carry(w.name)
+      return
+    }
+    const keplr = (window as unknown as { keplr?: unknown }).keplr
+    if (wanted === EXTENSION && keplr) connect().catch(() => { /* declined in Keplr: stays disconnected */ })
+  }
+
   useEffect(() => {
-    if (status === 'Connected' && wallet?.name) carry(wallet.name)
-    else if (settled.current && was.current === 'Connected' && status === 'Disconnected') carry(OFF)
+    if (!decided.current) {
+      if (waited.current && status !== 'Connecting') decide()
+    } else if (status === 'Connected' && wallet?.name) carry(wallet.name)
+    else if (was.current === 'Connected' && status === 'Disconnected') carry(OFF)
     was.current = status
+    // eslint-disable-next-line react-hooks/exhaustive-deps -- decide reads the latest state through a ref
   }, [status, wallet?.name])
 
-  // Once, after the kit has restored whatever this app had: follow what was chosen in the others
   useEffect(() => {
     const t = setTimeout(() => {
-      settled.current = true
-      const wanted = readCarried()
-      const { status: s, disconnect: off, connect } = now.current
-      if (wanted === OFF && s === 'Connected') { off(); return }
-      const keplr = (window as unknown as { keplr?: unknown }).keplr
-      if (wanted === EXTENSION && s !== 'Connected' && s !== 'Connecting' && keplr) connect().catch(() => { /* declined in Keplr: stays disconnected */ })
+      waited.current = true
+      if (now.current.status !== 'Connecting') decide()
     }, SETTLE_MS)
     return () => clearTimeout(t)
+    // eslint-disable-next-line react-hooks/exhaustive-deps -- once, at the start
   }, [])
 
   return null
