@@ -19,6 +19,8 @@ import Link from 'next/link'
 import { useCallback, useEffect, useRef, useState } from 'react'
 import { SPACE, TEXT } from 'components/tokens'
 import SiteNav from 'components/SiteNav'
+import ShellHeader from 'components/ShellHeader'
+import { pageColumn, pageMain } from 'components/PageShell'
 import { ASTRO_FACTORY, ASTRO_ROUTER, ROUTER_FACTORIES, SKELETON_FACTORY, TERRA_SWAP_FACTORY, TERRA_SWAP_FACTORY_V2, TERRA_SWAP_ROUTER, VENUE_INCENTIVES, smart } from 'lib/dex'
 import { lcdFetch } from 'lib/lcd'
 import { TERRA_FONT } from 'lib/font'
@@ -183,9 +185,9 @@ export default function VerifyPage() {
       <Head>
         <title>Verify · Terra Swap</title>
       </Head>
-      <main style={{ minHeight: '100vh', background: 'radial-gradient(120% 80% at 50% -10%, #111729 0%, #0a0d18 42%, #05070f 100%)', color: C.textPrimary, fontFamily: TERRA_FONT, padding: '1.4rem 1.2rem 4rem' }}>
-        <div style={{ maxWidth: 760, margin: '0 auto' }}>
-          <SiteNav here='verify' />
+      <main style={pageMain}>
+        <ShellHeader><SiteNav here='verify' /></ShellHeader>
+        <div className='of-col' style={pageColumn(760)}>
           <h1 style={{ fontSize: 'clamp(1.8rem, 5vw, 2.4rem)', margin: '0.6rem 0 0.4rem', letterSpacing: '-0.02em' }}>
             <span style={{ fontWeight: 700, color: C.goldLit }}>Verify</span> <span style={{ fontWeight: 300 }}>the contracts</span>
           </h1>

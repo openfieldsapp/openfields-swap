@@ -17,7 +17,8 @@ import { WalletName } from 'components/WalletName'
 import ElectricPulse from 'components/ElectricPulse'
 import LstBoard from 'components/LstBoard'
 import CommandPalette, { type PaletteItem } from 'components/CommandPalette'
-import AppSwitcher, { GOV_URL, HOME_URL, NFT_URL } from 'components/AppSwitcher'
+import { FooterApps, GOV_URL, HOME_URL, NFT_URL, STAKE_URL, TERRA_HOME_URL } from 'components/AppSwitcher'
+import ShellHeader from 'components/ShellHeader'
 import { PairIcons, TokenIcon } from 'components/TokenIcon'
 import { isPredictLive } from 'lib/predict'
 import { SPACE, RADIUS, TEXT } from 'components/tokens'
@@ -630,6 +631,8 @@ function Footer({ height, soundOn, onToggleSound, onSecret, seoul }: { height?: 
       }}>{soundOn ? '🔊' : '🔇'}</button>
       <span style={{ color: C.textWhisper }} title='press ? for keys'>steady lads</span>
       <span style={independentStyle}>{INDEPENDENT}</span>
+      {/* Every Openfields app, grouped the way the header's row is. */}
+      <FooterApps />
     </div>
   )
 }
@@ -2000,6 +2003,9 @@ function SwapPanel({ pools, venuePools, crystal, feeBps, poolFeeBps, onDone, arb
           <span>{t('Next:')}</span>
           <button type='button' onClick={() => onNext('history')} style={{ ...ghostBtn, padding: '2px 10px' }}>{t('See it in your history')}</button>
           <button type='button' onClick={() => onNext('pools', to.key)} style={{ ...ghostBtn, padding: '2px 10px' }}>{t('Pools with {token}', { token: to.label })}</button>
+          {/* The same wallet in the apps built for the rest of it: all of it in Terra Home, and LUNA just received can be staked. */}
+          {!LITE && <a href={`${TERRA_HOME_URL}/`} style={{ ...ghostBtn, padding: '2px 10px', textDecoration: 'none' }}>{t('See your wallet in Terra Home ↗')}</a>}
+          {!LITE && to.key === 'LUNA' && <a href={`${STAKE_URL}/#stake`} style={{ ...ghostBtn, padding: '2px 10px', textDecoration: 'none' }}>{t('Stake it ↗')}</a>}
         </div>
       )}
       {phase > 0 && (
@@ -3159,6 +3165,11 @@ function WalletPanel({ pools, onDone }: { pools: PoolView[]; onDone: () => void 
       <p style={{ fontSize: TEXT.xs.size, color: C.textMuted, lineHeight: 1.6, margin: `0 0 ${SPACE['3']}px` }}>
         Tick the small balances to sell, pick what they become, and sell up to {SWEEP_MAX} in one signature.
       </p>
+      {!LITE && (
+        <p style={{ fontSize: TEXT.xs.size, color: C.textWhisper, lineHeight: 1.6, margin: `-${SPACE['2']}px 0 ${SPACE['3']}px` }}>
+          Staking, loans and votes too: <a href={`${TERRA_HOME_URL}/`} style={{ color: C.textMuted }}>see your wallet in Terra Home ↗</a>
+        </p>
+      )}
       {!bal && <div style={{ fontSize: TEXT.xs.size, color: C.textMuted }}>Reading the wallet…</div>}
       {bal && holdings.length === 0 && <div style={{ fontSize: TEXT.sm.size, color: C.textMuted }}>This wallet holds none of the tokens listed here.</div>}
       {holdings.length > 0 && (
@@ -4811,14 +4822,6 @@ function Nick({ address, head = 6, tail = 4 }: { address: string; head?: number;
     : <WalletName address={address} head={head} tail={tail} />
 }
 
-/** 추석 — Korean harvest moon festival. Three days; the moon is full and so is the table. */
-const CHUSEOK: Record<number, string> = { 2026: '2026-09-25', 2027: '2027-09-15', 2028: '2028-10-03', 2029: '2029-09-22', 2030: '2030-09-12' }
-function isChuseok(d = new Date()): boolean {
-  const c = CHUSEOK[d.getFullYear()]; if (!c) return false
-  const mid = new Date(c + 'T12:00:00Z').getTime(), t = d.getTime()
-  return Math.abs(t - mid) <= 36 * 3600 * 1000
-}
-
 /** TV mode: the page as a Korean 24h news channel. Press v. */
 function TvMode({ data, board, onClose }: { data: DexResponse; board: BoardResponse | null; onClose: () => void }) {
   const [now, setNow] = useState(new Date())
@@ -5073,9 +5076,12 @@ function StatBand({ data, board }: { data: DexResponse; board: BoardResponse | n
   )
 }
 
-function Hero({ poolFeeBps, onReplay, onHome, onToast, me, right }: { poolFeeBps: number; onReplay: () => void; onHome: () => void; onToast: (m: string) => void; me?: string; right?: React.ReactNode }) {
+/**
+ * The Openfields header (components/ShellHeader), with the swap's own wordmark: a click goes home
+ * without reloading, and three quick clicks replay the intro. The tabs come in as children.
+ */
+function Hero({ onReplay, onHome, children }: { onReplay: () => void; onHome: () => void; children?: React.ReactNode }) {
   const clicks = useRef(0)
-  const { t } = useLang()
   // The wordmark is the way home. A modified click opens the home page in a new tab like any link; three clicks still replay the intro.
   const wordmarkClick = (e: React.MouseEvent<HTMLAnchorElement>) => {
     if (e.metaKey || e.ctrlKey || e.shiftKey || e.altKey || e.button !== 0) return
@@ -5085,41 +5091,7 @@ function Hero({ poolFeeBps, onReplay, onHome, onToast, me, right }: { poolFeeBps
     if (clicks.current >= 3) { clicks.current = 0; if (!LITE) onReplay() }
     setTimeout(() => { clicks.current = 0 }, 900)
   }
-  return (
-    <div className='terra-hero' style={{ marginTop: SPACE['3'], display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: SPACE['3'], flexWrap: 'wrap' }}>
-     <div style={{ minWidth: 0 }}>
-      {/* The family on its own line: inside the kicker it inherited uppercase and wide
-          tracking, which is exactly what made two navigations read as one muddle. */}
-      {!LITE && <AppSwitcher />}
-      <div style={{ fontSize: '0.62rem', letterSpacing: '0.34em', color: C.korea, fontWeight: 800, textTransform: 'uppercase', margin: `${SPACE['2']} 0`, display: 'flex', alignItems: 'center', gap: '0.5rem', flexWrap: 'wrap' }}>
-        <span>{(() => {
-          const h = new Date().getHours()
-          const gm = isChuseok() ? '추석 · happy harvest moon' : moonPhase().full ? '🌕 full moon' : h >= 5 && h < 11 ? 'gm' : h >= 22 || h < 5 ? 'gn' : ''
-          const who = me ? `${me.slice(0, 9)}…${me.slice(-4)}` : ''
-          void who
-          const greet = gm ? `${gm} · ` : ''
-          return LITE ? 'Unofficial · Astroport pools' : `${greet}${t('Experimental')}`
-        })()}</span>
-      </div>
-      <h1 style={{
-        fontFamily: TERRA_FONT, fontSize: 'clamp(2rem, 6.5vw, 3rem)', lineHeight: 1.02,
-        margin: '0 0 0.6rem', letterSpacing: '-0.02em', fontWeight: 700,
-        display: 'flex', alignItems: 'baseline', gap: '0.4rem', flexWrap: 'wrap',
-      }}>
-        <Link href='/' prefetch={false} className='atrium-swap-title' aria-label={`${APP_NAME} home`} style={{ fontFamily: TERRA_FONT, cursor: 'pointer', userSelect: 'none', display: 'inline-flex', alignItems: 'center', gap: '0.28em', whiteSpace: 'nowrap', textDecoration: 'none' }} onClick={wordmarkClick} title='Home'>
-          {/* Like the original lockup: "Terra" heavy, the product word light. */}
-          <span><span style={{ fontWeight: 700 }}>Terra</span> <span style={{ fontWeight: 300, letterSpacing: '0' }}>{LITE ? 'Pools' : 'Swap'}</span></span>
-        </Link>
-      </h1>
-      <div style={{ margin: '2px 0 0.6rem', fontSize: '0.72rem', letterSpacing: '0.12em', color: '#9a927f' }}>openfields.app</div>
-     </div>
-      {right && (
-        <div className='terra-hero-right' style={{ display: 'flex', alignItems: 'center', gap: SPACE['2'], flex: 'none', marginBottom: '0.6rem' }}>
-          {right}
-        </div>
-      )}
-    </div>
-  )
+  return <ShellHeader onWordmarkClick={wordmarkClick}>{children}</ShellHeader>
 }
 
 // ─── Retro-Terra intro ──────────────────────────────────────────
@@ -5696,12 +5668,7 @@ function SwapPageInner() {
 
   /** A tab button. `on` covers a tab that owns more than one section (Pools opens a pool, Portfolio holds History). */
   const tabBtn = (t: Tab, txt: React.ReactNode, on = tab === t) => (
-    <button type='button' onClick={() => setTab(t)} aria-current={on ? 'page' : undefined} style={{
-      ...ghostBtn, padding: '0.45rem 0.9rem', whiteSpace: 'nowrap',
-      color: on ? C.goldLit : C.textMuted,
-      borderColor: on ? C.goldCore : C.divider,
-      background: on ? 'rgba(255,216,61,0.06)' : 'transparent',
-    }}>{txt}</button>
+    <button type='button' onClick={() => setTab(t)} aria-current={on ? 'page' : undefined} className={`tl-btn${on ? ' is-active' : ''}`}>{txt}</button>
   )
 
   return (
@@ -5729,36 +5696,38 @@ function SwapPageInner() {
         {[0, 1, 2, 3, 4, 5].map(k => <span key={k} className={`terra-lantern terra-lantern-${k}`} />)}
       </div>
       <main style={{ minHeight: '100vh', background: 'transparent', paddingBottom: '4rem', position: 'relative', zIndex: 2 }}>
-        {/* Width and scale live in the stylesheet (.terra-article) so desktop can grow without touching phones. */}
-        <article className='terra-article' style={{ margin: '0 auto', padding: '1.4rem 1.2rem 2rem' }}>
-          {/* No "back to Atrium" row: the wallet sits on the wordmark's line instead, which buys
-              a whole row above the fold. The struck-through Atrium in the h1 still tells the story. */}
-          <Hero poolFeeBps={data?.poolFeeBps ?? 30} onReplay={() => setIntro(true)} onHome={goHome} onToast={m => setToast({ msg: m })} me={me || undefined}
-            right={<WalletButton />} />
-
+        {/* The header every Openfields app shares, full width; the swap's own tabs directly under it. */}
+        <Hero onReplay={() => setIntro(true)} onHome={goHome}>
+          {data?.live && (
+            // Five places, named for what people come to do. Opening a pool lives in Pools, History in Portfolio,
+            // and everything else, tokens and pools included, is one search away.
+            <nav className='tl-tabs terra-tabs' aria-label={APP_NAME}>
+              {tabBtn('swap', t('Swap'))}
+              {tabBtn('pools', <>{t('Pools')}<span className='terra-tab-count'> · {allPools.length}</span></>, tab === 'pools' || tab === 'create')}
+              {tabBtn('transfer', t('Bridge'))}
+              {tabBtn('positions', t('Portfolio'), tab === 'positions' || tab === 'wallet' || tab === 'history')}
+              {!LITE && tabBtn('board', <>{t('Board')}{board?.rows.length ? <span className='terra-tab-count'> · {board.rows.length}</span> : null}</>)}
+              {/* Terra Predict lives next door, once it is live. A link to "not live yet" is a dead end. */}
+              {!LITE && isPredictLive() && <Link href='/predict' prefetch={false} className='tl-btn tl-btn--warm'>Predict ↗</Link>}
+              <button type='button' onClick={() => setPalette(true)} title='Search tokens, pools and everything this site does (⌘K)' aria-label='Search everything'
+                className='tl-btn terra-search-btn' style={{ marginLeft: 'auto' }}>
+                <span aria-hidden style={{ color: C.goldLit }}>⌕</span>
+                <span className='terra-search-label'>{t('Search')}</span>
+                <kbd className='terra-kbd-hint' style={{ fontFamily: 'inherit', fontSize: '0.62rem', color: C.textWhisper, border: `1px solid ${C.divider}`, borderRadius: 5, padding: '0 5px' }}>⌘K</kbd>
+              </button>
+            </nav>
+          )}
+        </Hero>
+        {/* The swap's own column: narrower than the header, centred. Width and scale live in the stylesheet
+            (.terra-article) so desktop can grow without touching phones. Without the tabs (still loading), a
+            little room under the header instead of theirs. */}
+        <article className='terra-article of-col' style={{ margin: '0 auto', padding: `${data?.live ? 0 : '0.9rem'} 1.2rem 2rem` }}>
           {data && !data.live && (
             <Empty title='Not live yet' body='The factory is being set up. Check back shortly.' />
           )}
 
           {data?.live && (
             <>
-              {/* Five places, named for what people come to do. Opening a pool lives in Pools, History in Portfolio,
-                  and everything else, tokens and pools included, is one search away. */}
-              <div className='terra-tabs' style={{ display: 'flex', gap: SPACE['2'], marginBottom: SPACE['3'], alignItems: 'center' }}>
-                {tabBtn('swap', t('Swap'))}
-                {tabBtn('pools', <>{t('Pools')}<span className='terra-tab-count'> · {allPools.length}</span></>, tab === 'pools' || tab === 'create')}
-                {tabBtn('transfer', t('Bridge'))}
-                {tabBtn('positions', t('Portfolio'), tab === 'positions' || tab === 'wallet' || tab === 'history')}
-                {!LITE && tabBtn('board', <>{t('Board')}{board?.rows.length ? <span className='terra-tab-count'> · {board.rows.length}</span> : null}</>)}
-                {/* Terra Predict lives next door, once it is live. A link to "not live yet" is a dead end. */}
-                {!LITE && isPredictLive() && <Link href='/predict' prefetch={false} style={{ ...ghostBtn, padding: '0.45rem 0.9rem', textDecoration: 'none', color: C.emberLit, borderColor: C.dividerWarm, whiteSpace: 'nowrap' }}>Predict ↗</Link>}
-                <button type='button' onClick={() => setPalette(true)} title='Search tokens, pools and everything this site does (⌘K)' aria-label='Search everything'
-                  className='terra-search-btn' style={{ ...ghostBtn, padding: '0.45rem 0.8rem', marginLeft: 'auto', whiteSpace: 'nowrap', display: 'inline-flex', alignItems: 'center', gap: 8 }}>
-                  <span aria-hidden style={{ color: C.goldLit }}>⌕</span>
-                  <span className='terra-search-label'>{t('Search')}</span>
-                  <kbd className='terra-kbd-hint' style={{ fontFamily: 'inherit', fontSize: '0.62rem', color: C.textWhisper, border: `1px solid ${C.divider}`, borderRadius: 5, padding: '0 5px' }}>⌘K</kbd>
-                </button>
-              </div>
               {tab === 'swap' && loopFor && <LoopPanel plan={loopFor} pools={routePoolsAll} onClose={() => setLoopFor(null)} onOneSided={oneSided} onDone={refresh} />}
               {tab === 'swap' && <SwapPanel pools={data.pools} venuePools={swapVenuePools} crystal={crystal} feeBps={data.feeBps} poolFeeBps={data.poolFeeBps} onDone={refresh} arbs={arbs} preset={preset} onTakeArb={takeArb}
                 onNext={(k, key) => { if (k === 'pools') { setVenueFilter('all'); setPoolQuery(key ?? '') } openTab(k) }} />}
@@ -5860,7 +5829,7 @@ function SwapPageInner() {
               </div>
               {tab !== 'board' && board && board.rows.length > 0 && (
                 <button type='button' onClick={() => setTab('board')} style={{
-                  display: 'flex', alignItems: 'center', gap: SPACE['2'], width: '100%', textAlign: 'left',
+                  display: 'flex', alignItems: 'center', gap: SPACE['2'], width: '100%', textAlign: 'left', flexWrap: 'wrap',
                   padding: `${SPACE['2']}px ${SPACE['3']}px`, marginBottom: SPACE['3'], cursor: 'pointer', fontFamily: 'inherit',
                   background: 'rgba(255,216,61,0.04)', border: `1px solid ${C.divider}`, borderRadius: RADIUS.md,
                   fontSize: TEXT.xs.size, color: C.textMuted,
@@ -5925,25 +5894,6 @@ function SwapPageInner() {
       </main>
 
       <style jsx global>{`
-        .atrium-swap-title {
-          background: linear-gradient(
-            100deg,
-            #caa022 0%, #ffd83d 22%, #fff8dc 40%, #ffd83d 58%, #caa022 78%, #caa022 100%
-          );
-          background-size: 250% auto;
-          -webkit-background-clip: text;
-          background-clip: text;
-          -webkit-text-fill-color: transparent;
-          color: transparent;
-          animation: atriumSwapShimmer 6s linear infinite;
-        }
-        @keyframes atriumSwapShimmer {
-          to { background-position: 250% center; }
-        }
-        @media (prefers-reduced-motion: reduce) {
-          .atrium-swap-title { animation: none; }
-        }
-
         /* ── Retro Terra intro ── */
         .terra-intro {
           background: radial-gradient(120% 90% at 50% 120%, #1a1d30 0%, #0a0d18 45%, #05070f 100%);
@@ -6177,13 +6127,7 @@ function SwapPageInner() {
           .terra-chainpill, .terra-strike, .terra-kbd { display: none !important; }
           /* The pill keeps the money and the pulse; the pair name is in the row below anyway. */
           .terra-arb-pill span:last-child { display: none; }
-          .terra-article { padding-top: 0.7rem !important; }
-          .terra-hero { margin-top: 0 !important; gap: 8px !important; }
-          /* Small enough that the wordmark and the wallet pill share one line on a 375px phone. */
-          .terra-hero h1 { font-size: 1.4rem !important; margin-bottom: 0.3rem !important; }
-          .terra-hero-right { margin-bottom: 0.3rem !important; }
-          .terra-tabs { flex-wrap: nowrap !important; overflow-x: auto; scrollbar-width: none; margin-bottom: 8px !important; }
-          .terra-tabs::-webkit-scrollbar { display: none; }
+          /* The tabs scroll sideways under the header (.tl-tabs); tighter, so the five names fit a phone. */
           .terra-tabs button { padding: 0.32rem 0.65rem !important; white-space: nowrap; }
           /* Counts are for wide screens; on a phone the five names have to fit. Search stays pinned at the
              right end of the row while the tabs scroll under it, so finding things never needs a swipe first. */

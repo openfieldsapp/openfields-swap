@@ -12,13 +12,14 @@ import { useEffect, useMemo, useRef, useState } from 'react'
 import { SPACE, TEXT } from 'components/tokens'
 import LstBoard from 'components/LstBoard'
 import SiteNav from 'components/SiteNav'
+import ShellHeader from 'components/ShellHeader'
+import { pageColumn, pageMain } from 'components/PageShell'
 import { VENUE_NAME, annotateMarket, annotateValues, type PoolView } from 'lib/dex'
 import { arbPlans, fmtAmount, fmtUsd } from 'lib/arb'
 import type { DexResponse } from 'lib/api/dex'
 import type { VenueResponse } from 'lib/api/dex-venue'
 import type { StatsResponse } from 'lib/api/stats'
 import type { PoolFeesResponse } from 'lib/api/pool-fees'
-import { TERRA_FONT } from 'lib/font'
 
 const C = {
   surface: '#0b0f1c', surfaceElev: '#111729', divider: 'rgba(255,216,61,0.13)', goldCore: '#caa022', goldLit: '#ffd83d',
@@ -111,10 +112,10 @@ export default function StatsPage() {
       <Head>
         <title>Stats · Terra Swap</title>
       </Head>
-      <main style={{ minHeight: '100vh', background: 'radial-gradient(120% 80% at 50% -10%, #111729 0%, #0a0d18 42%, #05070f 100%)', color: C.textPrimary, fontFamily: TERRA_FONT, padding: '1.4rem 1.2rem 4rem' }}>
-        <div style={{ maxWidth: 860, margin: '0 auto', display: 'grid', gap: SPACE['3'] }}>
+      <main style={pageMain}>
+        <ShellHeader><SiteNav here='stats' /></ShellHeader>
+        <div className='of-col' style={{ ...pageColumn(860), display: 'grid', gap: SPACE['3'] }}>
           <div>
-            <SiteNav here='stats' />
             <h1 style={{ fontSize: 'clamp(1.8rem, 5vw, 2.4rem)', margin: '0.6rem 0 0.4rem', letterSpacing: '-0.02em' }}>
               <span style={{ fontWeight: 700, color: C.goldLit }}>Stats</span> <span style={{ fontWeight: 300 }}>for Terra&apos;s pools</span>
             </h1>

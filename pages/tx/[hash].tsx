@@ -13,7 +13,8 @@ import { useState } from 'react'
 import { SPACE, TEXT } from 'components/tokens'
 import { C, Page, Panel, linkBtn, row } from 'components/PageShell'
 import { TokenIcon } from 'components/TokenIcon'
-import { KNOWN_TOKENS, fromMicro, tokenFor, type KnownToken } from 'lib/dex'
+import { IS_ASTRO, KNOWN_TOKENS, fromMicro, tokenFor, type KnownToken } from 'lib/dex'
+import { TERRA_HOME_URL } from 'components/AppSwitcher'
 import { fmtAmount } from 'lib/arb'
 import { TX_HASH, readReceipt, type Receipt } from 'lib/txReceipt'
 import { SITE_URL } from 'lib/siteUrl'
@@ -131,6 +132,7 @@ export default function TxPage({ hash, receipt }: { hash: string; receipt: Recei
 
       <div style={{ display: 'flex', gap: SPACE['2'], flexWrap: 'wrap' }}>
         {pairLink && <Link href={pairLink} style={linkBtn(true)}>Swap the same pair</Link>}
+        {!IS_ASTRO && <a href={`${TERRA_HOME_URL}/`} style={linkBtn()}>See your wallet in Terra Home ↗</a>}
         <button type='button' onClick={share} style={{ ...linkBtn(), cursor: 'pointer' }}>{copied ? 'Link copied ✓' : 'Copy link'}</button>
         <a href={terrascope} target='_blank' rel='noreferrer' style={linkBtn()}>Terra Scan ↗</a>
       </div>

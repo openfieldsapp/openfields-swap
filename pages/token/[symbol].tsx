@@ -17,7 +17,8 @@ import { C, Figure, Page, Panel, cell, fmtNum, linkBtn, row } from 'components/P
 import { PairIcons, TokenIcon } from 'components/TokenIcon'
 import PriceHistoryChart from 'components/PriceHistoryChart'
 import DepthCurve, { markLine } from 'components/DepthCurve'
-import { KNOWN_TOKENS, VENUE_NAME, annotateMarket, annotateValues, assetId, sameAsset, type KnownToken } from 'lib/dex'
+import { IS_ASTRO, KNOWN_TOKENS, VENUE_NAME, annotateMarket, annotateValues, assetId, sameAsset, type KnownToken } from 'lib/dex'
+import { STAKE_URL } from 'components/AppSwitcher'
 import { fmtUsd } from 'lib/arb'
 import { TOKEN_META } from 'lib/tokenMeta'
 import { addAlert, askNotifications, fmtUsdPrice, removeAlert, toggleFavorite, useAlertWatcher, usePrefs } from 'lib/alerts'
@@ -263,6 +264,7 @@ export default function TokenPage({ symbol }: { symbol: string }) {
         <Link prefetch={false} href={`/?from=${encodeURIComponent(token.key)}&to=${encodeURIComponent(other)}`} style={linkBtn()}>Sell {token.label}</Link>
         {bridge && <Link prefetch={false} href={`/?tab=bridge&net=${bridge.net}`} style={linkBtn()}>Bring {token.label} in from {bridge.name}</Link>}
         {HUB_RATE.has(token.key) && <Link href='/stats' style={linkBtn()}>Hub rate against the pools</Link>}
+        {!IS_ASTRO && token.key === 'LUNA' && <a href={`${STAKE_URL}/#stake`} style={linkBtn()}>Stake LUNA ↗</a>}
       </div>
 
       <Panel title='Price' note="Astroport's deepest markets on Terra, recorded every ten minutes. Past prices, not a forecast.">

@@ -63,7 +63,12 @@ function WalletRow({ wallet, onDone }: { wallet: WalletList[number]; onDone: () 
   )
 }
 
+/**
+ * `className` hands the look to the stylesheet (the header's `tl-btn tl-btn--pill`, the same pill as in
+ * the other Openfields apps); without it the button keeps its own inline pill, as in the panels.
+ */
 export default function WalletButton({ className, onClick }: { className?: string; onClick?: () => void }) {
+  const look = className ? undefined : pill
   const { disconnect } = useWallet()
   const me = useMyAddress()
   const { txAllowed, country } = useTxRegionGate()
@@ -84,7 +89,7 @@ export default function WalletButton({ className, onClick }: { className?: strin
 
   if (me) {
     return (
-      <button type='button' className={className} style={pill} onClick={() => (onClick ? onClick() : disconnect())} title='Disconnect'>
+      <button type='button' className={className} style={look} onClick={() => (onClick ? onClick() : disconnect())} title='Disconnect'>
         <span style={{ width: 8, height: 8, borderRadius: 999, background: '#3ddc97', boxShadow: '0 0 8px #3ddc97' }} />
         <span style={{ fontVariantNumeric: 'tabular-nums' }}>{me.slice(0, 9)}…{me.slice(-4)}</span>
         <span style={{ opacity: 0.6, fontSize: '0.7rem' }}>▾</span>
@@ -95,7 +100,7 @@ export default function WalletButton({ className, onClick }: { className?: strin
   if (txAllowed === false) {
     return (
       <button
-        type='button' className={className} style={{ ...pill, cursor: 'help', opacity: 0.65 }}
+        type='button' className={className} style={{ ...look, cursor: 'help', opacity: 0.65 }}
         title={`Wallet actions are not available in ${country ?? 'your region'}.`}
         onClick={() => { /* explanation lives in the title and the banner */ }}
       >
@@ -106,7 +111,7 @@ export default function WalletButton({ className, onClick }: { className?: strin
 
   return (
     <>
-      <button type='button' className={className} style={pill} onClick={() => setOpen(true)}>{t('Connect')}</button>
+      <button type='button' className={className} style={look} onClick={() => setOpen(true)}>{t('Connect')}</button>
       {mounted && open && createPortal(
         <div
           onClick={e => { if (e.target === e.currentTarget) setOpen(false) }}

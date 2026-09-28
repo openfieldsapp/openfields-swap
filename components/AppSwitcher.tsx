@@ -11,6 +11,7 @@
  * competing at the same weight are two navigations nobody reads.
  */
 
+import { Fragment } from 'react'
 import { useLang } from 'lib/i18n'
 
 const trim = (u: string) => u.replace(/\/+$/, '')
@@ -26,36 +27,77 @@ export const ASK_URL = trim(process.env.NEXT_PUBLIC_ASK_URL || 'https://ask.open
 export const TERRA_HOME_URL = trim(process.env.NEXT_PUBLIC_TERRA_HOME_URL || 'https://home.openfields.app')
 export const HOME_URL = trim(process.env.NEXT_PUBLIC_HOME_URL || 'https://openfields.app')
 
+export type ProductKey = 'home' | 'ask' | 'swap' | 'stake' | 'nft' | 'gov' | 'daily' | 'scan' | 'data' | 'status'
+export const CURRENT_PRODUCT: ProductKey = 'swap'
+
+/** Every app in the family. The description is the English key; the switcher translates it. */
+export const PRODUCTS: { key: ProductKey; word: string; glyph: string; description: string; url: string }[] = [
+  { key: 'home', word: 'Home', glyph: '⌂', description: 'Everything your wallet holds, stakes, owes and votes on', url: TERRA_HOME_URL },
+  { key: 'ask', word: 'Ask', glyph: '✦', description: 'Say what you want to do on Terra, approve it in your wallet', url: ASK_URL },
+  { key: 'swap', word: 'Swap', glyph: '⇅', description: 'Swap tokens, pools, liquidity, transfers', url: '/' },
+  { key: 'stake', word: 'Stake', glyph: '⬢', description: 'Stake LUNA, move it, collect rewards', url: STAKE_URL },
+  { key: 'nft', word: 'NFT', glyph: '◆', description: 'Collections, items, listings and offers', url: NFT_URL },
+  { key: 'gov', word: 'Gov', glyph: '§', description: 'Proposals, votes and the community pool', url: GOV_URL },
+  { key: 'daily', word: 'Daily', glyph: '◷', description: 'A daily move, a calm minute and five Terra questions', url: DAILY_URL },
+  { key: 'scan', word: 'Scan', glyph: '⌕', description: 'Transactions, addresses and blocks', url: SCAN_URL },
+  { key: 'data', word: 'Data', glyph: '▦', description: 'How the apps on Terra are used', url: DATA_URL },
+  { key: 'status', word: 'Status', glyph: '●', description: 'Blocks, validators, bridges and endpoints, live', url: STATUS_URL },
+]
+
+/** The apps in the order people use them: your wallet, doing things, taking part, looking things up. */
+export const GROUPS: { label: string; keys: ProductKey[] }[] = [
+  { label: 'Your wallet', keys: ['home'] },
+  { label: 'Do', keys: ['ask', 'swap', 'stake', 'nft'] },
+  { label: 'Take part', keys: ['gov', 'daily'] },
+  { label: 'Look up', keys: ['scan', 'data', 'status'] },
+]
+
+const byKey = new Map(PRODUCTS.map(p => [p.key, p]))
+
+/**
+ * Every app in the family on one line at the top of the page, in the order people use them (your wallet,
+ * doing things, taking part, looking things up), with a hairline between the groups. The app you are in is
+ * marked and is not a link, so the row never moves under you.
+ */
 export default function AppSwitcher() {
   const { t } = useLang()
-
-  const apps = [
-    { key: 'home', word: 'Home', glyph: '⌂', description: t('Everything your wallet holds, stakes, owes and votes on'), url: TERRA_HOME_URL, here: false },
-    { key: 'ask', word: 'Ask', glyph: '✦', description: t('Say what you want to do on Terra, approve it in your wallet'), url: ASK_URL, here: false },
-    { key: 'swap', word: 'Swap', glyph: '⇅', description: t('Swap tokens, pools, liquidity, transfers'), url: '/', here: true },
-    { key: 'stake', word: 'Stake', glyph: '⬢', description: t('Stake LUNA, move it, collect rewards'), url: STAKE_URL, here: false },
-    { key: 'nft', word: 'NFT', glyph: '◆', description: t('Collections, items, listings and offers'), url: NFT_URL, here: false },
-    { key: 'gov', word: 'Gov', glyph: '§', description: t('Proposals, votes and the community pool'), url: GOV_URL, here: false },
-    { key: 'daily', word: 'Daily', glyph: '◷', description: t('A daily move, a calm minute and five Terra questions'), url: DAILY_URL, here: false },
-    { key: 'scan', word: 'Scan', glyph: '⌕', description: t('Transactions, addresses and blocks'), url: SCAN_URL, here: false },
-    { key: 'data', word: 'Data', glyph: '▦', description: t('How the apps on Terra are used'), url: DATA_URL, here: false },
-    { key: 'status', word: 'Status', glyph: '●', description: t('Blocks, validators, bridges and endpoints, live'), url: STATUS_URL, here: false },
-  ]
-
   return (
     <nav className='tl-eco' aria-label={t('Openfields apps')}>
-      {apps.map(a => (a.here ? (
-        <span key={a.key} className='tl-eco-item is-here' aria-current='page'>
-          <span className='tl-eco-glyph' aria-hidden>{a.glyph}</span>
-          {a.word}
-        </span>
-      ) : (
-        <a key={a.key} className='tl-eco-item' href={a.url} title={a.description}>
-          <span className='tl-eco-glyph' aria-hidden>{a.glyph}</span>
-          {a.word}
-        </a>
-      )))}
+      {GROUPS.map((g, gi) => (
+        <Fragment key={g.label}>
+          {gi > 0 && <span className='tl-eco-sep' aria-hidden />}
+          {g.keys.map(k => {
+            const p = byKey.get(k)
+            if (!p) return null
+            const inner = <><span className='tl-eco-glyph' aria-hidden>{p.glyph}</span>{p.word}</>
+            return k === CURRENT_PRODUCT
+              ? <span key={k} className='tl-eco-item is-here' aria-current='page'>{inner}</span>
+              : <a key={k} className='tl-eco-item' href={p.url} title={t(p.description)}>{inner}</a>
+          })}
+        </Fragment>
+      ))}
       <a className='tl-eco-home' href={HOME_URL}>{t('All apps')}</a>
+    </nav>
+  )
+}
+
+/** The same apps, grouped, at the foot of the page. */
+export function FooterApps() {
+  const { t } = useLang()
+  return (
+    <nav className='tl-footer-apps' aria-label={t('Openfields apps')}>
+      {GROUPS.map(g => (
+        <div key={g.label} className='tl-footer-group'>
+          <span className='tl-footer-label'>{t(g.label)}</span>
+          {g.keys.map(k => {
+            const p = byKey.get(k)
+            if (!p) return null
+            return k === CURRENT_PRODUCT
+              ? <span key={k} className='tl-footer-here'>Terra {p.word}</span>
+              : <a key={k} href={p.url}>Terra {p.word}</a>
+          })}
+        </div>
+      ))}
     </nav>
   )
 }

@@ -1,10 +1,12 @@
 /**
- * The frame for the site's own reference pages (a token, a pool): the same
- * ground, face and way back into every section as /stats and /verify, and the
- * panel and figure pieces they are built from.
+ * The frame for the site's own reference pages (a token, a pool, a receipt):
+ * the Openfields header every app shares, the way back into every section as
+ * tabs under it, the same ground as /stats and /verify, and the panel and
+ * figure pieces they are built from.
  */
 
 import { SPACE, TEXT } from 'components/tokens'
+import ShellHeader from 'components/ShellHeader'
 import SiteNav from 'components/SiteNav'
 import { TERRA_FONT } from 'lib/font'
 
@@ -14,16 +16,25 @@ export const C = {
   textPrimary: '#f4f1e8', textSecondary: '#d6cfbd', textMuted: '#9a927f', textWhisper: '#6b6555', success: '#3ddc97', alert: '#e04a5a', ember: '#ffb347',
 } as const
 
+/** The page's ground, under the shared header. */
+export const pageMain: React.CSSProperties = {
+  minHeight: '100vh', background: 'radial-gradient(120% 80% at 50% -10%, #111729 0%, #0a0d18 42%, #05070f 100%)', color: C.textPrimary, fontFamily: TERRA_FONT, paddingBottom: '4rem',
+}
+/**
+ * The page's own column, `width` wide and centred as before; on a phone its edge lines up with the header's
+ * (.of-col). One track that may shrink below its widest table, so a wide table scrolls inside its panel
+ * instead of widening the page on a phone.
+ */
+export const pageColumn = (width: number): React.CSSProperties => ({ maxWidth: `calc(${width}px + 2.4rem)`, margin: '0 auto', padding: '0 1.2rem', gridTemplateColumns: 'minmax(0, 1fr)' })
+
 export function Page({ children, width = 860 }: { children: React.ReactNode; width?: number }) {
   return (
-    <>
-      <main style={{ minHeight: '100vh', background: 'radial-gradient(120% 80% at 50% -10%, #111729 0%, #0a0d18 42%, #05070f 100%)', color: C.textPrimary, fontFamily: TERRA_FONT, padding: '1.4rem 1.2rem 4rem' }}>
-        <div style={{ maxWidth: width, margin: '0 auto', display: 'grid', gap: SPACE['3'] }}>
-          <SiteNav />
-          {children}
-        </div>
-      </main>
-    </>
+    <main style={pageMain}>
+      <ShellHeader><SiteNav /></ShellHeader>
+      <div className='of-col' style={{ ...pageColumn(width), display: 'grid', gap: SPACE['3'] }}>
+        {children}
+      </div>
+    </main>
   )
 }
 
