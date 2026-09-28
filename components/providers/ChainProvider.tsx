@@ -21,6 +21,7 @@ import neutronAssets from 'chain-registry/mainnet/neutron/assets'
 import strideChain from 'chain-registry/mainnet/stride/chain'
 import strideAssets from 'chain-registry/mainnet/stride/assets'
 import { EndpointOptions, SignerOptions } from '@cosmos-kit/core'
+import WalletCarry from './WalletCarry'
 import { CHAIN_CONFIGS } from 'constants/chainsConfig'
 import { GasPrice } from '@cosmjs/stargate'
 import { Chain } from '@chain-registry/types'
@@ -110,6 +111,7 @@ const ChainProvider = ({ children }: { children: ReactNode }) => {
       endpointOptions={endpointOptionsStatic}
       sessionOptions={sessionOptionsStatic}
     >
+      <WalletCarry />
       {children}
     </Provider>
   )
