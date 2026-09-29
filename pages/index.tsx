@@ -24,7 +24,7 @@ import { isPredictLive } from 'lib/predict'
 import { SPACE, RADIUS, TEXT } from 'components/tokens'
 import { isCrystalHolder } from 'lib/holders'
 import {
-  KNOWN_TOKENS, NOBLE_USDC, USDC_INJ_DENOM, ATOM_DENOM, TERRA_SWAP_ROUTER, assetId, sameAsset, tokenFor, toMicro, fromMicro,
+  KNOWN_TOKENS, NOBLE_USDC, USDC_INJ_DENOM, ATOM_DENOM, TERRA_SWAP_ROUTER, assetId, isListed, sameAsset, tokenFor, toMicro, fromMicro,
   simulateSwap, queryBalance, queryCw20Balance, planZap, annotateMarket, annotateValues, resolveToken,
   lpPosition, lpConcentration, IS_ASTRO, HOME_VENUE, VENUE_FACTORY, VENUE_NAME, VENUE_INCENTIVES, TERRA_SWAP_FACTORY_V2, factoryOf, smart, type Venue,
   COIN_REGISTRY, ASTRO_STAKING, XASTRO_CW20, ASTRO_CONVERTER, ASTRO_CW20, ASTRO_IBC_DENOM, DATOM_DENOM, FUEL_DENOM, STLUNA_DENOM, STATOM_DENOM,
@@ -358,6 +358,8 @@ function TokenPicker({ options, value, onPick, onClose }: {
             const others = (namesakes.get(meta?.name ?? t.label) ?? []).filter(l => l !== t.label)
             const twin = others.length > 0
             const fav = favorites.includes(id)
+            // Only there because a link asked for it by address (SwapPanel): say so, with the whole address.
+            const unlisted = !isListed(t.info)
             return (
               <div key={id} data-row={i} role='option' aria-selected={id === value} onMouseEnter={() => setActive(i)} onClick={() => pick(t)}
                 style={{ display: 'flex', alignItems: 'center', gap: SPACE['2'], padding: '9px 10px', marginTop: 4, borderRadius: 10, cursor: 'pointer', background: i === active ? C.surface : 'transparent', border: `1px solid ${id === value ? C.goldCore : 'transparent'}` }}>
@@ -367,7 +369,9 @@ function TokenPicker({ options, value, onPick, onClose }: {
                     <b style={{ color: C.textPrimary, fontSize: TEXT.sm.size }}>{t.label}</b>
                     <span style={{ fontSize: TEXT.xs.size, color: C.textMuted }}>{meta?.name ?? ''}</span>
                   </div>
-                  <div style={{ fontSize: TEXT.xs.size, color: twin ? C.goldLit : C.textWhisper }}>{meta?.origin ?? (('token' in t.info) ? 'Terra, cw20' : '')}{twin ? ` · ${tr('a different token from {others}', { others: others.join(' and ') })}` : ''}</div>
+                  {unlisted
+                    ? <div style={{ fontSize: TEXT.xs.size, color: C.alert, wordBreak: 'break-all' }}>⚠ {tr('Unlisted token')} · {id}</div>
+                    : <div style={{ fontSize: TEXT.xs.size, color: twin ? C.goldLit : C.textWhisper }}>{meta?.origin ?? (('token' in t.info) ? 'Terra, cw20' : '')}{twin ? ` · ${tr('a different token from {others}', { others: others.join(' and ') })}` : ''}</div>}
                 </div>
                 <button type='button' aria-label={fav ? `Unstar ${t.label}` : `Star ${t.label}`} title={fav ? 'Starred: shown first' : 'Star it to keep it at the top'}
                   onClick={e => { e.stopPropagation(); toggleFavorite(id) }}
@@ -400,7 +404,7 @@ function TokenSelect({ value, onChange, options, style }: {
     <div style={{ position: 'relative', display: 'flex', ...style }}>
       <button type='button' onClick={() => setOpen(true)} aria-haspopup='dialog' aria-label={cur ? `Token: ${cur.label}. Change` : 'Select a token'}
         style={{ ...select, width: '100%', display: 'flex', alignItems: 'center', gap: 8, textAlign: 'left', color: C.textPrimary }}>
-        {cur ? <><TokenIcon label={cur.label} size={20} /><span style={{ fontWeight: 700 }}>{cur.label}</span></> : <span style={{ color: C.textMuted }}>Select</span>}
+        {cur ? <><TokenIcon label={cur.label} size={20} /><span style={{ fontWeight: 700 }}>{cur.label}</span>{!isListed(cur.info) && <span style={{ color: C.alert, fontSize: '0.75em', fontWeight: 700 }}>⚠ unlisted</span>}</> : <span style={{ color: C.textMuted }}>Select</span>}
         <span aria-hidden style={{ marginLeft: 'auto', color: C.textMuted, fontSize: '0.8em' }}>▾</span>
       </button>
       {open && <TokenPicker options={options} value={value} onPick={v => { onChange(v); setOpen(false) }} onClose={() => setOpen(false)} />}
@@ -1460,6 +1464,15 @@ function SwapPanel({ pools, venuePools, crystal, feeBps, poolFeeBps, onDone, arb
     for (const p of routePools) for (const t of p.tokens) m.set(assetId(t.info), t)
     return Array.from(m.values())
   }, [routePools])
+  /* Anyone can make a token and open a pool for it on Openfields Swap's factories, so the pickers offer only the
+     tokens this site lists. An unlisted one is offered only when this visit asked for it by address (a link's
+     ?from= or ?to=, or a preset), and then it is marked, and a swap with it waits for the address to be checked. */
+  const [asked, setAsked] = useState<string[]>([])
+  const offered = useMemo(() => tokens.filter(t => isListed(t.info) || asked.includes(assetId(t.info))), [tokens, asked])
+  const ask = useCallback((...ids: string[]) => {
+    const want = ids.filter(id => id && !asked.includes(id) && tokens.some(t => assetId(t.info) === id && !isListed(t.info)))
+    if (want.length) setAsked(a => [...a, ...want])
+  }, [asked, tokens])
 
   const [fromId, setFromId] = useState('')
   const [toId, setToId] = useState('')
@@ -1509,6 +1522,7 @@ function SwapPanel({ pools, venuePools, crystal, feeBps, poolFeeBps, onDone, arb
     const f = find(wantFrom), t = find(wantTok)
     if (wantFrom && (!f || (wantTok && !t)) && venuePools.length === 0) return
     firstPair.current = true
+    ask(...[f, t].filter((x): x is KnownToken => !!x).map(x => assetId(x.info)))
     if (f) {
       setFromId(assetId(f.info))
       const amt = q.get('amount') ?? ''
@@ -1520,14 +1534,14 @@ function SwapPanel({ pools, venuePools, crystal, feeBps, poolFeeBps, onDone, arb
       return
     }
     // First impression: the deepest pool, LUNA on the pay side when it has one.
-    const deepest = [...tradable].sort((a, b) => (b.tvlUsd ?? 0) - (a.tvlUsd ?? 0))[0]
-    const pick = deepest ? (deepest.tokens.find(x => x.key === 'LUNA') ?? deepest.tokens[0]) : tokens[0]
-    setFromId(assetId(pick.info))
-  }, [tokens, fromId, tradable, venuePools.length])
+    const deepest = [...tradable].filter(p => p.tokens.every(x => isListed(x.info))).sort((a, b) => (b.tvlUsd ?? 0) - (a.tvlUsd ?? 0))[0]
+    const pick = deepest ? (deepest.tokens.find(x => x.key === 'LUNA') ?? deepest.tokens[0]) : offered[0]
+    if (pick) setFromId(assetId(pick.info))
+  }, [tokens, offered, fromId, tradable, venuePools.length, ask])
 
-  const from = tokens.find(t => assetId(t.info) === fromId) ?? null
+  const from = offered.find(t => assetId(t.info) === fromId) ?? null
   // Anything reachable in one or two hops across both sites.
-  const toOptions = useMemo(() => (from ? reachable(routePools, from, tokens) : []), [from, routePools, tokens])
+  const toOptions = useMemo(() => (from ? reachable(routePools, from, offered) : []), [from, routePools, offered])
   useEffect(() => {
     if (toOptions.find(t => assetId(t.info) === toId)) return
     // Default to the other side of the deepest pool the pay token sits in, so
@@ -1547,8 +1561,9 @@ function SwapPanel({ pools, venuePools, crystal, feeBps, poolFeeBps, onDone, arb
   useEffect(() => {
     if (!preset || preset.n === presetSeen.current) return
     presetSeen.current = preset.n
+    ask(preset.fromId, preset.toId)
     setFromId(preset.fromId); setAmount(preset.amount); setWantTo(preset.toId)
-  }, [preset])
+  }, [preset, ask])
   useEffect(() => {
     if (wantTo && toOptions.some(t => assetId(t.info) === wantTo)) { setToId(wantTo); setWantTo('') }
   }, [wantTo, toOptions])
@@ -1614,7 +1629,12 @@ function SwapPanel({ pools, venuePools, crystal, feeBps, poolFeeBps, onDone, arb
 
   const fee = '0'
   const insufficient = !!micro && BigInt(micro) + BigInt(fee) > BigInt(balance || '0')
-  // How a trade is signed decides what arrives: through Astroport's router the quote itself, as separate swaps a little less.
+  /* A token this site does not list, on either side, only because a link asked for it by address: named in full,
+     and the swap waits until the box saying the address was checked is ticked. Unticked for every new pair. */
+  const unlisted = [from, to].filter((x): x is KnownToken => !!x && !isListed(x.info))
+  const [unlistedOk, setUnlistedOk] = useState(false)
+  useEffect(() => { setUnlistedOk(false) }, [fromId, toId])
+  // How a trade is signed (lib/route planRoute): one pool as its own swap, several pools as one router call that checks what arrives.
   const trade: TradePlan | null = useMemo(() => (quotes?.best ? planTrade(quotes.split ?? [{ quote: quotes.best, share: 1 }], slip) : null), [quotes, slip])
   const impact = trade ? trade.impactPct : 0
   const sim = trade ? { ret: trade.expectedOut } : null
@@ -1623,6 +1643,7 @@ function SwapPanel({ pools, venuePools, crystal, feeBps, poolFeeBps, onDone, arb
   // The quote must be for the amount on screen, not the one before the debounce caught up.
   const canSwap = !!me && !!route && !!trade && !!from && !!to && !!micro && micro === quotes?.amountMicro
     && trade.parts.every(p => p.plan.legs.every(l => l.offerAmount !== '0') && p.plan.minOut !== '0') && minOut !== '0' && !insufficient && !swap.isLoading && !checking
+    && (unlisted.length === 0 || unlistedOk)
     // Receive exactly signs only a trade whose minimum covers what was asked for.
     && (mode !== 'out' || (!solving && !!receiveMicro && receiveMicro !== '0' && BigInt(minOut) >= BigInt(receiveMicro)))
 
@@ -1838,7 +1859,7 @@ function SwapPanel({ pools, venuePools, crystal, feeBps, poolFeeBps, onDone, arb
       <div style={{ display: 'flex', gap: SPACE['2'], marginBottom: SPACE['2'] }}>
         <input ref={amountRef} style={field} type='number' min='0' step='any' placeholder={mode === 'out' && solving ? '…' : '0.0'} value={amount} aria-label={t('You pay')}
           onChange={e => { setMode('in'); setAmount(e.target.value) }} />
-        <TokenSelect value={fromId} onChange={setFromId} options={tokens} />
+        <TokenSelect value={fromId} onChange={setFromId} options={offered} />
       </div>
       <div style={{ ...rowStyle, marginBottom: SPACE['3'] }}>
         <span>{t('Balance')} {from ? fromMicro(balance, from.decimals) : '—'}{from && me && (() => {
@@ -1890,6 +1911,18 @@ function SwapPanel({ pools, venuePools, crystal, feeBps, poolFeeBps, onDone, arb
       </div>
       {mode === 'out' && solving && <div style={{ fontSize: TEXT.xs.size, color: C.textMuted, marginBottom: SPACE['3'] }}>{t('Finding what to pay…')}</div>}
       {mode === 'out' && !solving && noSolve && <div style={{ fontSize: TEXT.xs.size, color: C.emberLit, marginBottom: SPACE['3'] }}>{t('No amount found that delivers that right now. The pools may be too thin.')}</div>}
+      {unlisted.length > 0 && (
+        <div role='alert' style={{ fontSize: TEXT.xs.size, lineHeight: 1.5, padding: `${SPACE['2']}px ${SPACE['3']}px`, borderRadius: 10, marginBottom: SPACE['3'], background: C.alertSoft, color: C.alert, border: '1px solid rgba(224,74,90,0.35)' }}>
+          {unlisted.map(x => (
+            <div key={assetId(x.info)} style={{ wordBreak: 'break-all' }}>⚠ {t('{token} is not a token this site lists. Its address: {id}', { token: x.label, id: assetId(x.info) })}</div>
+          ))}
+          <div style={{ marginTop: 4 }}>{t('Anyone can make a token and open a pool for it. Swap only if you know this exact address is the token you mean.')}</div>
+          <label style={{ display: 'flex', alignItems: 'center', gap: 6, marginTop: 6, color: C.textPrimary, cursor: 'pointer' }}>
+            <input type='checkbox' checked={unlistedOk} onChange={e => setUnlistedOk(e.target.checked)} />
+            {t('I checked the address')}
+          </label>
+        </div>
+      )}
 
       {route && trade && from && to && (
         <div style={{ padding: `${SPACE['2']}px ${SPACE['3']}px`, background: 'rgba(0,0,0,0.22)', borderRadius: 10, marginBottom: SPACE['3'] }}>
@@ -2242,9 +2275,10 @@ function CosmosTransfer({ net, routePools, onDone, switcher }: { net: SourceChai
   const base = useMemo(() => tokenFor({ native_token: { denom: net.terraDenom } }), [net])
   /** Routes avoid pools holding a token this one is never exchanged for. */
   const pools = useMemo(() => routePools.filter(p => !p.tokens.some(t => net.never.includes(assetId(t.info)))), [routePools, net])
+  /** The tokens this site lists: the picker offers no others (TokenPicker). */
   const allTokens = useMemo(() => {
     const m = new Map<string, KnownToken>()
-    for (const p of pools) for (const t of p.tokens) m.set(assetId(t.info), t)
+    for (const p of pools) for (const t of p.tokens) if (isListed(t.info)) m.set(assetId(t.info), t)
     return Array.from(m.values())
   }, [pools])
   const routable = useMemo(() => reachable(pools, base, allTokens), [pools, base, allTokens])
@@ -2648,7 +2682,8 @@ function InjectiveTransfer({ routePools, onDone, switcher }: { routePools: PoolV
   const pools = useMemo(() => routePools.filter(p => !p.tokens.some(t => assetId(t.info) === NOBLE_USDC)), [routePools])
   const arriveOptions = useMemo(() => {
     const m = new Map<string, KnownToken>()
-    for (const p of pools) for (const t of p.tokens) m.set(assetId(t.info), t)
+    // Listed tokens only, as in every picker (TokenPicker).
+    for (const p of pools) for (const t of p.tokens) if (isListed(t.info)) m.set(assetId(t.info), t)
     return TERRA_SWAP_ROUTER ? [token, ...reachable(pools, token, Array.from(m.values()))] : [token]
   }, [pools, token])
   useEffect(() => { if (!arriveOptions.some(t => assetId(t.info) === targetId)) setTargetId(USDC_INJ_DENOM) }, [arriveOptions, targetId])
