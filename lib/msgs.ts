@@ -121,11 +121,17 @@ export function terraSwapRouterMsg(sender: string, legs: ExecLeg[], amount: stri
   return exec(sender, first.token.contract_addr, { send: { contract: router, amount, msg: b64(inner) } })
 }
 
-/** A quote as lib/route planRoute decided to sign it: one message through a router, or one swap per leg. */
+/**
+ * A quote as lib/route planRoute decided to sign it: one message through a router, or one swap for one pool.
+ * A route through several pools is never signed as separate swaps: each would check only its own pool's price,
+ * a cw20 leg is carried out by the token's own contract, and nothing would check what finally reaches the
+ * wallet. Only a router call does that (lib/route).
+ */
 export function routeMsgs(sender: string, plan: RoutePlan, maxSpread: number): EncodeObject[] {
   if (plan.legs.length === 0 || plan.legs.some(l => l.offerAmount === '0') || plan.minOut === '0') throw new Error('Amount too small to route')
   if (plan.kind === 'router') return [routerMsg(sender, plan.legs.map(l => ({ offer: l.offerInfo, ask: l.askInfo })), plan.legs[0].offerAmount, plan.minOut)]
   if (plan.kind === 'multi') return [terraSwapRouterMsg(sender, plan.legs, plan.legs[0].offerAmount, plan.minOut)]
+  if (plan.legs.length > 1) throw new Error('A route through several pools is only signed as one router call, and no router reaches this one')
   return legMsgs(sender, plan.legs, maxSpread)
 }
 

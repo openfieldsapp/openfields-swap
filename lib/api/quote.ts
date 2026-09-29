@@ -65,7 +65,10 @@ export interface QuoteTx {
   offerMicro: string
   expectedOutMicro: string
   minimumOutMicro: string
-  /** intermediate tokens a route of separate swaps leaves in the wallet at its quote, smallest units */
+  /**
+   * Intermediate tokens left in the wallet at the quote, smallest units. Always empty since 2026-09-29: a route
+   * through several pools is one router call (lib/route), never separate swaps. Kept so callers do not break.
+   */
   leftover: { token: string; micro: string }[]
 }
 
