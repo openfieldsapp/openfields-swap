@@ -80,7 +80,8 @@ export function middleware(request: NextRequest) {
       const clean = request.nextUrl.clone()
       clean.searchParams.delete('bypass')
       const res = NextResponse.redirect(clean)
-      res.cookies.set(BYPASS_COOKIE, BYPASS_SECRET, { maxAge: 30 * 86_400, path: '/', sameSite: 'lax' })
+      // Read only on the server (here and /api/geo): never by page scripts, never over plain http.
+      res.cookies.set(BYPASS_COOKIE, BYPASS_SECRET, { maxAge: 30 * 86_400, path: '/', sameSite: 'lax', httpOnly: true, secure: true })
       return res
     }
     if (request.cookies.get(BYPASS_COOKIE)?.value === BYPASS_SECRET) return withRegion(NextResponse.next(), true, 'XX')
