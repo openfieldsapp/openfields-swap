@@ -20,7 +20,7 @@ import { MsgExecuteContract } from 'cosmjs-types/cosmwasm/wasm/v1/tx'
 import { MsgSend } from 'cosmjs-types/cosmos/bank/v1beta1/tx'
 import { MsgTransfer } from 'cosmjs-types/ibc/applications/transfer/v1/tx'
 import { toUtf8 } from '@cosmjs/encoding'
-import { ASTRO_ROUTER, TERRA_SWAP_ROUTER, VENUE_FACTORY, type Asset, type AssetInfo, type Venue } from 'lib/dex'
+import { ASTRO_ROUTER, TERRA_SWAP_ROUTER, VENUE_FACTORY, fromListedFactory, isListed, sameAsset, type Asset, type AssetInfo, type Venue } from 'lib/dex'
 import type { ExecLeg, RoutePlan, TradePlan } from 'lib/route'
 
 type Coin = { denom: string; amount: string }
@@ -121,17 +121,56 @@ export function terraSwapRouterMsg(sender: string, legs: ExecLeg[], amount: stri
   return exec(sender, first.token.contract_addr, { send: { contract: router, amount, msg: b64(inner) } })
 }
 
+const DIGITS = /^\d{1,40}$/
+
 /**
- * A quote as lib/route planRoute decided to sign it: one message through a router, or one swap for one pool.
- * A route through several pools is never signed as separate swaps: each would check only its own pool's price,
- * a cw20 leg is carried out by the token's own contract, and nothing would check what finally reaches the
- * wallet. Only a router call does that (lib/route).
+ * Why a route through several pools may not be signed as separate swaps, or null when it may.
+ *
+ * Separate swaps have no router checking what finally arrives: each checks only its own pool's price, and a
+ * cw20 leg is a `send` the token's own contract carries out (the 2026-09-29 audit's honeypot: a token whose
+ * send does nothing, in the middle of a route). So such a plan is only signed when
+ * - every token on it, both ends included, is one this site lists (lib/dex isListed),
+ * - every pool comes from a factory this site lists pools from, under its own venue (lib/dex fromListedFactory),
+ * - the legs chain: each offers the token the one before asks for, and no more than the one before is
+ *   guaranteed to return, so no leg is paid out of the wallet,
+ * - and every leg carries its own limit: a price limit with a floor that the pool itself enforces at the
+ *   max_spread the message carries (belief_price = offer / limitReturn), from that pool's own simulation.
+ * lib/route only builds such plans (legsOk); this is the same rule where the messages are made.
+ */
+export function legsRefusal(legs: ExecLeg[], maxSpread: number): string | null {
+  // swapMsg writes max_spread with three decimals: check against what the pool will actually be told.
+  const carried = Number(maxSpread.toFixed(3))
+  if (!(carried > 0 && carried <= 0.5)) return 'Each swap needs a slippage limit above 0 and at most 50%'
+  const keep = BigInt(Math.round((1 - carried) * 10_000))
+  for (let i = 0; i < legs.length; i++) {
+    const l = legs[i]
+    if (!isListed(l.offerInfo) || !isListed(l.askInfo)) return 'A route through a token this site does not list is only signed as one router call'
+    if (!fromListedFactory({ venue: l.venue, factory: l.factory })) return 'A route of separate swaps only goes through pools this site lists'
+    if (![l.offerAmount, l.limitReturn, l.minReturn].every(v => DIGITS.test(v))) return 'A swap on this route has no limit'
+    const offer = BigInt(l.offerAmount), limit = BigInt(l.limitReturn), min = BigInt(l.minReturn)
+    if (offer <= BigInt(0) || limit <= BigInt(0) || min <= BigInt(0) || min > (limit * keep) / BigInt(10_000)) return 'A swap on this route has no limit of its own'
+    if (i > 0) {
+      const prev = legs[i - 1]
+      if (!sameAsset(prev.askInfo, l.offerInfo)) return 'The swaps on this route do not follow each other'
+      if (offer > BigInt(prev.minReturn)) return 'A swap on this route would spend more than the one before is sure to return'
+    }
+  }
+  return null
+}
+
+/**
+ * A quote as lib/route planRoute decided to sign it: one message through a router, one swap for one pool, or
+ * separate swaps on a route of listed tokens and pools, each with its own limit (legsRefusal). Any other plan
+ * of separate swaps is refused here, whatever built it.
  */
 export function routeMsgs(sender: string, plan: RoutePlan, maxSpread: number): EncodeObject[] {
   if (plan.legs.length === 0 || plan.legs.some(l => l.offerAmount === '0') || plan.minOut === '0') throw new Error('Amount too small to route')
   if (plan.kind === 'router') return [routerMsg(sender, plan.legs.map(l => ({ offer: l.offerInfo, ask: l.askInfo })), plan.legs[0].offerAmount, plan.minOut)]
   if (plan.kind === 'multi') return [terraSwapRouterMsg(sender, plan.legs, plan.legs[0].offerAmount, plan.minOut)]
-  if (plan.legs.length > 1) throw new Error('A route through several pools is only signed as one router call, and no router reaches this one')
+  if (plan.legs.length > 1) {
+    const why = legsRefusal(plan.legs, maxSpread)
+    if (why) throw new Error(why)
+  }
   return legMsgs(sender, plan.legs, maxSpread)
 }
 

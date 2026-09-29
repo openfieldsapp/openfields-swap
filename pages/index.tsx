@@ -1634,7 +1634,7 @@ function SwapPanel({ pools, venuePools, crystal, feeBps, poolFeeBps, onDone, arb
   const unlisted = [from, to].filter((x): x is KnownToken => !!x && !isListed(x.info))
   const [unlistedOk, setUnlistedOk] = useState(false)
   useEffect(() => { setUnlistedOk(false) }, [fromId, toId])
-  // How a trade is signed (lib/route planRoute): one pool as its own swap, several pools as one router call that checks what arrives.
+  // How a trade is signed decides what arrives (lib/route planRoute): through a router the quote itself, as separate swaps (listed tokens only) a little less.
   const trade: TradePlan | null = useMemo(() => (quotes?.best ? planTrade(quotes.split ?? [{ quote: quotes.best, share: 1 }], slip) : null), [quotes, slip])
   const impact = trade ? trade.impactPct : 0
   const sim = trade ? { ret: trade.expectedOut } : null

@@ -43,8 +43,9 @@ export const TERRA_SWAP_FACTORY_V2 = IS_ASTRO ? '' : (process.env.NEXT_PUBLIC_DE
  * the same pool and simulation queries as Astroport's and take the same swap
  * message, but report their fee in parts, name their pool types differently,
  * and have an owner that can change fees and pause swaps. Neither router can
- * reach them, so they are only used for a swap through that one pool: a route
- * through several pools is only ever signed as one router call (lib/route).
+ * reach them, so a route through one and other pools is signed as separate
+ * swaps, each with its own limit, and only when every token on it is listed
+ * (lib/route, checked again in lib/msgs routeMsgs).
  */
 export const SKELETON_FACTORY = 'terra1f4cr4sr5eulp3f2us8unu6qv8a5rhjltqsg7ujjx6f2mrlqh923sljwhn3'
 export type Venue = 'terraswap' | 'astroport' | 'skeleton'
@@ -86,8 +87,8 @@ export const ASTRO_ROUTER = 'terra1j8hayvehh3yy02c2vtw5fdhz9f4drhtee8p5n5rguvg3n
  * both factories, each swap's whole return into the next, one minimum on what
  * arrives. No owner, no admin, no fee. On chain since 2026-09-14 as code 4028;
  * contracts/router/verify.sh checks it against the build. With the variable set
- * to an empty string, routes through Openfields Swap's pools keep to one pool
- * (lib/route never signs a route through several pools as separate swaps).
+ * to an empty string, such routes are signed as separate swaps instead, which
+ * lib/route only does when every token on the route is listed.
  */
 export const TERRA_SWAP_ROUTER = process.env.NEXT_PUBLIC_TERRA_SWAP_ROUTER ?? 'terra1u2uh0jsl2u76j52e6egf09zslsns27qsmzxxzcsxdxymeax8883s9prc4l'
 /** Router v1 trusts the first factory and Astroport's. Router v2 (contracts/factory-v2) is the same code trusting factory v2 as well. */
@@ -97,14 +98,24 @@ export const TERRA_SWAP_ROUTERS: readonly string[] = Array.from(new Set([TERRA_S
 /**
  * The factories the configured router trusts, in its own order. A router
  * other than v1 is only taken to know factory v2 when factory v2 is set too,
- * so a half-done configuration keeps factory v2's pools to one-pool swaps
- * instead of sending the router a pool it would refuse.
+ * so a half-done configuration signs v2 routes as separate swaps (listed
+ * tokens only) instead of sending the router a pool it would refuse.
  */
 export const ROUTER_FACTORIES: readonly string[] = TERRA_SWAP_FACTORY_V2 && TERRA_SWAP_ROUTER && TERRA_SWAP_ROUTER !== TERRA_SWAP_ROUTER_V1
   ? [TERRA_SWAP_FACTORY, TERRA_SWAP_FACTORY_V2, ASTRO_FACTORY]
   : [TERRA_SWAP_FACTORY, ASTRO_FACTORY]
 /** The factory that made a pool: its own when it carries one (factory v2), otherwise its venue's. */
 export const factoryOf = (p: { venue: Venue; factory?: string }): string => p.factory ?? VENUE_FACTORY[p.venue]
+/**
+ * A pool from a factory this site scans and lists pools from: Openfields Swap's two, Astroport's, Skeleton
+ * Swap's, each under its own venue. Their pairs are the factories' own pair code, not something a token's
+ * author wrote. lib/route and lib/msgs only let a route be signed as separate swaps through such pools.
+ */
+export const fromListedFactory = (p: { venue: Venue; factory?: string }): boolean => {
+  const f = factoryOf(p)
+  if (!f) return false
+  return p.venue === 'terraswap' ? f === TERRA_SWAP_FACTORY || (!!TERRA_SWAP_FACTORY_V2 && f === TERRA_SWAP_FACTORY_V2) : f === VENUE_FACTORY[p.venue]
+}
 
 
 /** Pool commission, set on the factory. Shown to users; not enforced here. */
@@ -249,8 +260,9 @@ const LISTED_IDS = new Set(KNOWN_TOKENS.map(t => assetId(t.info)))
 /**
  * A token this site lists (KNOWN_TOKENS). Anyone can make a token and open a
  * pool for it on a permissionless factory, so an unlisted token is never an
- * intermediate on a route (lib/route) and is never offered in a picker; it can
- * only be what someone explicitly pays or asks for.
+ * intermediate on a route (lib/route), never on a route signed as separate
+ * swaps (lib/msgs), and never offered in a picker; it can only be what someone
+ * explicitly pays or asks for.
  */
 export const isListed = (info: AssetInfo): boolean => LISTED_IDS.has(assetId(info))
 

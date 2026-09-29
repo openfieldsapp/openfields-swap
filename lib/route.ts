@@ -25,26 +25,31 @@
  * Either way, if less than the minimum reaches the wallet, the whole
  * transaction reverts.
  *
- * A route through several pools is never signed as consecutive swaps (found in
- * the 2026-09-29 audit). Each such swap only checks its own pool's price, and a
- * cw20 leg is a `send` that the token's own contract carries out, so a token
- * whose `send` does nothing would end the route in the wallet as that token,
- * with nothing checking what arrived. A path that no router can take is not
- * offered at all (multiHop).
+ * Only tokens this site lists (lib/dex isListed) sit in the middle of a path
+ * (found in the 2026-09-29 audit). Anyone can make a token and open pools for
+ * it with bait liquidity, and a cw20 leg is a `send` that the token's own
+ * contract carries out: a token whose `send` does nothing would end the route
+ * in the wallet as that token. An unlisted token is only ever the token someone
+ * pays or asks for.
  *
- * For the same reason only tokens this site lists (lib/dex isListed) sit in the
- * middle of a path. Anyone can make a token and open pools for it with bait
- * liquidity; an unlisted token is only ever the token someone pays or asks for.
+ * A route no router can take (one through a Skeleton Swap pool, or through
+ * Openfields Swap's pools without its router) is signed as consecutive swaps in
+ * one transaction, and only when every token on it, both ends included, is
+ * listed and every pool comes from a factory this site lists pools from
+ * (legsOk). Each swap carries its own price limit, worked out from that pool's
+ * own simulation, and each later swap only spends what the one before is
+ * guaranteed to return, so if any pool pays less than its quote allows the
+ * whole transaction reverts. lib/msgs routeMsgs checks all of this again before
+ * it builds the messages. A route with an unlisted token at either end goes
+ * through a router or through one pool, never as separate swaps.
  *
  * Skeleton Swap's pools (White Whale's pool contracts, lib/skeleton) are priced
  * and ranked the same way when the swap page or the quote API passes them in.
- * Neither router can reach them, so they are only used for a swap through that
- * one pool, and a swap that has to be one router call (on arrival over IBC)
- * never uses them.
+ * A swap that has to be one router call (on arrival over IBC) never uses them.
  */
 
 import {
-  NOBLE_USDC, ROUTER_FACTORIES, USDC_INJ_DENOM, factoryOf, assetId, isListed, priceLimit, sameAsset, simulateSwap, toMicro, TERRA_SWAP_ROUTER, VENUE_NAME,
+  NOBLE_USDC, ROUTER_FACTORIES, USDC_INJ_DENOM, factoryOf, fromListedFactory, assetId, isListed, priceLimit, sameAsset, simulateSwap, toMicro, TERRA_SWAP_ROUTER, VENUE_NAME,
   type KnownToken, type PoolView, type Venue,
 } from 'lib/dex'
 
@@ -136,21 +141,37 @@ function perVenue(pools: PoolView[]): PoolView[] {
 const multiHop = (p: PoolView) => p.venue === 'astroport' || (!!TERRA_SWAP_ROUTER && ROUTER_FACTORIES.includes(factoryOf(p)))
 
 /**
- * The two rules every path keeps (see the note at the top): a token in the
- * middle is one this site lists, and a path through several pools is one a
- * router can take. Paths are built that way; this is checked again on the way
- * out, together with the rule on the two dollars.
+ * A pool that can be one of several separate swaps: from a factory this site
+ * lists pools from, both of its tokens listed. Only used when the route's own
+ * two ends are listed too (legsOk).
+ */
+const legsPool = (p: PoolView) => fromListedFactory(p) && p.tokens.every(t => isListed(t.info))
+/** A path that may be signed as separate swaps: every token on it listed, both ends included, and every pool a legsPool. */
+const legsOk = (p: Path) => p.tokens.every(t => isListed(t.info)) && p.pools.every(legsPool)
+
+/**
+ * The rules every path keeps (see the note at the top): a token in the middle
+ * is one this site lists, and a path through several pools is either one a
+ * router can take or one that legsOk lets be signed as separate swaps. Paths
+ * are built that way; this is checked again on the way out, together with the
+ * rule on the two dollars.
  */
 const allowed = (p: Path) => !mixesDollars(p.tokens)
   && p.tokens.slice(1, -1).every(t => isListed(t.info))
-  && (p.pools.length === 1 || p.pools.every(multiHop))
+  && (p.pools.length === 1 || p.pools.every(multiHop) || legsOk(p))
+
+/** The pools a path between these two ends may chain: any a router reaches, and when both ends are listed, any legsPool. */
+const chainable = (from: KnownToken, to: KnownToken) => {
+  const ends = isListed(from.info) && isListed(to.info)
+  return (p: PoolView) => multiHop(p) || (ends && legsPool(p))
+}
 
 function paths(pools: PoolView[], from: KnownToken, to: KnownToken): Path[] {
   const live = usable(pools)
   const out: Path[] = []
   for (const p of perVenue(live.filter(q => has(q, from) && has(q, to)))) out.push({ pools: [p], tokens: [from, to] })
-  // Two pools: through a listed token, and through pools a router can chain.
-  const hops = live.filter(multiHop)
+  // Two pools: through a listed token, and through pools that can be chained (chainable).
+  const hops = live.filter(chainable(from, to))
   const mids = new Map<string, KnownToken>()
   for (const p of hops) {
     if (!has(p, from)) continue
@@ -165,9 +186,10 @@ function paths(pools: PoolView[], from: KnownToken, to: KnownToken): Path[] {
   return out.filter(allowed)
 }
 
-/** Three pools through two listed intermediate tokens, each hop through the deepest pool a router can chain for its pair. */
+/** Three pools through two listed intermediate tokens, each hop through the deepest pool for its pair that can be chained (chainable). */
 function paths3(pools: PoolView[], from: KnownToken, to: KnownToken): Path[] {
-  const deep = usable(pools).filter(p => (p.tvlUsd ?? 0) >= MIN_TVL_3HOP_USD && multiHop(p))
+  const link = chainable(from, to)
+  const deep = usable(pools).filter(p => (p.tvlUsd ?? 0) >= MIN_TVL_3HOP_USD && link(p))
   const deepest = (a: KnownToken, b: KnownToken) => deep.filter(q => has(q, a) && has(q, b)).sort((x, y) => (y.tvlUsd ?? 0) - (x.tvlUsd ?? 0))[0]
   const neighbours = (t: KnownToken) => {
     const m = new Map<string, KnownToken>()
@@ -335,10 +357,15 @@ const shave = (x: bigint, slip: number) => (x * BigInt(Math.round((1 - slip) * 1
 const routerReaches = (q: Quote) => q.legs.every(l => ROUTER_FACTORIES.includes(factoryOf(l.pool)))
 
 /**
- * A route leg by leg: the operations a router is given, and for one pool the
- * swap message itself. The first leg offers the full amount; each later leg
- * offers the least the leg before it can return. Signed as separate swap
- * messages, only a route through one pool is (planRoute).
+ * A route leg by leg: the operations a router is given, or the swap messages
+ * themselves. The first leg offers the full amount; each later leg offers the
+ * least the leg before it can return, so it is always paid out of that return
+ * and never out of tokens already in the wallet. Each leg's price limit comes
+ * from that pool's own simulation, scaled to what the leg offers, so if any
+ * pool pays less than its quote allows, the whole transaction reverts. When
+ * every leg lands on its quote, what a leg returns above the next leg's offer
+ * (about the slippage setting, per intermediate token) stays in the wallet;
+ * planRoute reports it, and avoids it wherever a router can be used.
  */
 export function executionLegs(q: Quote, slip: number): ExecLeg[] {
   const out: ExecLeg[] = []
@@ -360,7 +387,8 @@ export function executionLegs(q: Quote, slip: number): ExecLeg[] {
 export interface RoutePlan {
   /**
    * 'router': one message through Astroport's router. 'multi': one message through Openfields Swap's router,
-   * which reaches both factories. 'legs': one swap message per leg (executionLegs), only ever signed for one leg.
+   * which reaches both factories. 'legs': one swap message per leg (executionLegs); for more than one leg only on a
+   * route of listed tokens and listed pools (legsOk, lib/msgs routeMsgs).
    */
   kind: 'router' | 'multi' | 'legs'
   legs: ExecLeg[]
@@ -376,17 +404,17 @@ export interface RoutePlan {
  * How a quote gets signed.
  *
  * One pool is one swap message, with that pool's price limit as its minimum.
- * Two or more go through a router: Astroport's pools through Astroport's, a
- * route that touches Openfields Swap's pools through Openfields Swap's own
- * (contracts/router). Both deliver the quote and check one minimum on what
- * reaches the wallet.
+ * Two or more go through a router where one can: Astroport's pools through
+ * Astroport's, a route that touches Openfields Swap's pools through Openfields
+ * Swap's own (contracts/router). Both deliver the quote and check one minimum
+ * on what reaches the wallet.
  *
- * Separate swap messages cannot hand one swap's actual return to the next, and
- * nothing in them checks what finally arrives (see the note at the top), so a
- * route through several pools that no router can take is never signed:
- * paths() and paths3() do not offer one, and lib/msgs routeMsgs refuses the
- * 'legs' plan this still returns for such a quote. `leftover` describes what
- * that plan would have left in the wallet.
+ * Separate swap messages cannot hand one swap's actual return to the next, so
+ * a route signed that way leaves a slippage-sized slice of each intermediate
+ * token in the wallet and delivers that much less than the quote (found in the
+ * 2026-09-13 audit), and says so in `leftover`. It is only offered for a route
+ * of listed tokens and listed pools (legsOk), where every leg's own limit is
+ * the protection; lib/msgs routeMsgs refuses any other 'legs' plan.
  */
 export function planRoute(q: Quote, slip: number): RoutePlan {
   const legs = executionLegs(q, slip)
@@ -543,15 +571,15 @@ export interface Loop {
  * one with the best worst case. Returns null unless even the worst case ends
  * ahead of where it started.
  *
- * The loop is a route through several pools, so it keeps the same two rules as
- * any other (paths): the token bought in the drifted pool is a listed one, and
- * every pool on the way is one a router can chain, so it is signed as one
- * router call with its minimum on what comes back.
+ * The loop is a route through several pools, so it keeps the same rules as any
+ * other (allowed): the token bought in the drifted pool is a listed one, and
+ * the whole loop is either one router call or, on listed tokens and pools only,
+ * separate swaps each with its own limit.
  */
 export async function quoteLoop(pools: PoolView[], drifted: PoolView, start: KnownToken, optimalMicro: string, slip: number): Promise<Loop | null> {
   const mid = otherSide(drifted, start)
-  if (!mid || !isListed(mid.info) || !multiHop(drifted)) return null
-  const others = pools.filter(p => p.contract_addr !== drifted.contract_addr && multiHop(p))
+  if (!mid || !isListed(mid.info)) return null
+  const others = pools.filter(p => p.contract_addr !== drifted.contract_addr)
   let best: Loop | null = null
   for (const f of [1, 0.6, 0.3]) {
     const inMicro = ((BigInt(optimalMicro) * BigInt(Math.round(f * 1000))) / BigInt(1000)).toString()
