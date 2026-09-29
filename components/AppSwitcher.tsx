@@ -44,19 +44,22 @@ export const PRODUCTS: { key: ProductKey; word: string; glyph: string; descripti
   { key: 'status', word: 'Status', glyph: '●', description: 'Blocks, validators, bridges and endpoints, live', url: STATUS_URL },
 ]
 
-/** The apps in the order people use them: your wallet, doing things, taking part, looking things up. */
+/** The apps in the order people use them: where to start (Ask, Home), doing things, taking part, looking things up. */
 export const GROUPS: { label: string; keys: ProductKey[] }[] = [
-  { label: 'Your wallet', keys: ['home'] },
-  { label: 'Do', keys: ['ask', 'swap', 'stake', 'nft'] },
+  { label: 'Start', keys: ['ask', 'home'] },
+  { label: 'Do', keys: ['swap', 'stake', 'nft'] },
   { label: 'Take part', keys: ['gov', 'daily'] },
   { label: 'Look up', keys: ['scan', 'data', 'status'] },
 ]
 
+/** Where most people start: Ask does what you say, Home shows what you have. Marked in the switcher. */
+export const PRIMARY: ProductKey[] = ['ask', 'home']
+
 const byKey = new Map(PRODUCTS.map(p => [p.key, p]))
 
 /**
- * Every app in the family on one line at the top of the page, in the order people use them (your wallet,
- * doing things, taking part, looking things up), with a hairline between the groups. The app you are in is
+ * Every app in the family on one line at the top of the page, in the order people use them (where to start:
+ * Ask and Home, then doing things, taking part, looking things up), with a hairline between the groups. The app you are in is
  * marked and is not a link, so the row never moves under you.
  */
 export default function AppSwitcher() {
@@ -70,9 +73,10 @@ export default function AppSwitcher() {
             const p = byKey.get(k)
             if (!p) return null
             const inner = <><span className='tl-eco-glyph' aria-hidden>{p.glyph}</span>{p.word}</>
+            const cls = `tl-eco-item${PRIMARY.includes(k) ? ' is-primary' : ''}`
             return k === CURRENT_PRODUCT
-              ? <span key={k} className='tl-eco-item is-here' aria-current='page'>{inner}</span>
-              : <a key={k} className='tl-eco-item' href={p.url} title={t(p.description)}>{inner}</a>
+              ? <span key={k} className={`${cls} is-here`} aria-current='page'>{inner}</span>
+              : <a key={k} className={cls} href={p.url} title={t(p.description)}>{inner}</a>
           })}
         </Fragment>
       ))}

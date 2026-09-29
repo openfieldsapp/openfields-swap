@@ -139,3 +139,6 @@ input[type='number']::-webkit-inner-spin-button { -webkit-appearance: none; marg
 .tl-shell-head > .tl-eco { margin: calc(0.75 * var(--of-rem)) 0 0; }
 .tl-shell-head > .tl-hero { margin-top: 0; }
 .tl-footer-group a, .tl-footer-here { text-transform: none; letter-spacing: 0; }
+/* Where to start (Ask, Home): a little brighter than the rest of the row, never louder than the app you are in. */
+.tl-eco-item.is-primary { color: var(--tl-text, #f4f1e8); border-color: var(--tl-divider-strong, rgba(255, 216, 61, 0.28)); }
+.tl-eco-item.is-primary .tl-eco-glyph { color: var(--tl-gold, #ffd83d); opacity: 1; }
