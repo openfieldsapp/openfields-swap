@@ -36,6 +36,13 @@ export const INJECTIVE_RPC_ENDPOINTS = ['https://sentry.tm.injective.network', '
 
 /** Injective's minimum is 160000000inj per unit of gas, which is what relayers pay; this sits a little above it. */
 const GAS_PRICE = BigInt(500_000_000)
+/**
+ * The most gas this page will sign for. The estimate comes from a public endpoint, and the fee is that estimate
+ * times GAS_PRICE, so an endpoint answering with an absurd number would otherwise set an absurd fee. The only
+ * transaction signed here is one IBC transfer (with a swap-on-arrival memo at most), a few hundred thousand gas;
+ * this leaves several times that as room.
+ */
+export const MAX_INJECTIVE_GAS = BigInt(1_500_000)
 const ETHSECP256K1_PUBKEY = '/injective.crypto.v1beta1.ethsecp256k1.PubKey'
 const registry = new Registry(defaultRegistryTypes)
 
@@ -97,16 +104,21 @@ export function injectiveTxParts(a: { pubkey: Uint8Array; sequence: bigint; msgs
   return { bodyBytes, authInfoBytes }
 }
 
-/** The gas Injective reports for these messages, with room to spare. Nothing is signed. */
+/** The gas Injective reports for these messages, with room to spare, never above MAX_INJECTIVE_GAS. Nothing is signed. */
 export async function simulateInjective(a: { pubkey: Uint8Array; sequence: bigint; msgs: EncodeObject[]; memo: string }): Promise<bigint> {
   const { bodyBytes, authInfoBytes } = injectiveTxParts({ ...a, gasLimit: BigInt(0) })
   const tx = TxRaw.encode(TxRaw.fromPartial({ bodyBytes, authInfoBytes, signatures: [new Uint8Array()] })).finish()
   const j = await rest<{ gas_info?: { gas_used?: string } }>('/cosmos/tx/v1beta1/simulate', {
     method: 'POST', headers: { 'content-type': 'application/json' }, body: JSON.stringify({ tx_bytes: toBase64(tx) }),
   }, 20_000)
-  const used = BigInt(j?.gas_info?.gas_used ?? '0')
+  const reported = String(j?.gas_info?.gas_used ?? '')
+  const used = /^\d{1,20}$/.test(reported) ? BigInt(reported) : BigInt(0)
   if (used === BigInt(0)) throw new Error('Injective did not return a gas estimate')
-  return (used * BigInt(14)) / BigInt(10)
+  const limit = (used * BigInt(14)) / BigInt(10)
+  if (limit > MAX_INJECTIVE_GAS) {
+    throw new Error(`Injective's node asked for ${limit.toString()} gas for this transfer, more than the ${MAX_INJECTIVE_GAS.toString()} this page signs for. Nothing was signed. Try again in a moment.`)
+  }
+  return limit
 }
 
 /** Sign with the connected wallet and broadcast on Injective. Resolves with the hash once a block has included it, and throws if it failed there. */
