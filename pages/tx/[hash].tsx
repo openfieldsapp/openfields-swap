@@ -50,7 +50,9 @@ function vsQuote(r: Receipt): number | null {
 /**
  * Built on the first visit and kept (incremental static regeneration). A
  * transaction never changes once it is in a block, so a found receipt is kept
- * for good; one the endpoints do not know yet is asked for again in a minute.
+ * for good. One the endpoints do not know (yet) is a 404 (pages/404 says it
+ * may still be indexing), which Next holds in memory for a few seconds and
+ * never writes to disk, so made-up hashes cannot fill it with pages.
  * Rendered per request before 2026-09-27 (Vercel's Hobby plan).
  */
 export const getStaticPaths: GetStaticPaths = async () => ({ paths: [], fallback: 'blocking' })
@@ -61,9 +63,11 @@ export const getStaticProps: GetStaticProps = async ctx => {
   const hash = raw.toUpperCase()
   if (raw !== hash) return { redirect: { destination: `/tx/${hash}`, permanent: true } }
   const receipt = await readReceipt(hash)
+  // Not known to the endpoints: asked again after a few seconds (a swap that just landed may still be indexing).
+  if (!receipt) return { notFound: true, revalidate: 10 }
   const base = SITE_URL
-  const vs = receipt ? vsQuote(receipt) : null
-  const facts = receipt?.quote
+  const vs = vsQuote(receipt)
+  const facts = receipt.quote
     ? [
         `Quoted ${fmtAmount(receipt.quote.amount)} ${receipt.quote.label}`,
         vs != null ? `arrived ${vs >= 0 ? '+' : ''}${vs.toFixed(2)}% against the quote` : '',
@@ -71,13 +75,13 @@ export const getStaticProps: GetStaticProps = async ctx => {
       ].filter(Boolean).join(', ') + '. '
     : ''
   return {
-    revalidate: receipt ? false : 60,
+    revalidate: false,
     props: {
       hash,
       receipt,
       og: {
-        title: receipt ? titleFor(receipt) : 'A transaction on Terra',
-        description: receipt ? `${facts}Block ${receipt.height.toLocaleString('en-US')}, read from the chain.` : 'A transaction on Terra, read from the chain.',
+        title: titleFor(receipt),
+        description: `${facts}Block ${receipt.height.toLocaleString('en-US')}, read from the chain.`,
         image: `${base}/api/og/tx?hash=${hash}`,
         url: `${base}/tx/${hash}`,
         type: 'article',
@@ -86,25 +90,12 @@ export const getStaticProps: GetStaticProps = async ctx => {
   }
 }
 
-export default function TxPage({ hash, receipt }: { hash: string; receipt: Receipt | null }) {
+/** Only ever rendered with a receipt: a transaction the endpoints do not know is a 404 (getStaticProps, pages/404). */
+export default function TxPage({ hash, receipt }: { hash: string; receipt: Receipt }) {
   const [copied, setCopied] = useState(false)
   const terrascope = `https://scan.openfields.app/tx/${hash}`
   const share = () => {
     navigator.clipboard?.writeText(window.location.href).then(() => { setCopied(true); setTimeout(() => setCopied(false), 1800) }).catch(() => {})
-  }
-
-  if (!receipt) {
-    return (
-      <Page width={760}>
-        <h1 style={{ fontSize: 'clamp(1.6rem, 5vw, 2.2rem)', margin: 0 }}><span style={{ fontWeight: 700, color: C.goldLit }}>A transaction</span> <span style={{ fontWeight: 300 }}>on Terra</span></h1>
-        <Panel title='Not found yet'>
-          <p style={{ fontSize: TEXT.xs.size, color: C.textMuted, lineHeight: 1.6, margin: 0 }}>
-            The chain&apos;s public endpoints did not return this transaction. One that just landed can take a few seconds to be indexed; refresh in a moment.{' '}
-            <a href={terrascope} target='_blank' rel='noreferrer' style={{ color: C.goldLit }}>Look it up on Openfields Scan ↗</a>
-          </p>
-        </Panel>
-      </Page>
-    )
   }
 
   const r = receipt

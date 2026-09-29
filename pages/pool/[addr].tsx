@@ -38,6 +38,11 @@ const mono = 'ui-monospace, SFMono-Regular, Menlo, monospace'
  * page is client-rendered, and the server only names the pool for its social
  * card. Rendered per request before 2026-09-27, which cost CPU on every visit
  * that missed the CDN (Vercel's Hobby plan).
+ *
+ * Only an address that answers as a pair is kept. Anything else, or a chain
+ * that did not answer in time, is a 404 (pages/404), which Next holds in
+ * memory for a minute and never writes to disk, so any number of made-up
+ * addresses cannot fill it with pages.
  */
 export const getStaticPaths: GetStaticPaths = async () => ({ paths: [], fallback: 'blocking' })
 
@@ -59,10 +64,12 @@ export const getStaticProps: GetStaticProps = async ctx => {
       const dollars = [t0, t1].map(t => assetId(t.info))
       if (listed && !(dollars.includes(NOBLE_USDC) && dollars.includes(USDC_INJ_DENOM))) share = `?from=${enc(t0.key)}&to=${enc(t1.key)}`
     }
-  } catch { /* the page reads the pool again in the browser */ }
+  } catch { /* not a pair, or no answer: a 404 below */ }
+  // Not a pair, or the chain did not answer in time: asked again in a minute, and nothing is written.
+  if (!label) return { notFound: true, revalidate: 60 }
   return {
-    // A day once the pool's name is known (a pair never changes its tokens); a minute if the chain did not answer in time.
-    revalidate: label ? 86_400 : 60,
+    // A day once the pool's name is known: a pair never changes its tokens.
+    revalidate: 86_400,
     props: {
       addr,
       label,
