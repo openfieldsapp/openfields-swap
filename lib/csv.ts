@@ -35,7 +35,13 @@ export function plainAmount(micro: string, decimals: number): string {
   return `${padded.slice(0, -decimals)}${frac ? `.${frac}` : ''}`
 }
 
-const cell = (v: string) => (/[",\n]/.test(v) ? `"${v.replace(/"/g, '""')}"` : v)
+/**
+ * A spreadsheet reads a cell that starts with = + - or @ as a formula. A token's symbol comes from its own
+ * contract, so an unlisted cw20 can name itself "=HYPERLINK(…)"; such a cell gets a leading ' and is read as
+ * text. Amounts here are never negative, so no number is touched.
+ */
+const inert = (v: string) => (/^[\t\r]/.test(v) || /^[=+\-@]/.test(v.trimStart()) ? `'${v}` : v)
+const cell = (raw: string) => { const v = inert(raw); return /[",\n\r]/.test(v) ? `"${v.replace(/"/g, '""')}"` : v }
 const when = (iso: string) => { const s = new Date(iso).toISOString(); return `${s.slice(0, 10)} ${s.slice(11, 19)} UTC` }
 
 export function historyCsv(rows: HistoryRow[], tokenOf: (id: string) => CsvToken): string {
