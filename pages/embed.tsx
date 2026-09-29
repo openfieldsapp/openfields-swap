@@ -112,7 +112,7 @@ function Embed() {
 
           <a href={swapUrl} target='_blank' rel='noopener noreferrer'
             style={{ display: 'block', textAlign: 'center', padding: '12px 14px', borderRadius: 12, background: C.gold, color: C.void, fontWeight: 700, textDecoration: 'none', fontSize: 15 }}>
-            Swap on Openfields Swap ↗
+            Open in Openfields Swap ↗
           </a>
           <div style={{ fontSize: 10.5, lineHeight: 1.5, color: C.whisper, textAlign: 'center' }}>
             No interface fee · a quote, not an offer: prices move with every trade
