@@ -17,6 +17,7 @@
 
 import { NextResponse } from 'next/server'
 import type { NextRequest } from 'next/server'
+import { SITE_URL } from 'lib/siteUrl'
 
 export const BLOCKED = new Set(
   (process.env.BLOCKED_COUNTRIES ?? 'US,CA,GB').split(',').map(s => s.trim().toUpperCase()).filter(Boolean),
@@ -42,8 +43,9 @@ const esc = (v: string) => v.replace(/&/g, '&amp;').replace(/"/g, '&quot;').repl
 function previewCard(request: NextRequest): Response | null {
   if (request.nextUrl.pathname !== '/' || !PREVIEW_BOTS.test(request.headers.get('user-agent') ?? '')) return null
   const q = request.nextUrl.searchParams
-  // Behind the host proxy the app's own URL can read as http on the internal hop; the site is always https.
-  const origin = `https://${request.headers.get('x-forwarded-host') ?? request.nextUrl.host}`
+  // The site's own address, never a request header: a forwarded host is whatever the caller sent, and a card
+  // built from it would point people at someone else's domain.
+  const origin = SITE_URL
   const who = q.get('who') ?? ''
   const from = q.get('from') ?? '', to = q.get('to') ?? ''
   const amount = AMOUNT.test(q.get('amount') ?? '') && Number(q.get('amount')) > 0 ? q.get('amount')! : ''
@@ -64,7 +66,9 @@ function previewCard(request: NextRequest): Response | null {
   ].map(([k, v]) => `<meta property="${k}" content="${esc(v)}">`).join('')
     + `<meta name="twitter:card" content="summary_large_image"><meta name="twitter:title" content="${esc(title)}"><meta name="twitter:description" content="${esc(description)}"><meta name="twitter:image" content="${esc(image)}">`
   const html = `<!doctype html><html lang="en"><head><meta charset="utf-8"><title>${esc(title)}</title><meta name="description" content="${esc(description)}">${meta}<link rel="canonical" href="${esc(url)}"></head><body><a href="${esc(url)}">${esc(title)}</a></body></html>`
-  return new Response(html, { headers: { 'content-type': 'text/html; charset=utf-8', 'cache-control': 'public, max-age=3600' } })
+  // Never cached: the card answers a preview bot at the same address people open, so a cached copy would be
+  // served to people too, as a page with one link instead of the swap.
+  return new Response(html, { headers: { 'content-type': 'text/html; charset=utf-8', 'cache-control': 'private, no-store' } })
 }
 
 export function middleware(request: NextRequest) {
