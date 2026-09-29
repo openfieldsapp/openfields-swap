@@ -55,7 +55,7 @@ export default async function handler(_req: NextApiRequest, res: NextApiResponse
         if (!(p > 0) || !((a.dir === 'above' && p >= a.usd) || (a.dir === 'below' && p <= a.usd))) continue
         const payload = JSON.stringify({
           title: `${a.label} is ${a.dir} $${fmtUsdPrice(a.usd)}`,
-          body: `$${fmtUsdPrice(p)} at the market reference. Terra Swap`,
+          body: `$${fmtUsdPrice(p)} at the market reference. Openfields Swap`,
           url: `/token/${encodeURIComponent(a.key)}`,
           tag: a.id,
         })

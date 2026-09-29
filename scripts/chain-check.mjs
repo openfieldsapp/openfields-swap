@@ -16,7 +16,7 @@
  *
  * .github/workflows/uptime.yml runs it every ten minutes on GitHub's machines,
  * beside the uptime check, so the log is measured from outside the servers it
- * describes. Terra Status reads it back for its History section.
+ * describes. Openfields Status reads it back for its History section.
  *
  * usage: node scripts/chain-check.mjs <dir>
  */

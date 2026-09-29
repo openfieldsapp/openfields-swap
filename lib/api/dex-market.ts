@@ -21,7 +21,7 @@ import { keepMarket, marketScan, stale, type MarketScan } from 'lib/sharedCache'
 export type MarketResponse = MarketScan
 
 export default async function handler(_req: NextApiRequest, res: NextApiResponse<MarketResponse>) {
-  // Readable from any site, like /api/quote: Terra Home prices a wallet with it, in the browser.
+  // Readable from any site, like /api/quote: Openfields Home prices a wallet with it, in the browser.
   res.setHeader('Access-Control-Allow-Origin', '*')
   res.setHeader('Cache-Control', 's-maxage=300, stale-while-revalidate=1800')
   const body = await marketScan().catch(() => ({ px: {}, at: 0 }))

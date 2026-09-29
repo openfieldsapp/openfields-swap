@@ -1,7 +1,7 @@
 #!/usr/bin/env node
 /**
  * One uptime check of the maintained sites, appended as JSON lines to
- * <dir>/uptime/YYYY-MM.jsonl. Terra Status shows them (status.openfields.app),
+ * <dir>/uptime/YYYY-MM.jsonl. Openfields Status shows them (status.openfields.app),
  * and so does the swap's own /stats.
  *
  * .github/workflows/uptime.yml runs it every 10 minutes on GitHub's machines,
@@ -38,7 +38,7 @@ const TARGETS = [
     ],
   },
   {
-    // Terra Gov's own reads are heavy enough that asking for one every ten minutes would be rude to the chain; the page is the check.
+    // Openfields Gov's own reads are heavy enough that asking for one every ten minutes would be rude to the chain; the page is the check.
     site: 'gov.openfields.app',
     checks: [
       { url: 'https://gov.openfields.app/', expect: (r) => r.status === 200 },
@@ -97,7 +97,7 @@ const TARGETS = [
     ],
   },
   {
-    // The page is static; /api/h/health answers from Terra Home's reader on our own server, through the site's rewrite, so it checks the whole way.
+    // The page is static; /api/h/health answers from Openfields Home's reader on our own server, through the site's rewrite, so it checks the whole way.
     site: 'home.openfields.app',
     checks: [
       { url: 'https://home.openfields.app/', expect: (r) => r.status === 200 },

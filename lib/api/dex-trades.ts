@@ -3,7 +3,7 @@
  * GET /api/dex-trades?pair=<addr>&address=<a>  one wallet inside that pool
  * GET /api/dex-trades?address=<a>              one wallet across every pool
  *
- * Terra Swap: reads the ledger only; /api/dex-leaderboard scans the chain into
+ * Openfields Swap: reads the ledger only; /api/dex-leaderboard scans the chain into
  * it once a minute. Astroport mode has no board, so this route scans the pools
  * it is asked about itself, at most once a minute per pool.
  */
@@ -46,7 +46,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse<
   if (!isDexLive()) return res.status(200).json(empty(pair, address))
 
   const pairs = listedPairs(await queryPairs())
-  // Terra Swap's ledger is kept fresh by the board's scan. Astroport mode has
+  // Openfields Swap's ledger is kept fresh by the board's scan. Astroport mode has
   // no board, so read the chain here: the one pool asked about, or every listed
   // pool for a wallet view. At most once a minute per pool per instance.
   if (IS_ASTRO && pairs.length > 0) {

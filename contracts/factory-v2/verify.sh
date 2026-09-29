@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-# Read-only check of Terra Swap's factory v2 and router v2 from a public LCD. No keys.
+# Read-only check of Openfields Swap's factory v2 and router v2 from a public LCD. No keys.
 #
 #   ./verify.sh <factory-v2> <router-v2>
 set -euo pipefail
@@ -39,7 +39,7 @@ echo "Router v2 $ROUTER2"
 RI=$(info "$ROUTER2")
 [[ "$(sha_of_code "$(jq -r .code_id <<<"$RI")")" == "$ROUTER_SHA" ]] && ok "runs contracts/router" || bad "unexpected code"
 [[ -z "$(jq -r '.admin // ""' <<<"$RI")" ]] && ok "no admin" || bad "has an admin"
-[[ "$(smart "$ROUTER2" '{"config":{}}' | jq -c .factories)" == "[\"$V1_FACTORY\",\"$FACTORY2\",\"$ASTRO_FACTORY\"]" ]] && ok "trusts Terra Swap v1, v2 and Astroport" || bad "unexpected factories"
+[[ "$(smart "$ROUTER2" '{"config":{}}' | jq -c .factories)" == "[\"$V1_FACTORY\",\"$FACTORY2\",\"$ASTRO_FACTORY\"]" ]] && ok "trusts Openfields Swap v1, v2 and Astroport" || bad "unexpected factories"
 
 echo
 [[ $fail == 0 ]] && echo "RESULT: renounced, fee-free" || { echo "RESULT: something is off"; exit 1; }

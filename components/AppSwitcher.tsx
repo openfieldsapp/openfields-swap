@@ -23,7 +23,7 @@ export const DATA_URL = trim(process.env.NEXT_PUBLIC_DATA_URL || 'https://data.o
 export const SCAN_URL = trim(process.env.NEXT_PUBLIC_SCAN_URL || 'https://scan.openfields.app')
 export const DAILY_URL = trim(process.env.NEXT_PUBLIC_DAILY_URL || 'https://daily.openfields.app')
 export const ASK_URL = trim(process.env.NEXT_PUBLIC_ASK_URL || 'https://ask.openfields.app')
-/** Terra Home: one wallet on one page (not the openfields.app hub, which is HOME_URL) */
+/** Openfields Home: one wallet on one page (not the openfields.app hub, which is HOME_URL) */
 export const TERRA_HOME_URL = trim(process.env.NEXT_PUBLIC_TERRA_HOME_URL || 'https://home.openfields.app')
 export const HOME_URL = trim(process.env.NEXT_PUBLIC_HOME_URL || 'https://openfields.app')
 
@@ -93,8 +93,8 @@ export function FooterApps() {
             const p = byKey.get(k)
             if (!p) return null
             return k === CURRENT_PRODUCT
-              ? <span key={k} className='tl-footer-here'>Terra {p.word}</span>
-              : <a key={k} href={p.url}>Terra {p.word}</a>
+              ? <span key={k} className='tl-footer-here'>Openfields {p.word}</span>
+              : <a key={k} href={p.url}>Openfields {p.word}</a>
           })}
         </div>
       ))}

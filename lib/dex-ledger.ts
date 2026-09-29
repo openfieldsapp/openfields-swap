@@ -1,5 +1,5 @@
 /**
- * Terra Swap ledger + leaderboard.
+ * Openfields Swap ledger + leaderboard.
  *
  * Every swap, pool opening and liquidity add on the factory, pulled
  * from chain tx events and kept in a durable KV ledger keyed by txhash so it

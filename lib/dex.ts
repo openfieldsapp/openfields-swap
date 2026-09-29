@@ -16,7 +16,7 @@ export const DEX_FACTORY = process.env.NEXT_PUBLIC_DEX_FACTORY || ''
 export const isDexLive = () => DEX_FACTORY.length > 0
 
 /**
- * Which factory this build fronts. The same code runs two sites: Terra Swap on
+ * Which factory this build fronts. The same code runs two sites: Openfields Swap on
  * its own renounced factory, and a plain interface to Astroport's factory so
  * the chain's main liquidity stays reachable from an open, self-hostable page.
  * Astroport mode drops everything that only makes sense on our own pools (the
@@ -25,11 +25,11 @@ export const isDexLive = () => DEX_FACTORY.length > 0
 export const DEX_MODE: 'terraswap' | 'astroport' = process.env.NEXT_PUBLIC_DEX_MODE === 'astroport' ? 'astroport' : 'terraswap'
 export const IS_ASTRO = DEX_MODE === 'astroport'
 
-/** Terra Swap's renounced factory, and Astroport's. Each site routes through both. */
+/** Openfields Swap's renounced factory, and Astroport's. Each site routes through both. */
 export const TERRA_SWAP_FACTORY = 'terra1gx7n4yrfc2req7tdt9vpj66kr0cssnqkjsr80xmfacjpdlw6mzlqvlp3xd'
 export const ASTRO_FACTORY = 'terra14x9fr055x5hvr48hzy2t4q7kvjvfttsvxusa4xsdcy702mnzsvuqprer8r'
 /**
- * Terra Swap's second factory (contracts/factory-v2): concentrated and stable
+ * Openfields Swap's second factory (contracts/factory-v2): concentrated and stable
  * pools on Astroport's code, no fee address, its ownership in its own owner
  * sink, no admin. The first factory's ownership is already renounced, so no
  * pool type could be added there. Empty until it is on chain, and nothing of
@@ -51,10 +51,10 @@ export type Venue = 'terraswap' | 'astroport' | 'skeleton'
 export const HOME_VENUE: Venue = IS_ASTRO ? 'astroport' : 'terraswap'
 export const AWAY_VENUE: Venue = IS_ASTRO ? 'terraswap' : 'astroport'
 export const VENUE_FACTORY: Record<Venue, string> = { terraswap: TERRA_SWAP_FACTORY, astroport: ASTRO_FACTORY, skeleton: SKELETON_FACTORY }
-export const VENUE_NAME: Record<Venue, string> = { terraswap: 'Terra Swap', astroport: 'Astroport', skeleton: 'Skeleton Swap' }
-/** The factories Terra Swap's router trusts (its config on chain, checked 2026-09-15). A route with a pool anywhere else cannot go through it. */
+export const VENUE_NAME: Record<Venue, string> = { terraswap: 'Openfields Swap', astroport: 'Astroport', skeleton: 'Skeleton Swap' }
+/** The factories Openfields Swap's router trusts (its config on chain, checked 2026-09-15). A route with a pool anywhere else cannot go through it. */
 export const ROUTER_VENUES: readonly Venue[] = ['terraswap', 'astroport']
-/** Where a venue's LP gets staked for rewards ("Astroport Incentives"). Terra Swap's factory has none. */
+/** Where a venue's LP gets staked for rewards ("Astroport Incentives"). Openfields Swap's factory has none. */
 export const VENUE_INCENTIVES: Record<Venue, string | null> = {
   terraswap: null,
   astroport: 'terra1eywh4av8sln6r45pxq45ltj798htfy0cfcf7fy3pxc2gcv6uc07se4ch9x',
@@ -81,7 +81,7 @@ export const ASTRO_CONVERTER = 'terra1jyu4nct8ake3k8y8g42n8dvc9umtl5cktmtcy6rfdy
  */
 export const ASTRO_ROUTER = 'terra1j8hayvehh3yy02c2vtw5fdhz9f4drhtee8p5n5rguvg3nyd6m83qd2y90a'
 /**
- * Terra Swap's router (contracts/router): one transaction through pools on
+ * Openfields Swap's router (contracts/router): one transaction through pools on
  * both factories, each swap's whole return into the next, one minimum on what
  * arrives. No owner, no admin, no fee. On chain since 2026-09-14 as code 4028;
  * contracts/router/verify.sh checks it against the build. Set the variable to
@@ -90,7 +90,7 @@ export const ASTRO_ROUTER = 'terra1j8hayvehh3yy02c2vtw5fdhz9f4drhtee8p5n5rguvg3n
 export const TERRA_SWAP_ROUTER = process.env.NEXT_PUBLIC_TERRA_SWAP_ROUTER ?? 'terra1u2uh0jsl2u76j52e6egf09zslsns27qsmzxxzcsxdxymeax8883s9prc4l'
 /** Router v1 trusts the first factory and Astroport's. Router v2 (contracts/factory-v2) is the same code trusting factory v2 as well. */
 export const TERRA_SWAP_ROUTER_V1 = 'terra1u2uh0jsl2u76j52e6egf09zslsns27qsmzxxzcsxdxymeax8883s9prc4l'
-/** Every router Terra Swap has run, for reading history: swaps signed through router v1 stay recognisable after the switch to v2. */
+/** Every router Openfields Swap has run, for reading history: swaps signed through router v1 stay recognisable after the switch to v2. */
 export const TERRA_SWAP_ROUTERS: readonly string[] = Array.from(new Set([TERRA_SWAP_ROUTER, TERRA_SWAP_ROUTER_V1].filter(Boolean)))
 /**
  * The factories the configured router trusts, in its own order. A router
@@ -373,7 +373,7 @@ interface PartsSimulation {
  * Nothing downstream may assume this list is complete unless it is, so only a
  * list read to the end is cached. Astroport's ~850 pairs barely change and
  * keep ten minutes; the other site's factory, read for routing, keeps one;
- * Terra Swap's own factory is never cached, so a pool someone just opened
+ * Openfields Swap's own factory is never cached, so a pool someone just opened
  * shows up at once.
  */
 const pairsCache = new Map<string, { at: number; pairs: PairInfo[] }>()
@@ -505,7 +505,7 @@ export interface PoolView extends PairInfo {
   pairType: string
   /** which site's factory the pool belongs to */
   venue: Venue
-  /** the factory that made it, when that is not its venue's main one: Terra Swap's factory v2 */
+  /** the factory that made it, when that is not its venue's main one: Openfields Swap's factory v2 */
   factory?: string
   /**
    * token1 per token0 by reserves: the ratio a balanced deposit follows. On
@@ -522,7 +522,7 @@ export interface PoolView extends PairInfo {
   sideUsd?: [number, number]
   /** Skeleton Swap's pools: each swap's fee in basis points, split as the pool reports it (to LPs, to White Whale's fee collector, burned). */
   fees?: { lpBps: number; protocolBps: number; burnBps: number }
-  /** Skeleton Swap's pools: switches the pool's owner can turn off, each on its own. Absent on Terra Swap's and Astroport's pools. */
+  /** Skeleton Swap's pools: switches the pool's owner can turn off, each on its own. Absent on Openfields Swap's and Astroport's pools. */
   swapsEnabled?: boolean
   depositsEnabled?: boolean
   withdrawalsEnabled?: boolean

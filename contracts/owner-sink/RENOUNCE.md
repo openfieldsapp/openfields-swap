@@ -1,4 +1,4 @@
-# Renouncing control of the Terra Swap factory and pools
+# Renouncing control of the Openfields Swap factory and pools
 
 State on chain 2026-09-09 (checked via LCD):
 

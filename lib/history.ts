@@ -2,7 +2,7 @@
  * A wallet's own history on Terra, read from its transactions: swaps, zaps,
  * liquidity, staking at Astroport's incentives contract and at liquid staking
  * hubs, and IBC transfers both ways, including tokens that arrived already
- * swapped by Terra Swap's router.
+ * swapped by Openfields Swap's router.
  *
  * What moved is read from the chain's own bookkeeping rather than from what a
  * message asked for: bank transfer events for native tokens, and cw20
@@ -44,7 +44,7 @@ export interface HistoryRow {
   memo: string
   /** a swap signed on this site: what it was quoted, in display units, and what the routing added over two pools */
   quote?: { amount: number; label: string; gainPct: number | null }
-  /** the least Terra Swap's router would let arrive */
+  /** the least Openfields Swap's router would let arrive */
   minimum?: Moved
   /** the other chain of an IBC transfer, when it is one the Transfer tab knows */
   chain?: string
@@ -164,7 +164,7 @@ async function searchPage(query: string, limit: number, page: number): Promise<F
   } catch { return null }
 }
 
-/** What a wallet signed, what was transferred to it, and what Terra Swap's router paid it. */
+/** What a wallet signed, what was transferred to it, and what Openfields Swap's router paid it. */
 const walletQueries = (address: string) => [`message.sender='${address}'`, `transfer.recipient='${address}'`, `wasm.receiver='${address}'`]
 
 /** The transactions this wallet signed, and the ones that brought it tokens over IBC, as rows, newest first. */
@@ -184,7 +184,7 @@ function rowsFor(found: Map<string, Found>, address: string): HistoryRow[] {
 /**
  * The newest transactions this wallet signed, plus the ones that brought it
  * tokens over IBC, relayed by someone else: plain transfers, and deposits
- * Terra Swap's router swapped on arrival and paid to it.
+ * Openfields Swap's router swapped on arrival and paid to it.
  */
 export async function readHistory(address: string, max = 60): Promise<HistoryRow[]> {
   const [signed, transfers, routed] = walletQueries(address)

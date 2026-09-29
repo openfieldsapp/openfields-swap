@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-# Renounce control of the Terra Swap factory and its pools. One run, in order,
+# Renounce control of the Openfields Swap factory and its pools. One run, in order,
 # with an on-chain check after every step. Irreversible by design.
 #
 #   ./renounce.sh <owner-key-name>

@@ -1,8 +1,8 @@
 #!/usr/bin/env bash
-# Open Terra Swap's second factory for concentrated and stable pools, hand its
+# Open Openfields Swap's second factory for concentrated and stable pools, hand its
 # ownership to a contract that can never use it, and put a router in front of
 # both factories. Nothing new is stored: every contract runs code already on
-# chain (Astroport's factory and pair code, the owner sink, the Terra Swap
+# chain (Astroport's factory and pair code, the owner sink, the Openfields Swap
 # router), and the checksums are checked before anything is signed.
 #
 #   ./deploy.sh <key-name>
@@ -139,7 +139,7 @@ echo "  factory v2 owner is the sink. Ownership is dead."
 
 # ─── 4. router ─────────────────────────────────────────────────────────
 if [[ -z "${ROUTER2:-}" ]]; then
-  say "4. Instantiate router v2 over both Terra Swap factories and Astroport's (no admin)"
+  say "4. Instantiate router v2 over both Openfields Swap factories and Astroport's (no admin)"
   J=$(send wasm instantiate "$ROUTER_CODE" "{\"factories\":[\"$V1_FACTORY\",\"$FACTORY2\",\"$ASTRO_FACTORY\"]}" --label "Terra Swap router v2" --no-admin)
   ROUTER2=$(attr "$J" instantiate _contract_address)
   [[ "$ROUTER2" =~ ^terra1 ]] || die "could not read the router address"

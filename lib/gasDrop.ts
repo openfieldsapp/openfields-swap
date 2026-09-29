@@ -6,7 +6,7 @@
  * liquidity or send anything until they get some elsewhere. So when the Terra
  * wallet holds almost no LUNA, a transfer in sets aside about one LUNA's worth
  * of the amount and sends it as a second transfer in the same signature,
- * swapped into LUNA on arrival by Terra Swap's router. At Terra's gas price one
+ * swapped into LUNA on arrival by Openfields Swap's router. At Terra's gas price one
  * LUNA pays for many ordinary transactions. If that small swap cannot deliver
  * its minimum, its own transfer fails and the source chain returns that part;
  * the main transfer is not affected.
@@ -36,7 +36,7 @@ export function gasDropMicro(a: { from: KnownToken; amountMicro: string | null; 
   return micro
 }
 
-/** The drop as one call to Terra Swap's router, through up to two pools like any swap on arrival. */
+/** The drop as one call to Openfields Swap's router, through up to two pools like any swap on arrival. */
 export async function planGasDrop(pools: PoolView[], from: KnownToken, micro: string, slip: number): Promise<RoutePlan | null> {
   const q = await quoteBest(pools, from, LUNA, micro, HOME_VENUE, { slip, threeHop: false })
   return q.best ? routerPlan(q.best, slip) : null

@@ -8,10 +8,10 @@
  *
  * They go to Astroport's own contracts (pairs on either factory, the
  * factories, the incentives contract, the router, the first ASTRO staking and
- * the ASTRO converter), to Terra Swap's router in contracts/router, to
+ * the ASTRO converter), to Openfields Swap's router in contracts/router, to
  * Skeleton Swap's pairs (White Whale's pool contracts, which take the same swap
  * message), to the liquid staking hubs in lib/lst, and over IBC between Noble
- * and Terra, where a deposit can carry a call to Terra Swap's router that swaps
+ * and Terra, where a deposit can carry a call to Openfields Swap's router that swaps
  * it on arrival. None sends anything anywhere else, and none takes a fee.
  */
 
@@ -98,18 +98,18 @@ export function routerMsg(sender: string, hops: { offer: AssetInfo; ask: AssetIn
   return exec(sender, first.token.contract_addr, { send: { contract: router, amount, msg: b64(inner) } })
 }
 
-/** Legs as operations for Terra Swap's router, each naming the factory that owns its pair. */
+/** Legs as operations for Openfields Swap's router, each naming the factory that owns its pair. */
 const routerOperations = (legs: ExecLeg[]) => legs.map(l => ({ factory: l.factory ?? VENUE_FACTORY[l.venue], offer_asset_info: l.offerInfo, ask_asset_info: l.askInfo }))
 
 /**
- * A route through Terra Swap's router (contracts/router), which reaches pairs
+ * A route through Openfields Swap's router (contracts/router), which reaches pairs
  * on both factories. Each operation names the factory that owns its pair; the
  * router looks the pair up there, swaps everything it holds of the offered
  * token, and checks `minimumReceive` once, on what reaches the wallet. No
  * intermediate token is left in the wallet or in the router.
  */
 export function terraSwapRouterMsg(sender: string, legs: ExecLeg[], amount: string, minimumReceive: string, router = TERRA_SWAP_ROUTER): EncodeObject {
-  if (!router) throw new Error("Terra Swap's router is not on chain yet")
+  if (!router) throw new Error("Openfields Swap's router is not on chain yet")
   const inner = {
     execute_swap_operations: {
       operations: routerOperations(legs),
@@ -255,7 +255,7 @@ export const stakeMsg = (a: { incentives: string; lpToken: string; amount: strin
 export interface CreatePairArgs {
   assetInfos: [AssetInfo, AssetInfo]
   sender: string
-  /** Terra Swap's first factory has xyk; its factory v2 concentrated and stable; Astroport's opens all three. */
+  /** Openfields Swap's first factory has xyk; its factory v2 concentrated and stable; Astroport's opens all three. */
   pairType?: 'xyk' | 'concentrated' | 'stable'
   /** Concentrated pools need their curve settings and a starting price; stable pools their amp. */
   initParams?: object
@@ -351,14 +351,14 @@ export interface ArrivalSwapArgs {
  * runs IBC hooks: a transfer whose receiver is a contract, and whose memo is
  * {"wasm":{"contract","msg"}} naming that same contract, is paid to the
  * contract and runs the message as the transfer lands. Here the contract is
- * Terra Swap's router, the message is the route with its minimum, and `to` is
+ * Openfields Swap's router, the message is the route with its minimum, and `to` is
  * the wallet's own Terra address. If the swap would deliver less than the
  * minimum, or anything else in it fails, the transfer is acknowledged as
  * failed and the source chain returns the tokens to the sender.
  */
 export function arrivalSwapMsg(a: ArrivalSwapArgs): EncodeObject {
   const router = a.router ?? TERRA_SWAP_ROUTER
-  if (!router) throw new Error("Terra Swap's router is not on chain")
+  if (!router) throw new Error("Openfields Swap's router is not on chain")
   if (!/^terra1[02-9ac-hj-np-z]{38,58}$/.test(a.terraAddress)) throw new Error('That is not a Terra address')
   const legs = a.plan.legs
   const first = legs[0]?.offerInfo

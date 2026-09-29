@@ -1,5 +1,5 @@
 /**
- * GET /api/og/swap[?who=terra1…] — the social card for Terra Swap.
+ * GET /api/og/swap[?who=terra1…] — the social card for Openfields Swap.
  *
  * Rendered on the edge with next/og so it can carry live numbers: liquidity,
  * pools, names on the board, and the day of the experiment. With `?who=` it
@@ -113,7 +113,7 @@ export default async function handler(req: NextRequest) {
         {/* top: kicker + wordmark */}
         <div style={{ display: 'flex', flexDirection: 'column' }}>
           <div style={{ display: 'flex', fontSize: 22, letterSpacing: 8, color: BLUE, textTransform: 'uppercase' }}>
-            {personal ? 'WRITTEN DOWN · TERRA SWAP' : share ? 'A SWAP ON TERRA · NO INTERFACE FEE' : 'EXPERIMENTAL · DEX ON TERRA'}
+            {personal ? 'WRITTEN DOWN · OPENFIELDS SWAP' : share ? 'A SWAP ON TERRA · NO INTERFACE FEE' : 'EXPERIMENTAL · DEX ON TERRA'}
           </div>
           <div style={{ display: 'flex', alignItems: 'flex-end', marginTop: 18 }}>
             {/* The Openfields mark, cap-height with the wordmark. */}
@@ -123,7 +123,7 @@ export default async function handler(req: NextRequest) {
               backgroundImage: 'linear-gradient(180deg, #fff8dc 0%, #ffd83d 55%, #caa022 100%)',
               backgroundClip: 'text', color: 'transparent',
             }}>
-              <span style={{ fontWeight: 700 }}>Terra</span>
+              <span style={{ fontWeight: 700 }}>Openfields</span>
               <span style={{ fontWeight: 300, marginLeft: 26 }}>Swap</span>
             </div>
           </div>
@@ -139,7 +139,7 @@ export default async function handler(req: NextRequest) {
               <span>{share.to.label}</span>
             </div>
             <div style={{ display: 'flex', fontSize: 28, color: MUTED, marginTop: 12 }}>
-              {shareOut ? `about ${shareOut} ${share.to.label} at today's reference price` : "Priced across Terra Swap's and Astroport's pools when it opens"}
+              {shareOut ? `about ${shareOut} ${share.to.label} at today's reference price` : "Priced across Openfields Swap's and Astroport's pools when it opens"}
             </div>
           </div>
         ) : me ? (

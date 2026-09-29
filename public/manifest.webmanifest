@@ -1,7 +1,7 @@
 {
-  "name": "Terra Swap",
-  "short_name": "Terra Swap",
-  "description": "A decentralized exchange on Terra: the best route over Terra Swap's and Astroport's pools, with no interface fee.",
+  "name": "Openfields Swap",
+  "short_name": "Swap",
+  "description": "A decentralized exchange on Terra: the best route over Openfields Swap's and Astroport's pools, with no interface fee.",
   "start_url": "/",
   "scope": "/",
   "display": "standalone",

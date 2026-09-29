@@ -1,5 +1,5 @@
 /**
- * Terra Predict — client + server helpers for the admin-less prediction
+ * Openfields Predict — client + server helpers for the admin-less prediction
  * market contract (Astral/contracts/predict).
  *
  * Everything degrades to "not live yet" until NEXT_PUBLIC_PREDICT_CONTRACT is

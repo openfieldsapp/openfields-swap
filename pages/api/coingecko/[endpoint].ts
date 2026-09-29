@@ -1,5 +1,5 @@
 /**
- * Terra Swap's own pools in the shape of CoinGecko's integration spec for a
+ * Openfields Swap's own pools in the shape of CoinGecko's integration spec for a
  * DEX (lib/markets):
  *
  *   /api/coingecko/pairs

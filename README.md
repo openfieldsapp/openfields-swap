@@ -1,7 +1,7 @@
-# Terra Swap
+# Openfields Swap
 
 An open interface for permissionless liquidity pools on Terra (phoenix-1),
-plus **Terra Predict**, an admin-less prediction market. Experimental.
+plus **Openfields Predict**, an admin-less prediction market. Experimental.
 
 Anyone can run this. The pools are on chain and belong to no one; this
 repository is one way to look at them.
@@ -25,7 +25,7 @@ repository is one way to look at them.
   contract info on a public LCD.
 - **No interface fee.** The pool fee (0.3%) goes to liquidity providers.
 - **Non-custodial.** The wallet signs, the chain executes. Nothing is held.
-- **Terra Predict** (`/predict`) is a parimutuel YES/NO market settled by a
+- **Openfields Predict** (`/predict`) is a parimutuel YES/NO market settled by a
   time-weighted price read from an Astroport pair, by whoever shows up to read
   it. Contract source, tests and reproducible build: `contracts/predict`.
   The interface shows "not live yet" until a contract address is configured.
@@ -55,7 +55,7 @@ Everything else is optional: see `.env.example`.
 | variable | what |
 |---|---|
 | `NEXT_PUBLIC_DEX_FACTORY` | factory address (required) |
-| `NEXT_PUBLIC_PREDICT_CONTRACT` | Terra Predict contract; empty shows "not live yet" |
+| `NEXT_PUBLIC_PREDICT_CONTRACT` | Openfields Predict contract; empty shows "not live yet" |
 | `NEXT_PUBLIC_LCD`, `NEXT_PUBLIC_RPC` | chain endpoints, any public Terra node |
 | `NEXT_PUBLIC_WALLETCONNECT_PROJECT_ID` | needed only for mobile wallets |
 | `NEXT_PUBLIC_BOOST_CW721` | cw721 whose holders get 1.5× points; empty to disable |
@@ -74,7 +74,7 @@ are permissionless regardless.
 
 ```
 pages/index.tsx            the swap: swap · pools · open a pool · board
-pages/predict.tsx          Terra Predict
+pages/predict.tsx          Openfields Predict
 pages/api/dex.ts           pools, TVL, chain head
 pages/api/dex-market.ts    reference prices from Astroport's deepest pools
 pages/api/dex-prices.ts    trade series per pair

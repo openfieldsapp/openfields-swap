@@ -1,5 +1,5 @@
 /**
- * Price alerts that reach a phone or a desktop with no Terra Swap page open.
+ * Price alerts that reach a phone or a desktop with no Openfields Swap page open.
  *
  * Off until someone turns it on, per browser. Turning it on registers the
  * service worker (public/sw.js), asks the browser for a push subscription, and
@@ -57,7 +57,7 @@ async function currentSubscription(): Promise<PushSubscription | null> {
 
 export async function enablePush(): Promise<{ ok: true } | { ok: false; why: string }> {
   if (!pushSupported()) return { ok: false, why: 'This browser cannot receive notifications while the page is closed.' }
-  if (needsInstall()) return { ok: false, why: 'On iPhone and iPad this works once Terra Swap is on the home screen: Share, then Add to Home Screen, then turn it on from there.' }
+  if (needsInstall()) return { ok: false, why: 'On iPhone and iPad this works once Openfields Swap is on the home screen: Share, then Add to Home Screen, then turn it on from there.' }
   const permission = Notification.permission === 'default' ? await Notification.requestPermission() : Notification.permission
   if (permission !== 'granted') return { ok: false, why: 'Notifications are blocked for this site in the browser settings.' }
   try {

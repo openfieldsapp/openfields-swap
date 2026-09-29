@@ -119,7 +119,7 @@ function uptimeSection() {
   return lines
 }
 
-// ─── Terra Swap on chain ────────────────────────────────────────
+// ─── Openfields Swap on chain ───────────────────────────────────
 
 async function terraSwapSection() {
   const pairs = []
@@ -174,7 +174,7 @@ async function terraSwapSection() {
 
 // ─── Routing ────────────────────────────────────────────────────
 
-/** Terra Swap's router (contracts/router), on chain since 2026-09-14. */
+/** Openfields Swap's router (contracts/router), on chain since 2026-09-14. */
 const ROUTER = 'terra1u2uh0jsl2u76j52e6egf09zslsns27qsmzxxzcsxdxymeax8883s9prc4l'
 /** Re-priced every month: the pairs people come for, at two sizes. */
 const BENCH_PAIRS = [['LUNA', 'USDC'], ['SOLID', 'USDC'], ['CAPA', 'USDC'], ['ROAR', 'USDC'], ['PAXG', 'USDC'], ['EURe', 'USDC'], ['USDC', 'LUNA'], ['USDC', 'SOLID']]
@@ -192,7 +192,7 @@ async function routerUsage(txs, decimals, px) {
     seen.add(tx.txhash)
     // A swap on arrival is run by Terra's IBC hooks inside the relayer's transaction that delivers the USDC.
     const arrival = (tx._body?.messages ?? []).some((m) => String(m['@type']).endsWith('MsgRecvPacket'))
-    const site = String(tx._body?.memo ?? '').startsWith('Terra Swap')
+    const site = isSiteMemo(String(tx._body?.memo ?? ''))
     for (const ev of tx.events ?? []) {
       if (ev.type !== 'wasm') continue
       const at = Object.fromEntries(ev.attributes.map((a) => [a.key, a.value]))
@@ -207,10 +207,10 @@ async function routerUsage(txs, decimals, px) {
       else unpriced++
     }
   }
-  const lines = [`- Swaps through Terra Swap's router (${ROUTER}) in ${month}: ${swaps}, to ${wallets.size} wallet${wallets.size === 1 ? '' : 's'}`]
+  const lines = [`- Swaps through Openfields Swap's router (${ROUTER}) in ${month}: ${swaps}, to ${wallets.size} wallet${wallets.size === 1 ? '' : 's'}`]
   if (swaps > 0) {
     lines.push(
-      `- Signed from the Terra Swap interface: ${fromSite}; USDC from Noble swapped on arrival: ${arrivals}; other callers: ${swaps - fromSite - arrivals}`,
+      `- Signed from the Openfields Swap interface: ${fromSite}; USDC from Noble swapped on arrival: ${arrivals}; other callers: ${swaps - fromSite - arrivals}`,
       `- By pools crossed: ${[...byPools].sort((a, b) => Number(a[0]) - Number(b[0])).map(([n, c]) => `${n}: ${c}`).join(', ')}`,
       `- Volume: about ${usd(volume)} at the prices on the day this report was generated${unpriced ? ` (${unpriced} swap${unpriced === 1 ? '' : 's'} in tokens without a price are not counted)` : ''}`,
     )
@@ -221,6 +221,13 @@ async function routerUsage(txs, decimals, px) {
 
 /** Astroport's router on Terra. It writes no attributes of its own, so its calls are found by the execute event. */
 const ASTRO_ROUTER = 'terra1j8hayvehh3yy02c2vtw5fdhz9f4drhtee8p5n5rguvg3nyd6m83qd2y90a'
+/**
+ * What the site's memos start with: "Openfields Swap" since 2026-09-29, "Terra Swap" before, which stays on
+ * chain. A copy of SITE_MEMO_PREFIXES in lib/route.ts, since the router counts run without the compiled lib;
+ * keep the two in step.
+ */
+const SITE_MEMO_PREFIXES = ['Openfields Swap', 'Terra Swap']
+const isSiteMemo = (memo) => SITE_MEMO_PREFIXES.some(p => memo.startsWith(p))
 /** lib/route tradeMemo, read back: "split swap (quote 4923.246400 USDC, +1.03% vs 2 pools)". */
 const MEMO_TAG = /(split swap|routed swap|swap) \(quote ([\d.]+) ([^,)\s]+)(?:, ([+-][\d.]+)% vs 2 pools)?\)/
 
@@ -241,7 +248,7 @@ async function interfaceSwaps(routerTxs, pools, px) {
     if (seen.has(tx.txhash) || tx.code) continue
     seen.add(tx.txhash)
     const memo = String(tx._body?.memo ?? '')
-    const m = memo.startsWith('Terra Swap') ? MEMO_TAG.exec(memo) : null
+    const m = isSiteMemo(memo) ? MEMO_TAG.exec(memo) : null
     if (!m) continue
     tagged++
     const quote = Number(m[2]), token = byLabel.get(m[3]), gain = m[4] != null ? Number(m[4]) : null
@@ -419,7 +426,7 @@ const md = [
   '',
   ...uptimeSection(),
   '',
-  '## Terra Swap',
+  '## Openfields Swap',
   '',
   ...(await terraSwapSection()),
   '',

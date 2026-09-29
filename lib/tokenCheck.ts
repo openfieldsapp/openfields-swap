@@ -190,7 +190,7 @@ function namedAddresses(pools: PoolView[]): Map<string, string> {
   const m = new Map<string, string>()
   for (const p of pools) m.set(p.contract_addr, `${p.label} pool on ${VENUE_NAME[p.venue]}`)
   if (VENUE_INCENTIVES.astroport) m.set(VENUE_INCENTIVES.astroport, "Astroport's incentives contract")
-  for (const r of TERRA_SWAP_ROUTERS) m.set(r, r === TERRA_SWAP_ROUTER ? "Terra Swap's router" : "Terra Swap's first router")
+  for (const r of TERRA_SWAP_ROUTERS) m.set(r, r === TERRA_SWAP_ROUTER ? "Openfields Swap's router" : "Openfields Swap's first router")
   return m
 }
 

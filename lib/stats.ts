@@ -1,5 +1,5 @@
 /**
- * The numbers behind /stats that take the chain some reading: what Terra
+ * The numbers behind /stats that take the chain some reading: what Openfields
  * Swap's router has been used for in the last 30 days, what the quote tags in
  * swaps signed on the interface say the routing added (lib/route tradeMemo),
  * a few trades re-priced three ways right now, and this month's uptime from
@@ -12,7 +12,7 @@
 
 import { ASTRO_ROUTER, TERRA_SWAP_ROUTERS, assetId, toMicro, type KnownToken, type PoolView } from 'lib/dex'
 import { lcdFetch } from 'lib/lcd'
-import { planRoute, planTrade, quoteBest, readTradeMemo, tradeText } from 'lib/route'
+import { isSiteMemo, planRoute, planTrade, quoteBest, readTradeMemo, tradeText } from 'lib/route'
 
 const UA = { 'User-Agent': 'Mozilla/5.0 terra-swap-stats', accept: 'application/json' }
 const DAY = 86_400_000
@@ -95,7 +95,7 @@ function routerActivity(w: Window & { txs: Tx[] }, tokens: Map<string, KnownToke
   for (const tx of w.txs) {
     if (tx.code) continue
     const arrival = (tx.body?.messages ?? []).some(m => String(m['@type'] ?? '').endsWith('MsgRecvPacket'))
-    const site = String(tx.body?.memo ?? '').startsWith('Terra Swap')
+    const site = isSiteMemo(String(tx.body?.memo ?? ''))
     for (const ev of tx.events) {
       if (ev.type !== 'wasm') continue
       const at = attrsOf(ev)
@@ -122,7 +122,7 @@ function taggedSwaps(txs: Tx[], window: Window, pools: PoolView[], px: Record<st
     if (tx.code || seen.has(tx.txhash)) continue
     seen.add(tx.txhash)
     const memo = String(tx.body?.memo ?? '')
-    const tag = memo.startsWith('Terra Swap') ? readTradeMemo(memo) : null
+    const tag = isSiteMemo(memo) ? readTradeMemo(memo) : null
     if (!tag) continue
     swaps++
     const token = byLabel.get(tag.label)
@@ -234,7 +234,7 @@ export async function computeStats(pools: PoolView[], px: Record<string, number>
   const tokens = new Map<string, KnownToken>()
   for (const p of pools) for (const t of p.tokens) tokens.set(assetId(t.info), t)
   const [routerParts, astro, bench, up] = await Promise.all([
-    // Both of Terra Swap's routers: v1 until the switch to router v2 on 2026-09-16, v2 since.
+    // Both of Openfields Swap's routers: v1 until the switch to router v2 on 2026-09-16, v2 since.
     Promise.all(TERRA_SWAP_ROUTERS.map(r => recentTxs(`wasm._contract_address='${r}'`, WINDOW_DAYS, 10))),
     // Astroport's router writes no attributes of its own, so its calls are found by the execute event.
     recentTxs(`execute._contract_address='${ASTRO_ROUTER}'`, WINDOW_DAYS, 5),

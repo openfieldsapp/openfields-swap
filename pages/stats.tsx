@@ -2,7 +2,7 @@
  * /stats: Terra's DEX activity in one place, read from the chain and from this
  * repository's public status log. Liquidity on both sites and what the
  * deepest pools paid their providers, liquid staking tokens against their
- * hubs, pools that drifted off the market, what Terra Swap's routing is used
+ * hubs, pools that drifted off the market, what Openfields Swap's routing is used
  * for and adds, and uptime. No accounts, and nothing is stored about visitors.
  */
 
@@ -110,7 +110,7 @@ export default function StatsPage() {
   return (
     <>
       <Head>
-        <title>Stats · Terra Swap</title>
+        <title>Stats · Openfields Swap</title>
       </Head>
       <main style={pageMain}>
         <ShellHeader><SiteNav here='stats' /></ShellHeader>
@@ -126,7 +126,7 @@ export default function StatsPage() {
 
           <Panel title='Liquidity' note="Valued at Astroport's deepest markets. Fees are what each pool's swaps paid its providers, less Astroport's maker share, at today's prices.">
             <div style={{ display: 'flex', gap: SPACE['4'], flexWrap: 'wrap', marginBottom: SPACE['3'] }}>
-              <Figure label="Terra Swap" value={dex ? fmtUsd(tvl('terraswap')) : '…'} sub={dex ? `${all.filter(p => p.venue === 'terraswap').length} pools` : undefined} />
+              <Figure label="Openfields Swap" value={dex ? fmtUsd(tvl('terraswap')) : '…'} sub={dex ? `${all.filter(p => p.venue === 'terraswap').length} pools` : undefined} />
               <Figure label="Astroport (listed tokens)" value={venue ? fmtUsd(tvl('astroport')) : '…'} sub={venue ? `${all.filter(p => p.venue === 'astroport').length} pools` : undefined} />
             </div>
             <div style={{ overflowX: 'auto' }}>
@@ -148,9 +148,9 @@ export default function StatsPage() {
 
           <LstBoard />
 
-          <Panel title='Pools off the market' note="Terra Swap pools that drifted from Astroport's deepest market, with the trade that closes the gap. First come; it moves on every trade.">
+          <Panel title='Pools off the market' note="Openfields Swap pools that drifted from Astroport's deepest market, with the trade that closes the gap. First come; it moves on every trade.">
             {!px && <div style={{ fontSize: TEXT.xs.size, color: C.textMuted }}>Reading the market…</div>}
-            {px && gaps.length === 0 && <div style={{ fontSize: TEXT.xs.size, color: C.textMuted }}>Every Terra Swap pool is within a few percent of the market right now.</div>}
+            {px && gaps.length === 0 && <div style={{ fontSize: TEXT.xs.size, color: C.textMuted }}>Every Openfields Swap pool is within a few percent of the market right now.</div>}
             <div style={{ display: 'grid', gap: 6 }}>
               {gaps.map(g => (
                 <div key={g.pool.contract_addr} style={{ display: 'flex', gap: SPACE['2'], alignItems: 'baseline', flexWrap: 'wrap', fontSize: TEXT.xs.size, padding: '6px 10px', background: C.surface, borderRadius: 10, border: `1px solid ${C.divider}` }}>
@@ -163,7 +163,7 @@ export default function StatsPage() {
             </div>
           </Panel>
 
-          <Panel title="Terra Swap's router" note={<>The last 30 days of <Link href='/verify' style={{ color: C.goldLit }}>the router</Link>: swaps signed on Terra Swap, deposits swapped on arrival over IBC, and anyone else calling it. Swaps signed on Terra Swap carry their quote and what three-pool paths and splitting added over the best two-pool path.</>}>
+          <Panel title="Openfields Swap's router" note={<>The last 30 days of <Link href='/verify' style={{ color: C.goldLit }}>the router</Link>: swaps signed on Openfields Swap, deposits swapped on arrival over IBC, and anyone else calling it. Swaps signed on Openfields Swap carry their quote and what three-pool paths and splitting added over the best two-pool path.</>}>
             {!stats && <div style={{ fontSize: TEXT.xs.size, color: C.textMuted }}>{statsFailed ? 'The chain did not answer in time. Try again in a moment.' : 'Reading 30 days of transactions…'}</div>}
             {r && r.read === false && <div style={{ fontSize: TEXT.xs.size, color: C.textMuted }}>The chain&apos;s transaction history did not answer in time. Reload in a minute.</div>}
             {r && t && r.read !== false && (

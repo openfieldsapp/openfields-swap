@@ -1,17 +1,17 @@
 /**
- * /verify: Terra Swap's contracts, checked from this browser against a public
+ * /verify: Openfields Swap's contracts, checked from this browser against a public
  * endpoint every time the page opens.
  *
  * For each contract: the code it runs and that code's checksum, whether anyone
  * can migrate it, and the settings that matter (who owns the factory, what the
  * pools charge, which factories the router trusts). The contracts written for
- * Terra Swap are expected to match the reproducible builds in this repository
+ * Openfields Swap are expected to match the reproducible builds in this repository
  * (contracts/owner-sink, contracts/router). The factory and the pools run
  * Astroport's own code, so they are checked against the code Astroport's
  * factory on Terra runs and uses for its xyk pools. The same checks run from a
  * terminal with contracts/owner-sink/verify.sh and contracts/router/verify.sh.
  * Astroport's contracts and Skeleton Swap's factory, which swaps also go
- * through, are listed as notes: they are not Terra Swap's to verify.
+ * through, are listed as notes: they are not Openfields Swap's to verify.
  */
 
 import Head from 'next/head'
@@ -33,7 +33,7 @@ const C = {
 
 const REPO = 'https://github.com/solid-online/terra-swap'
 const OWNER_SINK = 'terra1ylr5lqj9e4ehjpxc4944rhjcmq7zdaju50r3tn60vn7rsqym50gq5w27l3'
-/** Codes and checksums as expected. Terra Swap's own builds: contracts/*\/artifacts/checksums.txt. */
+/** Codes and checksums as expected. Openfields Swap's own builds: contracts/*\/artifacts/checksums.txt. */
 const EXPECT = {
   factory: { code: '3108', checksum: '363b4859ac08d9acbf2387b864cf74d3f7954ac34b52acae9d9d71c6fdde1dd1' },
   pair: { code: '392', checksum: 'a5155c856cebff4519a63a3acb4985971f3ed98289519cf588a92425464476e1' },
@@ -60,13 +60,13 @@ const contractInfo = (a: string) => readJson<{ contract_info?: { code_id: string
 const codeChecksum = (id: string) => readJson<{ checksum?: string }>(`/cosmwasm/wasm/v1/code-info/${id}`).then(j => (j?.checksum ?? '').toLowerCase())
 
 const GROUPS: { key: string; title: string; address?: string; blurb: string }[] = [
-  { key: 'factory', title: "Terra Swap's factory", address: TERRA_SWAP_FACTORY, blurb: "Creates the pools. It runs Astroport's factory code, its ownership was handed to a contract that can never use it, and nobody can migrate it." },
+  { key: 'factory', title: "Openfields Swap's factory", address: TERRA_SWAP_FACTORY, blurb: "Creates the pools. It runs Astroport's factory code, its ownership was handed to a contract that can never use it, and nobody can migrate it." },
   { key: 'sink', title: 'The owner sink', address: OWNER_SINK, blurb: "The 60-line contract that holds the factory's ownership (contracts/owner-sink). All it can do is accept it." },
-  ...(TERRA_SWAP_FACTORY_V2 ? [{ key: 'factory2', title: "Terra Swap's factory v2", address: TERRA_SWAP_FACTORY_V2, blurb: 'Opens concentrated and stable pools (contracts/factory-v2). The same factory code with no fee address, its ownership in its own owner sink, and nobody can migrate it.' }] : []),
+  ...(TERRA_SWAP_FACTORY_V2 ? [{ key: 'factory2', title: "Openfields Swap's factory v2", address: TERRA_SWAP_FACTORY_V2, blurb: 'Opens concentrated and stable pools (contracts/factory-v2). The same factory code with no fee address, its ownership in its own owner sink, and nobody can migrate it.' }] : []),
   { key: 'pools', title: 'Every pool', blurb: "Astroport's xyk pair code. 0.3% per swap, all of it to liquidity providers. No pool can be migrated: the pools that existed at the renounce had their admin cleared, and pools opened since carry the owner sink as admin, which has no way to migrate anything." },
-  { key: 'router', title: "Terra Swap's router", address: TERRA_SWAP_ROUTER, blurb: 'One transaction through pools on both factories, and the swap on arrival over IBC (contracts/router). No owner, no admin, no fee.' },
-  { key: 'astroport', title: "Astroport's contracts this page also uses", blurb: "Not Terra Swap's. Swaps and positions can go through them, and Astroport can upgrade them." },
-  { key: 'skeleton', title: "Skeleton Swap's pools this page also routes through", blurb: "Not Terra Swap's. Swaps can go through Skeleton Swap's pools, which run on White Whale's pool contracts. Their factory's owner can change the pools' fees and pause swaps." },
+  { key: 'router', title: "Openfields Swap's router", address: TERRA_SWAP_ROUTER, blurb: 'One transaction through pools on both factories, and the swap on arrival over IBC (contracts/router). No owner, no admin, no fee.' },
+  { key: 'astroport', title: "Astroport's contracts this page also uses", blurb: "Not Openfields Swap's. Swaps and positions can go through them, and Astroport can upgrade them." },
+  { key: 'skeleton', title: "Skeleton Swap's pools this page also routes through", blurb: "Not Openfields Swap's. Swaps can go through Skeleton Swap's pools, which run on White Whale's pool contracts. Their factory's owner can change the pools' fees and pause swaps." },
 ]
 
 async function run(push: (c: Check) => void): Promise<void> {
@@ -89,7 +89,7 @@ async function run(push: (c: Check) => void): Promise<void> {
   const [sInfo, sSum, target] = await Promise.all([contractInfo(OWNER_SINK), codeChecksum(EXPECT.sink.code), smart<string>(OWNER_SINK, { target: {} })])
   push({ group: 'sink', what: 'Code', expected: `${EXPECT.sink.code} · ${shortHash(EXPECT.sink.checksum)} (this repository's build)`, found: `${sInfo?.code_id ?? 'no answer'} · ${shortHash(sSum)}`, state: sInfo?.code_id === EXPECT.sink.code && sSum === EXPECT.sink.checksum ? 'ok' : 'bad', href: `${REPO}/tree/main/contracts/owner-sink` })
   push({ group: 'sink', what: 'Migrate admin', expected: 'none', found: sInfo ? sInfo.admin || 'none' : 'no answer', state: sInfo && !sInfo.admin ? 'ok' : 'bad' })
-  push({ group: 'sink', what: 'Holds ownership of', expected: "Terra Swap's factory", found: target ?? 'no answer', state: target === TERRA_SWAP_FACTORY ? 'ok' : 'bad' })
+  push({ group: 'sink', what: 'Holds ownership of', expected: "Openfields Swap's factory", found: target ?? 'no answer', state: target === TERRA_SWAP_FACTORY ? 'ok' : 'bad' })
 
   if (TERRA_SWAP_FACTORY_V2) {
     const [f2Info, f2Config] = await Promise.all([
@@ -145,7 +145,7 @@ async function run(push: (c: Check) => void): Promise<void> {
     push({ group: 'router', what: 'Code', expected: `${EXPECT.router.code} · ${shortHash(EXPECT.router.checksum)} (this repository's build)`, found: `${rInfo?.code_id ?? 'no answer'} · ${shortHash(rSum)}`, state: rInfo?.code_id === EXPECT.router.code && rSum === EXPECT.router.checksum ? 'ok' : 'bad', href: `${REPO}/tree/main/contracts/router` })
     push({ group: 'router', what: 'Migrate admin', expected: 'none', found: rInfo ? rInfo.admin || 'none' : 'no answer', state: rInfo && !rInfo.admin ? 'ok' : 'bad' })
     const f = rConfig?.factories ?? []
-    const nameOf = (x: string) => (x === TERRA_SWAP_FACTORY ? 'Terra Swap' : x === TERRA_SWAP_FACTORY_V2 ? 'Terra Swap v2' : x === ASTRO_FACTORY ? 'Astroport' : x)
+    const nameOf = (x: string) => (x === TERRA_SWAP_FACTORY ? 'Openfields Swap' : x === TERRA_SWAP_FACTORY_V2 ? 'Openfields Swap v2' : x === ASTRO_FACTORY ? 'Astroport' : x)
     push({ group: 'router', what: 'Factories it trusts', expected: `${ROUTER_FACTORIES.map(nameOf).join(' + ')}, nothing else`, found: f.length ? f.map(nameOf).join(' + ') : 'no answer', state: f.length === ROUTER_FACTORIES.length && f.every((x, i) => x === ROUTER_FACTORIES[i]) ? 'ok' : 'bad' })
   }
 
@@ -183,7 +183,7 @@ export default function VerifyPage() {
   return (
     <>
       <Head>
-        <title>Verify · Terra Swap</title>
+        <title>Verify · Openfields Swap</title>
       </Head>
       <main style={pageMain}>
         <ShellHeader><SiteNav here='verify' /></ShellHeader>
@@ -192,7 +192,7 @@ export default function VerifyPage() {
             <span style={{ fontWeight: 700, color: C.goldLit }}>Verify</span> <span style={{ fontWeight: 300 }}>the contracts</span>
           </h1>
           <p style={{ fontSize: TEXT.sm.size, color: C.textSecondary, lineHeight: 1.65, margin: `0 0 ${SPACE['3']}px` }}>
-            Read by your browser from a public Terra endpoint when this page opens, not from this site&apos;s server. Terra Swap&apos;s own contracts are compared with the reproducible builds in <a href={REPO} target='_blank' rel='noreferrer' style={{ color: C.goldLit }}>the repository</a>; the factory and the pools run Astroport&apos;s code. From a terminal, <code>contracts/owner-sink/verify.sh</code> and <code>contracts/router/verify.sh</code> check the same things.
+            Read by your browser from a public Terra endpoint when this page opens, not from this site&apos;s server. Openfields Swap&apos;s own contracts are compared with the reproducible builds in <a href={REPO} target='_blank' rel='noreferrer' style={{ color: C.goldLit }}>the repository</a>; the factory and the pools run Astroport&apos;s code. From a terminal, <code>contracts/owner-sink/verify.sh</code> and <code>contracts/router/verify.sh</code> check the same things.
           </p>
           <div style={{ display: 'flex', alignItems: 'center', gap: SPACE['2'], flexWrap: 'wrap', margin: `0 0 ${SPACE['3']}px` }}>
             <span style={{ fontSize: TEXT.sm.size, fontWeight: 700, color: running ? C.textMuted : bad ? C.alert : C.success }}>

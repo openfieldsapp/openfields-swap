@@ -1,9 +1,9 @@
 /**
- * /developers: how to put a Terra Swap quote on another site, and the open
+ * /developers: how to put an Openfields Swap quote on another site, and the open
  * APIs behind the site: quotes either way, how much trades before a price
  * moves, the site's own price record, who controls a token, and market data in
  * the shapes listing sites read. All of it reads public chain data and signs
- * nothing; a swap always happens on Terra Swap itself, in the wallet of whoever
+ * nothing; a swap always happens on Openfields Swap itself, in the wallet of whoever
  * signs it.
  */
 
@@ -36,8 +36,8 @@ export const getStaticProps: GetStaticProps = async () => {
     props: {
       base,
       og: {
-        title: 'Build with Terra Swap: embed a quote, or call the open APIs',
-        description: 'Embed a live Terra Swap quote, or call open APIs for routes, depth, price history, token control and market data. No key, no fee.',
+        title: 'Build with Openfields Swap: embed a quote, or call the open APIs',
+        description: 'Embed a live Openfields Swap quote, or call open APIs for routes, depth, price history, token control and market data. No key, no fee.',
         image: `${base}/api/og/swap`, url: `${base}/developers`, type: 'website',
       },
     },
@@ -47,7 +47,7 @@ export const getStaticProps: GetStaticProps = async () => {
 export default function Developers({ base }: { base: string }) {
   const embedSnippet = `<iframe src="${base}/embed?from=LUNA&to=USDC&amount=100"
   width="420" height="340" style="border:0;border-radius:16px"
-  title="Terra Swap quote" loading="lazy"></iframe>`
+  title="Openfields Swap quote" loading="lazy"></iframe>`
   const sample = `{
   "from": "LUNA",
   "to": "USDC",
@@ -66,18 +66,18 @@ export default function Developers({ base }: { base: string }) {
     <Page width={820}>
       <header style={{ display: 'grid', gap: 6 }}>
         <h1 style={{ fontSize: 'clamp(1.8rem, 5vw, 2.4rem)', margin: 0, letterSpacing: '-0.02em' }}>
-          <span style={{ fontWeight: 700, color: C.goldLit }}>Build</span> <span style={{ fontWeight: 300 }}>with Terra Swap</span>
+          <span style={{ fontWeight: 700, color: C.goldLit }}>Build</span> <span style={{ fontWeight: 300 }}>with Openfields Swap</span>
         </h1>
         <p style={{ fontSize: TEXT.sm.size, color: C.textSecondary, lineHeight: 1.65, margin: 0 }}>
-          Put a live swap quote on your site, or call the APIs. Quotes use the routing the swap page signs: every pool on Terra Swap&apos;s and Astroport&apos;s factories, paths through up to three pools, and a split over two paths when that delivers more. No key and no fee, open to any origin.
+          Put a live swap quote on your site, or call the APIs. Quotes use the routing the swap page signs: every pool on Openfields Swap&apos;s and Astroport&apos;s factories, paths through up to three pools, and a split over two paths when that delivers more. No key and no fee, open to any origin.
         </p>
       </header>
 
-      <Panel title='Embed a quote' note='Prices a pair as people type. Its button opens the swap on Terra Swap in a new tab, where people sign in their own wallet. The card signs nothing.'>
+      <Panel title='Embed a quote' note='Prices a pair as people type. Its button opens the swap on Openfields Swap in a new tab, where people sign in their own wallet. The card signs nothing.'>
         <Code>{embedSnippet}</Code>
         <div style={{ ...row, marginTop: SPACE['2'] }}><span>Parameters</span><span style={{ color: C.textSecondary }}>from, to (tickers below) and amount, all optional</span></div>
         <div style={{ marginTop: SPACE['3'], display: 'flex', justifyContent: 'center' }}>
-          <iframe src='/embed?from=LUNA&to=USDC&amount=100' title='Terra Swap quote' loading='lazy' style={{ width: '100%', maxWidth: 420, height: 340, border: 0, borderRadius: 16 }} />
+          <iframe src='/embed?from=LUNA&to=USDC&amount=100' title='Openfields Swap quote' loading='lazy' style={{ width: '100%', maxWidth: 420, height: 340, border: 0, borderRadius: 16 }} />
         </div>
       </Panel>
 
@@ -122,7 +122,7 @@ curl "${base}/api/price-history?pool=terra1…&base=LUNA&quote=USDC&range=30d"`}
         <Code>{`curl "${base}/api/token-check?token=ampLUNA"`}</Code>
       </Panel>
 
-      <Panel title='Market data for listing sites' note="Terra Swap's own pools only, in CoinGecko's and CoinMarketCap's integration formats. Pools are constant-product, so the order book is the curve itself. Swaps routed through Astroport's pools are not counted.">
+      <Panel title='Market data for listing sites' note="Openfields Swap's own pools only, in CoinGecko's and CoinMarketCap's integration formats. Pools are constant-product, so the order book is the curve itself. Swaps routed through Astroport's pools are not counted.">
         <Code>{`${base}/api/coingecko/pairs
 ${base}/api/coingecko/tickers
 ${base}/api/coingecko/orderbook?ticker_id=<base>_<target>&depth=100
@@ -150,7 +150,7 @@ ${base}/api/volume?date=2026-09-20`}</Code>
       <Panel title='Notes'>
         <ul style={{ fontSize: TEXT.xs.size, color: C.textSecondary, lineHeight: 1.7, margin: 0, paddingLeft: 18 }}>
           <li>A quote is what the pools would deliver when it is read. It is not an offer and not advice, and it moves with every trade. The same goes for sizes, prices and market data.</li>
-          <li>Nothing is signed, held or charged here. A swap opens Terra Swap, where the person signs in their own wallet and the site&apos;s regional restrictions apply.</li>
+          <li>Nothing is signed, held or charged here. A swap opens Openfields Swap, where the person signs in their own wallet and the site&apos;s regional restrictions apply.</li>
           <li>USDC from Noble and USDC.inj are separate tokens and are never quoted against each other.</li>
           <li>Please cache on your side: quotes are kept about 20 seconds here, and each server answers about 120 fresh quotes a minute.</li>
           <li>The code is open source under MIT. <a href={REPO} target='_blank' rel='noreferrer' style={{ color: C.goldLit }}>Run your own copy</a>; the pools and the router on chain have no owner and no admin.</li>

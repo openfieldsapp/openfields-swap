@@ -1,7 +1,7 @@
 /**
  * /token/[symbol]: a page per listed token. What it is and where it comes
  * from, its price over time as this site has written it down, how much of it
- * trades before the price moves, who controls it, every pool on Terra Swap and
+ * trades before the price moves, who controls it, every pool on Openfields Swap and
  * Astroport that holds it, and a swap one click away. For people who arrive
  * from a search or a shared link wanting to know where a token trades on
  * Terra, and what stands behind it. The title and summary are rendered on the
@@ -315,10 +315,10 @@ export default function TokenPage({ symbol }: { symbol: string }) {
           <div style={{ marginTop: SPACE['3'], borderTop: `1px solid ${C.divider}`, paddingTop: SPACE['2'] }}>
             <label style={{ display: 'flex', alignItems: 'center', gap: 8, fontSize: TEXT.sm.size, color: C.textPrimary, cursor: 'pointer' }}>
               <input type='checkbox' checked={push.on} onChange={e => void togglePush(e.target.checked)} />
-              Also when no Terra Swap page is open
+              Also when no Openfields Swap page is open
             </label>
             <p style={{ fontSize: TEXT.xs.size, color: C.textMuted, lineHeight: 1.6, margin: '4px 0 0' }}>
-              This keeps this browser&apos;s notification address and its alert levels on Terra Swap&apos;s server, and nothing else: no wallet, no name. Checked every ten minutes. Turn it off to delete them.
+              This keeps this browser&apos;s notification address and its alert levels on Openfields Swap&apos;s server, and nothing else: no wallet, no name. Checked every ten minutes. Turn it off to delete them.
             </p>
             {pushNote && <div style={{ fontSize: TEXT.xs.size, color: C.ember, marginTop: 4 }}>{pushNote}</div>}
           </div>

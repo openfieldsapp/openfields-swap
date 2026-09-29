@@ -1,6 +1,6 @@
 /**
  * GET /api/positions?address=terra1… — every pool position a wallet holds on
- * Terra Swap or Astroport, staked LP included. See lib/positions.
+ * Openfields Swap or Astroport, staked LP included. See lib/positions.
  *
  * Chain data only, the same anyone can read from an explorer. A build reads
  * well over a hundred contracts plus the wallet's recent history from a public
@@ -49,7 +49,7 @@ function terraAddress(v: unknown): string | null {
 }
 
 export default async function handler(req: NextApiRequest, res: NextApiResponse<PositionsResponse | { error: string }>) {
-  // Readable from any site (public chain data): Terra Home shows a wallet's pool positions with it.
+  // Readable from any site (public chain data): Openfields Home shows a wallet's pool positions with it.
   res.setHeader('Access-Control-Allow-Origin', '*')
   const address = terraAddress(req.query.address)
   if (!address) return res.status(400).json({ error: 'address required' })

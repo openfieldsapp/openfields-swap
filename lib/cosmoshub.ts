@@ -3,7 +3,7 @@
  *
  * Checked 2026-09-14: the Hub's channel-339 is Terra's channel-0, both open,
  * and ATOM arrives on Terra as lib/dex ATOM_DENOM. The Hub runs ibc-go v10, so
- * a transfer's memo can carry a call to Terra Swap's router for Terra's IBC
+ * a transfer's memo can carry a call to Openfields Swap's router for Terra's IBC
  * hooks, the same swap on arrival as from Noble (lib/msgs arrivalSwapMsg). Its
  * fee market's minimum gas price is 0.005uatom.
  */

@@ -45,7 +45,7 @@ const nextConfig = {
     return config
   },
   async rewrites() {
-    // As on Terra Scan (2026-09-25): AI crawlers walk every transaction page, each read from the chain and rendered on
+    // As on Openfields Scan (2026-09-25): AI crawlers walk every transaction page, each read from the chain and rendered on
     // a function. robots.txt closes /tx/; until they read it again, the ones below get the static 404 there, before any
     // function runs. People and search engines are not matched.
     const crawler = { type: 'header', key: 'user-agent', value: '.*(GPTBot|ClaudeBot|Claude-SearchBot|anthropic-ai|CCBot|Bytespider|Amazonbot|PerplexityBot|meta-externalagent|OAI-SearchBot|Applebot-Extended|Diffbot|ImagesiftBot|Timpibot).*' }
@@ -87,7 +87,7 @@ const nextConfig = {
         ],
       },
       {
-        // The embed is made to be framed anywhere. It holds no wallet and signs nothing; its button opens Terra Swap in a new tab.
+        // The embed is made to be framed anywhere. It holds no wallet and signs nothing; its button opens Openfields Swap in a new tab.
         source: '/embed',
         headers: [
           { key: 'X-Content-Type-Options', value: 'nosniff' },

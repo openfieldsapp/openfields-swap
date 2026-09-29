@@ -3,7 +3,7 @@
   "version": "1.0.0",
   "private": true,
   "license": "MIT",
-  "description": "Terra Swap — an open interface for permissionless Astroport pools on Terra, plus Terra Predict. No fee, no keys, host it anywhere.",
+  "description": "Openfields Swap — an open interface for permissionless Astroport pools on Terra, plus Openfields Predict. No fee, no keys, host it anywhere.",
   "scripts": {
     "dev": "next dev",
     "build": "next build",

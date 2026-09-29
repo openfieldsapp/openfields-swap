@@ -1,6 +1,6 @@
-# Terra Swap router — deploy
+# Openfields Swap router — deploy
 
-One transaction through pools on Terra Swap's and Astroport's factories. Each
+One transaction through pools on Openfields Swap's and Astroport's factories. Each
 hop names the factory that owns its pair; the router looks the pair up there,
 swaps everything it holds of the offered token, hands the whole return to the
 next hop, sends the last return straight to the receiver, and reverts unless at
@@ -8,7 +8,7 @@ least `minimum_receive` arrived. No owner, no admin, no fee, no migrate entry
 point. The factory list is fixed at instantiation.
 
 Why it exists: Astroport's router only looks pairs up in Astroport's factory,
-so a route that touches Terra Swap's pools had to be signed as separate swaps,
+so a route that touches Openfields Swap's pools had to be signed as separate swaps,
 and separate swaps leave about the slippage setting of each intermediate token
 in the wallet.
 
@@ -19,7 +19,7 @@ in the wallet.
 | router | `terra1u2uh0jsl2u76j52e6egf09zslsns27qsmzxxzcsxdxymeax8883s9prc4l` |
 | code | 4028, sha256 `d4f36193c98a92dd455fda0e3b2a899071edda1c638d3dbc8149e0e9caf31ff3` |
 | admin | none |
-| factories | Terra Swap `terra1gx7n4…lp3xd`, Astroport `terra14x9fr…rer8r` |
+| factories | Openfields Swap `terra1gx7n4…lp3xd`, Astroport `terra14x9fr…rer8r` |
 
 `./verify.sh terra1u2uh0jsl2u76j52e6egf09zslsns27qsmzxxzcsxdxymeax8883s9prc4l` checks all of it from a public endpoint.
 
@@ -79,7 +79,7 @@ terrad tx wasm instantiate <code_id> \
   --gas auto --gas-adjustment 1.4 --gas-prices 0.015uluna -y
 ```
 
-The first factory is Terra Swap's, the second Astroport's. Take the contract
+The first factory is Openfields Swap's, the second Astroport's. Take the contract
 address from the tx events.
 
 ## 4. Check it
@@ -95,14 +95,14 @@ exactly the two above.
 ## 5. Point the site at it
 
 Simulate a real route through the deployed router first (a route that crosses
-from a Terra Swap pool into an Astroport pool). Then:
+from an Openfields Swap pool into an Astroport pool). Then:
 
 ```bash
 vercel env add NEXT_PUBLIC_TERRA_SWAP_ROUTER production   # the router address
 vercel --prod --yes
 ```
 
-Until the variable is set, routes that touch Terra Swap's pools stay signed as
+Until the variable is set, routes that touch Openfields Swap's pools stay signed as
 separate swaps and the page says what they leave in the wallet.
 
 ## Messages

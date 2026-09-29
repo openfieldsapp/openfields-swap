@@ -2,9 +2,9 @@
  * Favourite tokens and price alerts, kept in this browser only
  * (localStorage): nothing about them leaves the device or reaches any server.
  *
- * An alert goes off once, when an open Terra Swap page sees the market
+ * An alert goes off once, when an open Openfields Swap page sees the market
  * reference cross its level: as a note on the page, and as a browser
- * notification when the person has allowed those. With no Terra Swap page
+ * notification when the person has allowed those. With no Openfields Swap page
  * open, nothing watches; the page says so where alerts are set.
  */
 
@@ -114,7 +114,7 @@ export function fireAlerts(px: Record<string, number> | null): PriceAlert[] {
   if (notificationsAllowed()) {
     for (const f of fired) {
       try {
-        new Notification(`${f.label} is ${f.dir} $${fmtUsdPrice(f.usd)}`, { body: `$${fmtUsdPrice(f.firedUsd ?? 0)} at the market reference. Terra Swap`, icon: '/img/icon-192.png', tag: f.id })
+        new Notification(`${f.label} is ${f.dir} $${fmtUsdPrice(f.usd)}`, { body: `$${fmtUsdPrice(f.firedUsd ?? 0)} at the market reference. Openfields Swap`, icon: '/img/icon-192.png', tag: f.id })
       } catch { /* phones only notify through a service worker; the note on the page still shows */ }
     }
   }

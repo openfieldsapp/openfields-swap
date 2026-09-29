@@ -1,12 +1,12 @@
 /**
  * Best execution across both sites.
  *
- * Terra Swap's pools are small and Astroport's are deep, and until now neither
+ * Openfields Swap's pools are small and Astroport's are deep, and until now neither
  * site knew the other existed. Measured 2026-09-13: 50 SOLID → USDC returned
- * 4.11 USDC through Terra Swap's pools and 50.46 through Astroport's. So a swap
+ * 4.11 USDC through Openfields Swap's pools and 50.46 through Astroport's. So a swap
  * now considers every pool on both factories, direct or through one
  * intermediate token, prices each path with the pools' own simulations, and
- * takes the best. When a Terra Swap pool is the better price, because it has
+ * takes the best. When an Openfields Swap pool is the better price, because it has
  * drifted, flow from the Astroport interface goes through it, which is also
  * what pulls it back to market.
  *
@@ -20,8 +20,8 @@
  *
  * A route made only of Astroport's pools goes through Astroport's router, which
  * carries each swap's full return into the next and checks one minimum at the
- * end. A route through Terra Swap's pools, which that router cannot reach,
- * goes through Terra Swap's own router (contracts/router) the same way, once
+ * end. A route through Openfields Swap's pools, which that router cannot reach,
+ * goes through Openfields Swap's own router (contracts/router) the same way, once
  * TERRA_SWAP_ROUTER is set; until then it is signed as consecutive swaps in one
  * transaction, each with its own price limit. Either way, if anything falls
  * short the whole transaction reverts.
@@ -84,9 +84,9 @@ export interface Quote {
 /** What actually gets signed for one leg. */
 export interface ExecLeg {
   pair: string
-  /** which site's factory owns the pair; Terra Swap's router looks the pair up there */
+  /** which site's factory owns the pair; Openfields Swap's router looks the pair up there */
   venue: Venue
-  /** the factory that made the pair: Terra Swap has two, and its router is told which (lib/msgs) */
+  /** the factory that made the pair: Openfields Swap has two, and its router is told which (lib/msgs) */
   factory?: string
   offerInfo: KnownToken['info']
   askInfo: KnownToken['info']
@@ -300,7 +300,7 @@ async function bestSplit(quotes: Quote[], amountMicro: string, slip: number): Pr
 
 const shave = (x: bigint, slip: number) => (x * BigInt(Math.round((1 - slip) * 10_000))) / BigInt(10_000)
 
-/** Every pool on the route sits on a factory Terra Swap's router trusts. */
+/** Every pool on the route sits on a factory Openfields Swap's router trusts. */
 const routerReaches = (q: Quote) => q.legs.every(l => ROUTER_FACTORIES.includes(factoryOf(l.pool)))
 
 /**
@@ -331,7 +331,7 @@ export function executionLegs(q: Quote, slip: number): ExecLeg[] {
 
 export interface RoutePlan {
   /**
-   * 'router': one message through Astroport's router. 'multi': one message through Terra Swap's router,
+   * 'router': one message through Astroport's router. 'multi': one message through Openfields Swap's router,
    * which reaches both factories. 'legs': one swap message per leg (executionLegs).
    */
   kind: 'router' | 'multi' | 'legs'
@@ -351,10 +351,10 @@ export interface RoutePlan {
  * a multi-leg route signed that way leaves a slippage-sized slice of each
  * intermediate token in the wallet and delivers that much less of the output
  * than the quote (found in the 2026-09-13 audit). A router can: two or more
- * Astroport pools go through Astroport's, and a route that touches Terra
- * Swap's pools goes through Terra Swap's own (contracts/router) when it is on
+ * Astroport pools go through Astroport's, and a route that touches Openfields
+ * Swap's pools goes through Openfields Swap's own (contracts/router) when it is on
  * chain. Both deliver the quote and check one minimum on what arrives. Without
- * Terra Swap's router, or with a Skeleton Swap pool on the route (a factory the
+ * Openfields Swap's router, or with a Skeleton Swap pool on the route (a factory the
  * router does not trust), the route stays as legs and says what it leaves behind.
  */
 export function planRoute(q: Quote, slip: number): RoutePlan {
@@ -369,7 +369,7 @@ export function planRoute(q: Quote, slip: number): RoutePlan {
   return { kind: 'legs', legs, expectedOut: last.expectedReturn, minOut: last.minReturn, leftover }
 }
 
-/** "SOLID → LUNA (Terra Swap) → USDC (Astroport)" */
+/** "SOLID → LUNA (Openfields Swap) → USDC (Astroport)" */
 export function routeText(q: Quote): string {
   return [q.legs[0].offer.label, ...q.legs.map(l => `${l.ask.label} (${VENUE_NAME[l.pool.venue]})`)].join(' → ')
 }
@@ -387,7 +387,7 @@ export interface TradePlan {
 
 /**
  * A single path or a split, as it gets signed. In a split, a part through one
- * pool also goes through Terra Swap's router: each part still carries its own
+ * pool also goes through Openfields Swap's router: each part still carries its own
  * minimum, and every trade the routing improved then passes through a router,
  * where the monthly report can find it on chain.
  */
@@ -406,6 +406,17 @@ export function planTrade(parts: SplitPart[], slip: number): TradePlan {
     impactPct: out > 0 ? planned.reduce((s, x) => s + x.quote.impactPct * Number(x.plan.expectedOut), 0) / out : 0,
   }
 }
+
+/**
+ * What every memo this site signs starts with, before its colon ("Openfields Swap: routed swap (…)"), newest
+ * first: the first entry is what the site signs now. Transactions signed before 2026-09-29 say "Terra Swap" and
+ * keep saying it on chain, so a reader accepts every entry. The Astroport build (lib/dex IS_ASTRO) signs with
+ * POOLS_MEMO_PREFIXES. scripts/monthly-report.mjs keeps a copy of this list.
+ */
+export const SITE_MEMO_PREFIXES = ['Openfields Swap', 'Terra Swap']
+export const POOLS_MEMO_PREFIXES = ['Openfields Pools', 'Terra Pools']
+/** A memo signed on this site, under its current name or its old one. */
+export const isSiteMemo = (memo: string): boolean => SITE_MEMO_PREFIXES.some(p => memo.startsWith(p))
 
 /**
  * The memo a trade is signed with: the kind of trade, what it was quoted, and
@@ -582,7 +593,7 @@ export async function planRoutedZap(pools: PoolView[], target: PoolView, inIdx: 
 // ─── One contract call ──────────────────────────────────────────
 
 /**
- * A quote as a single call to Terra Swap's router, whatever its length, for a
+ * A quote as a single call to Openfields Swap's router, whatever its length, for a
  * swap that has to be one contract call: a deposit swapped on arrival over IBC
  * runs as the router's own execute (lib/msgs arrivalSwapMsg). The router
  * checks the minimum on what reaches the receiver. Null when there is no router,

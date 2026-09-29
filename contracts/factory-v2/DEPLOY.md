@@ -1,6 +1,6 @@
 # Factory v2: concentrated and stable pools
 
-Terra Swap's first factory only opens standard (xyk) pools, and its ownership is
+Openfields Swap's first factory only opens standard (xyk) pools, and its ownership is
 already in a contract that can never use it, so no pool type can be added to it.
 Factory v2 is a second factory with the same rules and two more pool types:
 
@@ -20,13 +20,13 @@ Factory v2 is a second factory with the same rules and two more pool types:
   A pool's settings can only be changed by the factory owner, so every pool's
   settings are fixed at creation.
 - **No new code.** Every contract runs code already on chain: Astroport's
-  factory (3108) and pair code (2569, 428), the owner sink (4025) and the Terra
+  factory (3108) and pair code (2569, 428), the owner sink (4025) and the Openfields
   Swap router (4028). `deploy.sh` checks all five checksums before signing.
 
 ## Router v2
 
 The router checks that every pool on a route belongs to a factory it trusts,
-and its list is fixed at instantiation. Router v1 trusts Terra Swap v1 and
+and its list is fixed at instantiation. Router v1 trusts Openfields Swap v1 and
 Astroport. Router v2 is the same code trusting v1, v2 and Astroport, with no
 admin.
 

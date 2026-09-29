@@ -1,5 +1,5 @@
 /**
- * Terra Swap's own pools in the shape of CoinMarketCap's exchange API
+ * Openfields Swap's own pools in the shape of CoinMarketCap's exchange API
  * standard (lib/markets):
  *
  *   /api/cmc/summary

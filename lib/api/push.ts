@@ -1,6 +1,6 @@
 /**
  * POST /api/push — a browser's price alerts, kept so they can reach it with no
- * Terra Swap page open (lib/push, lib/pushStore).
+ * Openfields Swap page open (lib/push, lib/pushStore).
  *
  *   { action: 'save', subscription, alerts }  store or replace; an empty list deletes the record
  *   { action: 'delete', endpoint }            forget this browser

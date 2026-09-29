@@ -2,7 +2,7 @@
  * Moving money between Noble and Terra.
  *
  * Every transfer is an ordinary IBC message built in lib/msgs. A deposit that
- * should arrive as another token carries a call to Terra Swap's router in its
+ * should arrive as another token carries a call to Openfields Swap's router in its
  * memo, which Terra's IBC hooks run as the USDC lands (lib/msgs
  * arrivalSwapMsg). Until 2026-09-14 Skip Go built those deposits; it only
  * reached Astroport's pools and put a third party's contracts in the path.

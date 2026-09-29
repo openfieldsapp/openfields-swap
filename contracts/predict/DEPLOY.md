@@ -1,4 +1,4 @@
-# Terra Predict — deploy
+# Openfields Predict — deploy
 
 Admin-less parimutuel YES/NO markets settled by an on-chain TWAP from an
 Astroport pair. No oracle, no operator, no migrate entry point. What you
@@ -55,7 +55,7 @@ Parameters are immutable afterwards. Suggested for the experiment:
 ```bash
 terrad tx wasm instantiate <code_id> \
   '{"fee_bps":100,"fee_recipient":"<treasury terra1…>","bounty_bps":20,"min_window":600}' \
-  --label "Terra Predict" --no-admin \
+  --label "Openfields Predict" --no-admin \
   --from <your-key> --chain-id phoenix-1 \
   --node https://terra-rpc.publicnode.com:443 \
   --gas auto --gas-adjustment 1.4 --gas-prices 0.015uluna -y

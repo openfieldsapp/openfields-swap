@@ -126,7 +126,7 @@ export default function PoolPage({ addr, label }: { addr: string; label: string 
           {done && (
             <p style={{ fontSize: TEXT.xs.size, color: C.textMuted, lineHeight: 1.6, margin: 0 }}>
               Not a pool this site lists, or the chain did not answer just now.{' '}
-              <a href={`https://scan.openfields.app/address/${addr}`} target='_blank' rel='noreferrer' style={{ color: C.goldLit }}>See it on Terra Scan ↗</a>
+              <a href={`https://scan.openfields.app/address/${addr}`} target='_blank' rel='noreferrer' style={{ color: C.goldLit }}>See it on Openfields Scan ↗</a>
             </p>
           )}
         </Panel>
@@ -258,7 +258,7 @@ export default function PoolPage({ addr, label }: { addr: string; label: string 
         </div>
         {pool.venue === 'terraswap' && (
           <p style={{ fontSize: TEXT.xs.size, color: C.textMuted, lineHeight: 1.6, margin: '8px 0 0' }}>
-            Terra Swap&apos;s pools have no admin that can change them and no fee for anyone but their providers. <Link href='/verify' style={{ color: C.goldLit }}>Check it from your browser</Link>.
+            Openfields Swap&apos;s pools have no admin that can change them and no fee for anyone but their providers. <Link href='/verify' style={{ color: C.goldLit }}>Check it from your browser</Link>.
           </p>
         )}
       </Panel>

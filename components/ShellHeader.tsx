@@ -27,11 +27,11 @@ export default function ShellHeader({ children, onWordmarkClick }: { children?: 
         <div className='tl-hero-main'>
           <div className='tl-kicker'>{IS_ASTRO ? 'Unofficial · Astroport pools' : t('Experimental')}</div>
           <h1 className='tl-wordmark'>
-            <Link href='/' prefetch={false} aria-label={`Terra ${word}, home`} title='Home' onClick={onWordmarkClick}>
-              <span><span className='tl-word-strong'>Terra</span> <span className='tl-word-light'>{word}</span></span>
+            <Link href='/' prefetch={false} aria-label={`Openfields ${word}, home`} title='Home' onClick={onWordmarkClick}>
+              <span><span className='tl-word-strong'>Openfields</span> <span className='tl-word-light'>{word}</span></span>
             </Link>
           </h1>
-          <div className='tl-domain'>openfields.app</div>
+          <div className='tl-domain'>{IS_ASTRO ? 'openfields.app' : 'swap.openfields.app'}</div>
         </div>
         <div className='tl-hero-actions'>
           <WalletButton className='tl-btn tl-btn--pill' />

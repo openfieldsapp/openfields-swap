@@ -1,8 +1,8 @@
 /**
  * GET /api/dex-venue — the other site's pools, for routing.
  *
- * Terra Swap routes a swap through Astroport's pools when that pays better, and
- * the Astroport interface routes through Terra Swap's pools when one of those
+ * Openfields Swap routes a swap through Astroport's pools when that pays better, and
+ * the Astroport interface routes through Openfields Swap's pools when one of those
  * is the better price. Both need the other factory's pools with live reserves,
  * real spot prices and a dollar depth. Only pairs of tokens we can name.
  * The pool-scan workflow builds it (lib/poolScans, lib/scanPlan); the page

@@ -1,8 +1,8 @@
 /**
- * Terra Swap's own pools as a market listing, in the shapes CoinGecko's and
+ * Openfields Swap's own pools as a market listing, in the shapes CoinGecko's and
  * CoinMarketCap's integration specs ask for, built from the chain.
  *
- * Only pools on Terra Swap's own factory, and only those whose two tokens this
+ * Only pools on Openfields Swap's own factory, and only those whose two tokens this
  * site lists. A route through Astroport's pools is trading on Astroport, which
  * lists its own markets; counting it here would count it twice.
  *
@@ -214,7 +214,7 @@ export interface VolumeResponse {
 }
 
 /**
- * Dollar volume through Terra Swap's own pools between two times. Each swap is
+ * Dollar volume through Openfields Swap's own pools between two times. Each swap is
  * valued at its UTC day's average recorded price (lib/priceHistory) on one
  * side: USDC from Noble when it is a side, otherwise the side paid in, then
  * the side received. A swap on a day with no recorded price is counted as

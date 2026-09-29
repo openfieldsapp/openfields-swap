@@ -72,7 +72,7 @@ async function historyTouches(address: string): Promise<{ pairs: Set<string>; lp
  * What this wallet put into each of `pairs`, less what it took out, from its
  * own provide and withdraw events, keyed like the board's flows
  * (`${address}|${pair}`). The board's ledger (lib/dex-ledger computeFlows)
- * only records Terra Swap's pools; this reads the wallet's history instead,
+ * only records Openfields Swap's pools; this reads the wallet's history instead,
  * so Astroport positions get the same "Put in" line. Only liquidity the
  * wallet added itself counts: LP bought or received from someone else has no
  * deposit to show. Reads the wallet's own transactions, newest first, up to
@@ -208,7 +208,7 @@ export async function readPositions(address: string): Promise<Position[]> {
     queryPairsOf(SKELETON_FACTORY).then(ps => ps.map(withPlainLp)).catch(() => [] as PairInfo[]),
     historyTouches(address), sharedMarketPrices(),
   ])
-  // Both of Terra Swap's factories: standard pools on the first, concentrated and stable pools on factory v2.
+  // Both of Openfields Swap's factories: standard pools on the first, concentrated and stable pools on factory v2.
   const tsPairs = [...tsPairs1, ...tsPairs2]
   const byAddr = new Map<string, { pair: PairInfo; venue: Venue }>()
   const byLp = new Map<string, string>()
@@ -216,7 +216,7 @@ export async function readPositions(address: string): Promise<Position[]> {
   for (const p of astroPairs) { byAddr.set(p.contract_addr, { pair: p, venue: 'astroport' }); byLp.set(p.liquidity_token, p.contract_addr) }
   for (const p of skeletonPairs) { byAddr.set(p.contract_addr, { pair: p, venue: 'skeleton' }); byLp.set(p.liquidity_token, p.contract_addr) }
 
-  // Every Terra Swap pool, every Astroport and Skeleton Swap pool of a listed token, and whatever the wallet itself touched.
+  // Every Openfields Swap pool, every Astroport and Skeleton Swap pool of a listed token, and whatever the wallet itself touched.
   const want = new Set<string>(tsPairs.map(p => p.contract_addr))
   knownPairs(astroPairs).forEach(p => want.add(p.contract_addr))
   knownPairs(skeletonPairs).forEach(p => want.add(p.contract_addr))

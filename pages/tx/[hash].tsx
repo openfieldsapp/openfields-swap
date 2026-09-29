@@ -1,6 +1,6 @@
 /**
  * /tx/[hash]: a receipt for one transaction on Terra, read from the chain.
- * What left and what arrived, and for a swap signed on Terra Swap what it was
+ * What left and what arrived, and for a swap signed on Openfields Swap what it was
  * quoted, how that compares with what arrived and with the best path through
  * up to two pools, the least it allowed, and the pools it went through. The
  * link can be shared: its card (/api/og/tx) reads the same transaction, so
@@ -18,6 +18,7 @@ import { TERRA_HOME_URL } from 'components/AppSwitcher'
 import { fmtAmount } from 'lib/arb'
 import { TX_HASH, readReceipt, type Receipt } from 'lib/txReceipt'
 import { SITE_URL } from 'lib/siteUrl'
+import { POOLS_MEMO_PREFIXES, SITE_MEMO_PREFIXES } from 'lib/route'
 
 const KIND: Record<string, string> = {
   swap: 'Swap', zap: 'Zap', 'add liquidity': 'Added liquidity', 'remove liquidity': 'Removed liquidity', stake: 'Staked LP', unstake: 'Unstaked LP',
@@ -99,7 +100,7 @@ export default function TxPage({ hash, receipt }: { hash: string; receipt: Recei
         <Panel title='Not found yet'>
           <p style={{ fontSize: TEXT.xs.size, color: C.textMuted, lineHeight: 1.6, margin: 0 }}>
             The chain&apos;s public endpoints did not return this transaction. One that just landed can take a few seconds to be indexed; refresh in a moment.{' '}
-            <a href={terrascope} target='_blank' rel='noreferrer' style={{ color: C.goldLit }}>Look it up on Terra Scan ↗</a>
+            <a href={terrascope} target='_blank' rel='noreferrer' style={{ color: C.goldLit }}>Look it up on Openfields Scan ↗</a>
           </p>
         </Panel>
       </Page>
@@ -119,7 +120,7 @@ export default function TxPage({ hash, receipt }: { hash: string; receipt: Recei
     </span>
   )
   const when = new Date(r.time).toLocaleString('en-GB', { day: 'numeric', month: 'short', year: 'numeric', hour: '2-digit', minute: '2-digit', timeZone: 'UTC' })
-  const ourMemo = /^Terra (Swap|Pools):/.test(r.memo)
+  const ourMemo = [...SITE_MEMO_PREFIXES, ...POOLS_MEMO_PREFIXES].some(p => r.memo.startsWith(`${p}:`))
 
   return (
     <Page width={760}>
@@ -132,9 +133,9 @@ export default function TxPage({ hash, receipt }: { hash: string; receipt: Recei
 
       <div style={{ display: 'flex', gap: SPACE['2'], flexWrap: 'wrap' }}>
         {pairLink && <Link href={pairLink} style={linkBtn(true)}>Swap the same pair</Link>}
-        {!IS_ASTRO && <a href={`${TERRA_HOME_URL}/`} style={linkBtn()}>See your wallet in Terra Home ↗</a>}
+        {!IS_ASTRO && <a href={`${TERRA_HOME_URL}/`} style={linkBtn()}>See your wallet in Openfields Home ↗</a>}
         <button type='button' onClick={share} style={{ ...linkBtn(), cursor: 'pointer' }}>{copied ? 'Link copied ✓' : 'Copy link'}</button>
-        <a href={terrascope} target='_blank' rel='noreferrer' style={linkBtn()}>Terra Scan ↗</a>
+        <a href={terrascope} target='_blank' rel='noreferrer' style={linkBtn()}>Openfields Scan ↗</a>
       </div>
 
       <Panel title='What moved' note={r.ok ? undefined : 'It failed, so nothing moved but the network fee.'}>
@@ -145,7 +146,7 @@ export default function TxPage({ hash, receipt }: { hash: string; receipt: Recei
       </Panel>
 
       {r.quote && (
-        <Panel title='Against the quote' note="Terra Swap writes the quote into the transaction's memo.">
+        <Panel title='Against the quote' note="Openfields Swap writes the quote into the transaction's memo.">
           <div style={row}><span>Quoted</span><span style={{ color: C.textSecondary }}>{fmtAmount(r.quote.amount)} {r.quote.label}</span></div>
           {vs != null && <div style={row}><span>Arrived against the quote</span><span style={{ color: vs >= -0.05 ? C.success : C.ember }}>{vs >= 0 ? '+' : ''}{vs.toFixed(2)}%</span></div>}
           {r.quote.gainPct != null && <div style={row}><span>Routing added</span><span style={{ color: r.quote.gainPct >= 0.005 ? C.success : C.textSecondary }}>{r.quote.gainPct >= 0 ? '+' : ''}{r.quote.gainPct.toFixed(2)}% over the best path through up to two pools</span></div>}

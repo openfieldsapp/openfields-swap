@@ -5,7 +5,7 @@
  * A pair writes each swap's fee as commission_amount, in the token that came
  * out. Astroport's pairs send part of it to Astroport's maker
  * (maker_fee_amount) and, on some pools, a share to a third address
- * (fee_share_amount); liquidity providers keep the rest. Terra Swap's factory
+ * (fee_share_amount); liquidity providers keep the rest. Openfields Swap's factory
  * sends no maker fee. Dollars use today's reference prices, so they are a
  * size, not a record of what the fees were worth on the day. History, never a
  * projection: nothing here says what a pool will pay.

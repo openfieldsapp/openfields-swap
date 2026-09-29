@@ -1,5 +1,5 @@
 /**
- * Terra Predict transaction hooks. Same broadcaster as the swap (two-layer
+ * Openfields Predict transaction hooks. Same broadcaster as the swap (two-layer
  * region gate, `code !== 0` check); the messages are the contract's own.
  */
 
@@ -11,7 +11,7 @@ import { useDexBroadcast } from 'components/transactions/useDex'
 import { PREDICT_CONTRACT, type Side } from 'lib/predict'
 import type { AssetInfo } from 'lib/dex'
 
-const MEMO = 'Terra Predict'
+const MEMO = 'Openfields Predict'
 
 type Coin = { denom: string; amount: string }
 

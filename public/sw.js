@@ -1,6 +1,6 @@
 /*
- * Terra Swap's service worker. It does one thing: show a price alert that
- * arrives while no Terra Swap page is open (lib/push, /api/push-check).
+ * Openfields Swap's service worker. It does one thing: show a price alert that
+ * arrives while no Openfields Swap page is open (lib/push, /api/push-check).
  * It caches nothing, so the site is never served from an old copy.
  */
 
@@ -10,7 +10,7 @@ self.addEventListener('activate', event => event.waitUntil(self.clients.claim())
 self.addEventListener('push', event => {
   let d = {}
   try { d = event.data ? event.data.json() : {} } catch (e) { d = { body: event.data ? event.data.text() : '' } }
-  event.waitUntil(self.registration.showNotification(d.title || 'Terra Swap', {
+  event.waitUntil(self.registration.showNotification(d.title || 'Openfields Swap', {
     body: d.body || '',
     icon: '/img/icon-192.png',
     badge: '/img/icon-192.png',

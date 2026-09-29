@@ -1,7 +1,7 @@
 /**
  * /embed: a swap quote any site can frame (see /developers). It prices a pair
- * through the best route over Terra Swap's and Astroport's pools with
- * /api/quote, and its button opens the swap on Terra Swap in a new tab, where
+ * through the best route over Openfields Swap's and Astroport's pools with
+ * /api/quote, and its button opens the swap on Openfields Swap in a new tab, where
  * the person signs in their own wallet. The frame itself holds no wallet,
  * signs nothing, stores nothing and takes no fee. Rendered without the wallet
  * stack (App.bare), so it loads fast inside someone else's page.
@@ -77,14 +77,14 @@ function Embed() {
   return (
     <>
       <Head>
-        <title>Terra Swap quote</title>
+        <title>Openfields Swap quote</title>
         <meta name='robots' content='noindex' />
       </Head>
       <div style={{ minHeight: '100vh', background: C.void, color: C.text, fontFamily: FONT, padding: 8, boxSizing: 'border-box', display: 'flex', justifyContent: 'center', alignItems: 'flex-start' }}>
         <div style={{ width: '100%', maxWidth: 440, background: C.elev, border: `1px solid ${C.divider}`, borderRadius: 16, padding: 14, boxSizing: 'border-box', display: 'grid', gap: 10, alignContent: 'start' }}>
           <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
             <img src='/img/terra-globe.svg' alt='' width={22} height={21} />
-            <span style={{ fontSize: 16 }}><b style={{ color: C.gold }}>Terra</b> <span style={{ fontWeight: 300 }}>Swap</span></span>
+            <span style={{ fontSize: 16 }}><b style={{ color: C.gold }}>Openfields</b> <span style={{ fontWeight: 300 }}>Swap</span></span>
             <span style={{ marginLeft: 'auto', fontSize: 11, letterSpacing: '0.12em', textTransform: 'uppercase', color: C.whisper }}>quote</span>
           </div>
 
@@ -112,7 +112,7 @@ function Embed() {
 
           <a href={swapUrl} target='_blank' rel='noopener noreferrer'
             style={{ display: 'block', textAlign: 'center', padding: '12px 14px', borderRadius: 12, background: C.gold, color: C.void, fontWeight: 700, textDecoration: 'none', fontSize: 15 }}>
-            Swap on Terra Swap ↗
+            Swap on Openfields Swap ↗
           </a>
           <div style={{ fontSize: 10.5, lineHeight: 1.5, color: C.whisper, textAlign: 'center' }}>
             No interface fee · a quote, not an offer: prices move with every trade

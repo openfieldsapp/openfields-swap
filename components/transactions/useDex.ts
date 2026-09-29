@@ -18,10 +18,11 @@ import {
   astroExitMsgs, bondMsg, claimMsg, createPairMsg, exitMsgs, provideMsgs, queueUnbondMsg, routeMsgs, stakeMsg, tradeMsgs, unstakeMsg, withdrawUnbondedMsg, zapMsgs,
   type AstroExitArgs, type CreatePairArgs, type ExitArgs, type ProvideArgs, type ZapArgs,
 } from 'lib/msgs'
-import type { RoutePlan, TradePlan } from 'lib/route'
+import { POOLS_MEMO_PREFIXES, SITE_MEMO_PREFIXES, type RoutePlan, type TradePlan } from 'lib/route'
 import { sendInjectiveTx } from 'lib/injective'
 
-const MEMO = IS_ASTRO ? 'Terra Pools' : 'Terra Swap'
+/** The name every memo signed here starts with (lib/route: readers also accept the old "Terra Swap"). */
+const MEMO = (IS_ASTRO ? POOLS_MEMO_PREFIXES : SITE_MEMO_PREFIXES)[0]
 
 /** Shared broadcaster: region gate (cookie + server), sign, assert on-chain success. */
 export function useDexBroadcast() {

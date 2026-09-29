@@ -1,6 +1,6 @@
 /**
  * GET /api/quote?from=LUNA&to=USDC&amount=100 — what a swap would deliver
- * right now through the best route over Terra Swap's, Astroport's and Skeleton Swap's pools,
+ * right now through the best route over Openfields Swap's, Astroport's and Skeleton Swap's pools,
  * the same routing the swap page signs (lib/route): paths through up to three
  * pools, and a split over two paths when that delivers more.
  *
@@ -84,7 +84,7 @@ let windowReads = 0
 const LOOPBACK = new Set(['127.0.0.1', '::1', '::ffff:127.0.0.1'])
 
 /**
- * A caller on this machine (Terra Ask runs next to the swap on the Openfields server). The app listens on
+ * A caller on this machine (Openfields Ask runs next to the swap on the Openfields server). The app listens on
  * the loopback address only, so visitors reach it through the server's proxy, which marks every request
  * (X-Of-Proxy) whatever headers the visitor sends; a caller on the machine has no mark, and Next's own server
  * fills in its loopback address as x-forwarded-for. Its quotes are left out of the window outside callers

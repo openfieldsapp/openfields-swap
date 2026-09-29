@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-# Read-only check of a deployed Terra Swap router via a public LCD. No keys, no terrad.
+# Read-only check of a deployed Openfields Swap router via a public LCD. No keys, no terrad.
 set -euo pipefail
 ROUTER=${1:?usage: verify.sh <router address>}
 LCD=${LCD:-https://terra-lcd.publicnode.com}
@@ -20,5 +20,5 @@ OK=1
 echo "router:    $ROUTER (code $CODE)"
 [[ "$ONCHAIN" == "$LOCAL" ]] && echo "  ✓ stored code matches artifacts/checksums.txt" || { echo "  ✗ stored code $ONCHAIN, artifact $LOCAL"; OK=0; }
 [[ -z "$ADMIN" ]] && echo "  ✓ no admin: nobody can migrate it" || { echo "  ✗ admin is $ADMIN"; OK=0; }
-[[ "$FACTORIES" == "$EXPECT_FACTORIES" ]] && echo "  ✓ factories: Terra Swap's and Astroport's, nothing else" || { echo "  ✗ factories: $FACTORIES"; OK=0; }
+[[ "$FACTORIES" == "$EXPECT_FACTORIES" ]] && echo "  ✓ factories: Openfields Swap's and Astroport's, nothing else" || { echo "  ✗ factories: $FACTORIES"; OK=0; }
 [[ $OK -eq 1 ]] && echo "RESULT: as built" || { echo "RESULT: NOT as built"; exit 1; }

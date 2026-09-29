@@ -18,7 +18,7 @@ const LINKS = [
 
 export default function SiteNav({ here }: { here?: 'stats' | 'verify' }) {
   return (
-    <nav className='tl-tabs' aria-label='Terra Swap'>
+    <nav className='tl-tabs' aria-label='Openfields Swap'>
       {LINKS.map(l => {
         const on = l.key === here
         return (

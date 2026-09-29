@@ -1,5 +1,5 @@
 /**
- * GET /api/volume — dollar volume through Terra Swap's own pools (lib/markets
+ * GET /api/volume — dollar volume through Openfields Swap's own pools (lib/markets
  * volumeBetween), for DefiLlama's volume adapter (integrations/defillama).
  *
  *   ?date=2026-09-20            one UTC day

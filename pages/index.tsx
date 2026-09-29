@@ -1,5 +1,5 @@
 /**
- * Terra Swap — the swap page. Served at /.
+ * Openfields Swap — the swap page. Served at /.
  *
  * Pools are Astroport's audited xyk pair code, created through a factory
  * whose ownership and admin keys have been renounced. This interface takes
@@ -98,18 +98,18 @@ const PARAM_TAB: Record<string, Tab> = { pools: 'pools', portfolio: 'positions',
 
 /** Astroport mode: this page as a plain interface to Astroport's pools. See DEX_MODE in lib/dex. */
 const LITE = IS_ASTRO
-const APP_NAME = LITE ? 'Terra Pools' : 'Terra Swap'
+const APP_NAME = LITE ? 'Openfields Pools' : 'Openfields Swap'
 /** What a pool charges. Astroport's pairs send part of it to their maker, so "to LPs" is only true on ours. */
 const poolFeeText = (p: PoolView | null | undefined, poolFeeBps: number) => {
   if (!LITE) return `${poolFeeBps / 100}% to LPs`
   if (!p) return 'set by the pool'
   return p.pairType === 'xyk' ? '0.3%, set by the pool' : p.pairType === 'stable' ? '0.05%, set by the pool' : 'dynamic, set by the pool'
 }
-/** One leg's pool fee, for a pool on any venue. Terra Swap's factory sends all of it to LPs; Skeleton Swap's pools each set their own. */
+/** One leg's pool fee, for a pool on any venue. Openfields Swap's factory sends all of it to LPs; Skeleton Swap's pools each set their own. */
 /** A share of a swap in basis points as a short percentage: 30 → "0.3%". */
 const bpsPct = (bps: number) => `${(bps / 100).toFixed(2).replace(/\.?0+$/, '')}%`
 const poolFeeTextFor = (p: PoolView) => p.venue === 'terraswap'
-  ? '0.3% to LPs on Terra Swap'
+  ? '0.3% to LPs on Openfields Swap'
   : p.venue === 'skeleton'
     ? p.fees ? `${bpsPct(p.fees.lpBps + p.fees.protocolBps + p.fees.burnBps)}, ${bpsPct(p.fees.lpBps)} of it to LPs, on Skeleton Swap` : 'fee set by the pool, on Skeleton Swap'
     : `${p.pairType === 'xyk' ? '0.3%' : p.pairType === 'stable' ? '0.05%' : 'dynamic'} on Astroport`
@@ -555,7 +555,7 @@ function Wire({ board, pools, onOpen }: { board: BoardResponse | null; pools: Po
   )
 }
 
-/** The wire, unrolled: every recent move with its receipt on Terra Scan. */
+/** The wire, unrolled: every recent move with its receipt on Openfields Scan. */
 function LedgerOverlay({ board, pools, onClose }: { board: BoardResponse | null; pools: PoolView[]; onClose: () => void }) {
   const byAddr = new Map(pools.map(p => [p.contract_addr, p.label]))
   const rows = board?.recent ?? []
@@ -762,7 +762,7 @@ function CapitalGame({ onClose }: { onClose: () => void }) {
     fetch('/api/dex-arcade', { method: 'POST', headers: { 'content-type': 'application/json' }, body: JSON.stringify({ name, score: hud.score, burrito: hud.burrito }) })
       .then(r => r.ok ? r.json() : null).then(j => { if (j) setArcade(j) }).catch(() => {})
   }, [hud.over, hud.score, hud.burrito])
-  const share = `https://twitter.com/intent/tweet?text=${encodeURIComponent(`I caught ${hud.score} of capital on Terra Swap as a ${gameTitle(hud.score)}.${hud.burrito ? ' And I found the burrito. 🌯' : ''} Steady lads. 🫡\n${location.origin}`)}`
+  const share = `https://twitter.com/intent/tweet?text=${encodeURIComponent(`I caught ${hud.score} of capital on Openfields Swap as a ${gameTitle(hud.score)}.${hud.burrito ? ' And I found the burrito. 🌯' : ''} Steady lads. 🫡\n${location.origin}`)}`
   return (
     <div className='terra-party' onClick={e => { if (e.target === e.currentTarget) onClose() }} role='presentation' style={{ cursor: 'default' }}>
       <div onClick={e => e.stopPropagation()} style={{ position: 'relative', zIndex: 2, width: 'min(92vw, 640px)', fontFamily: TERRA_FONT }}>
@@ -1150,7 +1150,7 @@ function Credits({ board }: { board: BoardResponse | null }) {
 /**
  * Explorer links. Terra Finder's shell is still up but its backend is gone —
  * a tx page spins on "Searching transaction" forever (checked 2026-09-08).
- * Terra Scan resolves phoenix-1 fully, memo and decoded swap included.
+ * Openfields Scan resolves phoenix-1 fully, memo and decoded swap included.
  */
 const finderTx = (hash: string) => `https://scan.openfields.app/tx/${hash}`
 
@@ -1183,7 +1183,7 @@ function Toast({ msg, href, onDone }: { msg: string; href?: string; onDone: () =
   return (
     <div className='terra-toast' role='status'>
       <span>{msg}</span>
-      {href && <a href={href} target='_blank' rel='noreferrer' style={{ color: C.goldLit, fontWeight: 700, marginLeft: 10, whiteSpace: 'nowrap' }}>View on Terra Scan →</a>}
+      {href && <a href={href} target='_blank' rel='noreferrer' style={{ color: C.goldLit, fontWeight: 700, marginLeft: 10, whiteSpace: 'nowrap' }}>View on Openfields Scan →</a>}
     </div>
   )
 }
@@ -1933,7 +1933,7 @@ function SwapPanel({ pools, venuePools, crystal, feeBps, poolFeeBps, onDone, arb
                 : trade.parts[0].plan.kind === 'router'
                   ? <>One transaction through Astroport&apos;s router. Reverts if less than the minimum arrives.</>
                   : trade.parts[0].plan.kind === 'multi'
-                    ? <>One transaction through Terra Swap&apos;s router. Reverts if less than the minimum arrives.</>
+                    ? <>One transaction through Openfields Swap&apos;s router. Reverts if less than the minimum arrives.</>
                     : <>One transaction, {route.legs.length} swaps. If any leg lands past its limit, all of it reverts.</>}
               {trade.leftover.length > 0 && <> At the quoted prices about {trade.leftover.map(x => `${fromMicro(x.micro, x.token.decimals, 6)} ${x.token.label}`).join(' and ')} stays in your wallet.</>}
             </div>
@@ -2003,8 +2003,8 @@ function SwapPanel({ pools, venuePools, crystal, feeBps, poolFeeBps, onDone, arb
           <span>{t('Next:')}</span>
           <button type='button' onClick={() => onNext('history')} style={{ ...ghostBtn, padding: '2px 10px' }}>{t('See it in your history')}</button>
           <button type='button' onClick={() => onNext('pools', to.key)} style={{ ...ghostBtn, padding: '2px 10px' }}>{t('Pools with {token}', { token: to.label })}</button>
-          {/* The same wallet in the apps built for the rest of it: all of it in Terra Home, and LUNA just received can be staked. */}
-          {!LITE && <a href={`${TERRA_HOME_URL}/`} style={{ ...ghostBtn, padding: '2px 10px', textDecoration: 'none' }}>{t('See your wallet in Terra Home ↗')}</a>}
+          {/* The same wallet in the apps built for the rest of it: all of it in Openfields Home, and LUNA just received can be staked. */}
+          {!LITE && <a href={`${TERRA_HOME_URL}/`} style={{ ...ghostBtn, padding: '2px 10px', textDecoration: 'none' }}>{t('See your wallet in Openfields Home ↗')}</a>}
           {!LITE && to.key === 'LUNA' && <a href={`${STAKE_URL}/#stake`} style={{ ...ghostBtn, padding: '2px 10px', textDecoration: 'none' }}>{t('Stake it ↗')}</a>}
         </div>
       )}
@@ -2024,7 +2024,7 @@ function SwapPanel({ pools, venuePools, crystal, feeBps, poolFeeBps, onDone, arb
       )}
       {receipt && (
         <div className='terra-receipt' onClick={() => setReceipt(null)} title='click to dismiss'>
-          <div className='terra-receipt-h'>영수증 · TERRA SWAP</div>
+          <div className='terra-receipt-h'>영수증 · OPENFIELDS SWAP</div>
           <div className='terra-receipt-row'><span>{receipt.from} → {receipt.to}</span><span>{new Date().toLocaleTimeString('en-GB', { hour: '2-digit', minute: '2-digit' })}</span></div>
           <div className='terra-receipt-row'><span>paid</span><span>{receipt.amtIn} {receipt.from}</span></div>
           <div className='terra-receipt-row'><span>received (est.)</span><span>{receipt.amtOut} {receipt.to}</span></div>
@@ -2057,7 +2057,7 @@ function SwapPanel({ pools, venuePools, crystal, feeBps, poolFeeBps, onDone, arb
 // ─── Positions: everything a wallet holds, on either site ───────
 
 /**
- * Every pool position the connected wallet holds on Terra Swap or Astroport,
+ * Every pool position the connected wallet holds on Openfields Swap or Astroport,
  * LP staked in Astroport's incentives contract included, with the ways out.
  * Built so nobody has to open Astroport's app to find or leave a position.
  */
@@ -2214,7 +2214,7 @@ const isNetKey = (v: string | null): v is NetKey => !!v && BRIDGE_CHAINS.some(c 
  * A token between Noble or the Cosmos Hub and Terra without leaving the page.
  *
  * Into Terra: a plain IBC transfer, or, when it should arrive as another
- * token, the same transfer carrying a call to Terra Swap's router that Terra's
+ * token, the same transfer carrying a call to Openfields Swap's router that Terra's
  * IBC hooks run as it lands (lib/msgs arrivalSwapMsg). If the swap cannot
  * deliver its minimum, the transfer fails and the source chain returns the
  * tokens. Out of Terra: any listed token is swapped to the chain's token by
@@ -2248,7 +2248,7 @@ function CosmosTransfer({ net, routePools, onDone, switcher }: { net: SourceChai
     return Array.from(m.values())
   }, [pools])
   const routable = useMemo(() => reachable(pools, base, allTokens), [pools, base, allTokens])
-  /** A deposit can arrive as the token itself, or swapped on arrival by Terra Swap's router into anything routable. */
+  /** A deposit can arrive as the token itself, or swapped on arrival by Openfields Swap's router into anything routable. */
   const inOptions = useMemo(() => (TERRA_SWAP_ROUTER ? [base, ...routable] : [base]), [base, routable])
   /** Anything this site can route to the token can leave for its chain. */
   const outOptions = useMemo(() => [base, ...routable], [base, routable])
@@ -2298,7 +2298,7 @@ function CosmosTransfer({ net, routePools, onDone, switcher }: { net: SourceChai
         if (!q.best || !plan) { setQuoteErr(`No route from ${net.label} to ${token.label} through up to two pools right now. Bring ${net.label} to Terra and swap it here.`); return }
         setQuote({
           out: plan.expectedOut, secs: 45, plan,
-          path: `IBC transfer to Terra, swapped on arrival by Terra Swap's router: ${routeText(q.best)}`,
+          path: `IBC transfer to Terra, swapped on arrival by Openfields Swap's router: ${routeText(q.best)}`,
           note: `At least ${fromMicro(plan.minOut, token.decimals, 6)} ${token.label} arrives, or the swap does not happen and ${net.name} returns the ${net.label} to you.`,
         })
       }).catch(() => { if (alive) setQuoteErr('Could not price that right now.') })
@@ -2471,7 +2471,7 @@ function CosmosTransfer({ net, routePools, onDone, switcher }: { net: SourceChai
             </button>}
 
       <div style={{ fontSize: TEXT.xs.size, color: C.textWhisper, lineHeight: 1.6, marginTop: SPACE['3'] }}>
-        A swap on arrival runs in the same transfer, through Terra Swap&apos;s router (no owner, no fee). {net.footnote} This page adds no fee.
+        A swap on arrival runs in the same transfer, through Openfields Swap&apos;s router (no owner, no fee). {net.footnote} This page adds no fee.
       </div>
     </Card>
   )
@@ -2615,7 +2615,7 @@ function TransferPanel({ routePools, onDone, initialNet = 'noble' }: { routePool
  * USDC.inj between Injective and Terra: ordinary IBC both ways. It leaves
  * Injective as Circle's USDC and arrives on Terra as USDC.inj, a token of its
  * own that this site never exchanges for, or counts as, USDC from Noble.
- * Arriving, it can also be swapped into another token by Terra Swap's router
+ * Arriving, it can also be swapped into another token by Openfields Swap's router
  * through Terra's IBC hooks, never into USDC from Noble and never through a
  * pool holding both.
  */
@@ -2666,7 +2666,7 @@ function InjectiveTransfer({ routePools, onDone, switcher }: { routePools: PoolV
       if (!alive) return
       const plan = q.best ? routerPlan(q.best, SLIP) : null
       if (!q.best || !plan) { setQuoteErr(`No route from USDC.inj to ${target.label} through up to two pools right now. Bring USDC.inj to Terra and swap it here.`); return }
-      setQuote({ plan, path: `IBC transfer to Terra, swapped on arrival by Terra Swap's router: ${routeText(q.best)}` })
+      setQuote({ plan, path: `IBC transfer to Terra, swapped on arrival by Openfields Swap's router: ${routeText(q.best)}` })
     }).catch(() => { if (alive) setQuoteErr('Could not price that right now.') })
     return () => { alive = false }
   }, [plain, mainDebounced, pools, token, target])
@@ -2837,7 +2837,7 @@ function InjectiveTransfer({ routePools, onDone, switcher }: { routePools: PoolV
             </button>}
 
       <div style={{ fontSize: TEXT.xs.size, color: C.textWhisper, lineHeight: 1.6, marginTop: SPACE['3'] }}>
-        A swap on arrival runs in the same transfer, through Terra Swap&apos;s router (no owner, no fee). Injective charges its network fee in INJ. This page adds no fee.
+        A swap on arrival runs in the same transfer, through Openfields Swap&apos;s router (no owner, no fee). Injective charges its network fee in INJ. This page adds no fee.
       </div>
     </Card>
   )
@@ -2886,7 +2886,7 @@ function PositionsPanel({ onDone, flows }: { onDone: () => void; flows?: Record<
       <Card>
         <Section title='Your positions' />
         <p style={{ fontSize: TEXT.sm.size, color: C.textMuted, lineHeight: 1.6, margin: `0 0 ${SPACE['3']}px` }}>
-          Connect a wallet to see and withdraw its pool positions on Terra Swap and Astroport, staked LP included.
+          Connect a wallet to see and withdraw its pool positions on Openfields Swap and Astroport, staked LP included.
         </p>
         <div className='terra-connect-cta'><WalletButton /></div>
       </Card>
@@ -3167,7 +3167,7 @@ function WalletPanel({ pools, onDone }: { pools: PoolView[]; onDone: () => void 
       </p>
       {!LITE && (
         <p style={{ fontSize: TEXT.xs.size, color: C.textWhisper, lineHeight: 1.6, margin: `-${SPACE['2']}px 0 ${SPACE['3']}px` }}>
-          Staking, loans and votes too: <a href={`${TERRA_HOME_URL}/`} style={{ color: C.textMuted }}>see your wallet in Terra Home ↗</a>
+          Staking, loans and votes too: <a href={`${TERRA_HOME_URL}/`} style={{ color: C.textMuted }}>see your wallet in Openfields Home ↗</a>
         </p>
       )}
       {!bal && <div style={{ fontSize: TEXT.xs.size, color: C.textMuted }}>Reading the wallet…</div>}
@@ -3401,10 +3401,10 @@ function AlertsPanel() {
         <div style={{ margin: `0 0 ${SPACE['2']}px` }}>
           <label style={{ display: 'flex', alignItems: 'center', gap: 8, fontSize: TEXT.sm.size, color: C.textPrimary, cursor: 'pointer' }}>
             <input type='checkbox' checked={push.on} onChange={e => void togglePush(e.target.checked)} />
-            Also when no Terra Swap page is open
+            Also when no Openfields Swap page is open
           </label>
           <div style={{ fontSize: TEXT.xs.size, color: C.textWhisper, lineHeight: 1.6, marginTop: 2 }}>
-            This keeps this browser&apos;s notification address and its alert levels on Terra Swap&apos;s server, and nothing else: no wallet, no name. Checked every ten minutes. Turn it off to delete them.
+            This keeps this browser&apos;s notification address and its alert levels on Openfields Swap&apos;s server, and nothing else: no wallet, no name. Checked every ten minutes. Turn it off to delete them.
           </div>
           {pushNote && <div style={{ fontSize: TEXT.xs.size, color: C.emberLit, marginTop: 2 }}>{pushNote}</div>}
         </div>
@@ -4171,7 +4171,7 @@ function PoolRow({ p, routePools, onDone, onParty, act, height, firstHand, cryst
               {useRouted && zRouted ? (() => {
                 const tOut = p.tokens[zIdx === 0 ? 1 : 0]
                 const legs = zRouted.plan.legs
-                const via = zRouted.plan.kind === 'multi' ? " in one call to Terra Swap's router" : zRouted.plan.kind === 'router' ? " in one call to Astroport's router" : ''
+                const via = zRouted.plan.kind === 'multi' ? " in one call to Openfields Swap's router" : zRouted.plan.kind === 'router' ? " in one call to Astroport's router" : ''
                 return (
                   <div style={{ fontSize: TEXT.xs.size, color: C.textSecondary, lineHeight: 1.6, padding: `${SPACE['2']}px ${SPACE['3']}px`, background: C.surface, borderRadius: 10, border: `1px solid ${C.dividerWarm}` }}>
                     <div>1 · swap <b style={{ color: C.goldLit }}>{fromMicro(legs[0].offerAmount, zTok.decimals, 6)} {zTok.label}</b> → at least {fromMicro(zRouted.getMicro, tOut.decimals, 6)} {tOut.label}, routed {routeText(zRouted.swap)}{via} <span style={{ color: zRouted.impactPct > 3 ? C.alert : C.textMuted }}>({zRouted.impactPct.toFixed(2)}% impact{zPlan ? `, against ${zPlan.impact.toFixed(1)}% inside this pool` : ''})</span></div>
@@ -4402,7 +4402,7 @@ function CreatePanel({ pools, marketPx, onDone, onCreated, onBack, onParty }: { 
   const ta = KNOWN_TOKENS.find(t => assetId(t.info) === a)!
   const tb = KNOWN_TOKENS.find(t => assetId(t.info) === b)!
   const ia = ta.info, ib = tb.info
-  // Terra Swap has two factories: standard pools on the first, concentrated and stable pools on factory v2 (contracts/factory-v2).
+  // Openfields Swap has two factories: standard pools on the first, concentrated and stable pools on factory v2 (contracts/factory-v2).
   const v2 = venue === 'terraswap' && !!TERRA_SWAP_FACTORY_V2
   const kinds: PoolKind[] = v2 ? ['xyk', 'concentrated', 'stable'] : ['xyk', 'concentrated']
   const factory = venue === 'terraswap' && kind !== 'xyk' ? TERRA_SWAP_FACTORY_V2 : VENUE_FACTORY[venue]
@@ -4449,7 +4449,7 @@ function CreatePanel({ pools, marketPx, onDone, onCreated, onBack, onParty }: { 
         factory,
       })
       setOk(true); onDone()
-      // The board scores Terra Swap's pools; an Astroport pool earns no stamp.
+      // The board scores Openfields Swap's pools; an Astroport pool earns no stamp.
       if (!LITE && venue === 'terraswap') onParty({ emoji: '🏗️', title: 'BUILDER', sub: 'You opened a pool. 50 points, the stamp is yours, and it is empty. Go be its first hand too.' })
       // The pool exists now but is empty; take them straight to Pools where
       // they (or anyone) can be the first hand in it.
@@ -4569,7 +4569,7 @@ function Leaderboard({ board, me, onGoSwap, height, crystal, spotlight }: { boar
             <span style={{ fontSize: TEXT.xs.size, color: C.textWhisper, width: '100%' }}>{race(me)}</span>
             <div style={{ display: 'flex', gap: 5, flexWrap: 'wrap' }}>{mine.badges.map(b => <BadgeChip key={b.name} b={b} />)}</div>
             <a
-              href={`https://twitter.com/intent/tweet?text=${encodeURIComponent(`${mine.badges.map(b => b.emoji).join('')} #${mine.rank} on the Terra Swap board · ${mine.points.toLocaleString('en-US')} pts\n\nA DEX built in a night for the price of gas. Steady lads.\n${location.origin}/?who=${me}`)}`}
+              href={`https://twitter.com/intent/tweet?text=${encodeURIComponent(`${mine.badges.map(b => b.emoji).join('')} #${mine.rank} on the Openfields Swap board · ${mine.points.toLocaleString('en-US')} pts\n\nA DEX built in a night for the price of gas. Steady lads.\n${location.origin}/?who=${me}`)}`}
               target='_blank' rel='noreferrer'
               style={{ ...ghostBtn, marginLeft: 'auto', textDecoration: 'none', color: C.goldLit, borderColor: C.goldCore }}
             >Share on X</a>
@@ -4990,11 +4990,11 @@ type ExploreKey = 'swap' | 'bridge' | 'pools' | 'portfolio' | 'history' | 'lst' 
 function Explore({ pools, gaps, onGo }: { pools: number; gaps: number; onGo: (k: ExploreKey) => void }) {
   const cards: { k: ExploreKey | 'verify' | 'stats'; icon: string; title: string; body: string; cta: string; muted?: boolean }[] = [
     { k: 'bridge', icon: '🌉', title: 'Bring money in', body: 'From Noble, the Cosmos Hub, Injective, Neutron and Stride, swapped on arrival if you like.', cta: 'Bridge' },
-    { k: 'pools', icon: '💧', title: 'Provide liquidity', body: `${pools} pools on Terra Swap and Astroport. Add both sides, or zap in with one token.`, cta: 'Pools' },
+    { k: 'pools', icon: '💧', title: 'Provide liquidity', body: `${pools} pools on Openfields Swap and Astroport. Add both sides, or zap in with one token.`, cta: 'Pools' },
     { k: 'portfolio', icon: '🧾', title: 'Everything you hold', body: 'Positions on both sites, closed in one signature. Sell leftovers in one go, and see your history.', cta: 'Portfolio' },
     { k: 'lst', icon: '🥩', title: 'Liquid staking against the hubs', body: 'When redeeming ampLUNA or bLUNA at its hub pays more than selling in a pool, and by how much.', cta: 'See the rates' },
     { k: 'gap', icon: '⚡', title: gaps ? `${gaps} pool${gaps === 1 ? '' : 's'} off the market` : 'Pools off the market', body: 'A pool that drifted from the market, and the round trip that closes the gap.', cta: gaps ? 'Close one' : 'None right now', muted: !gaps },
-    { k: 'verify', icon: '✓', title: 'No owner, no admin', body: "Nobody can change Terra Swap's pools or take a cut. Check every contract from your browser.", cta: 'Verify' },
+    { k: 'verify', icon: '✓', title: 'No owner, no admin', body: "Nobody can change Openfields Swap's pools or take a cut. Check every contract from your browser.", cta: 'Verify' },
     { k: 'stats', icon: '📊', title: 'The numbers', body: 'Liquidity, fees paid to providers, what routing adds, and uptime.', cta: 'Stats' },
     { k: 'search', icon: '⌕', title: 'Find anything', body: 'Any token, pool or part of the site. ⌘K from anywhere.', cta: 'Search' },
   ]
@@ -5121,7 +5121,7 @@ function IntroSplash({ onDone }: { onDone: () => void }) {
         <div className='terra-intro-kicker'>A DECENTRALIZED EXCHANGE ON TERRA</div>
         <div className='terra-intro-word' style={{ fontFamily: TERRA_FONT }}>
           <img src='/img/terra-globe.svg' alt='' aria-hidden width={52} height={49} draggable={false} className='terra-intro-globe' />
-          Terra <span className='terra-intro-thin'>Swap</span>
+          Openfields <span className='terra-intro-thin'>Swap</span>
         </div>
         <div className='terra-intro-sub'>swap · pools · liquidity</div>
       </div>
@@ -5518,21 +5518,21 @@ function SwapPageInner() {
       { id: 'do-bridge-stride', group: 'Do', label: 'Bring stLUNA or stATOM in from Stride', hint: 'arrives as itself, or swapped on arrival', keywords: 'bridge deposit transfer ibc stride stluna statom staked move in', icon: icon('🏃'), run: () => openBridge('stride-stluna') },
       { id: 'do-lst', group: 'Do', label: 'Liquid staking against the hubs', hint: 'when redeeming ampLUNA or bLUNA at its hub beats selling in the pool', keywords: 'lst stake unstake redeem mint ampluna bluna eris backbone hub', icon: icon('🥩'), run: () => openInPools('lst') },
       ...(arbs[0] ? [{ id: 'do-gap', group: 'Do', label: 'Close the biggest gap', hint: `${arbs[0].pool.label} is ${arbs[0].off.toFixed(1)}× off the market`, keywords: 'arbitrage arb drift gap off market', icon: icon('⚡'), run: () => takeArb(arbs[0]) }] : []),
-      { id: 'do-open-pool', group: 'Do', label: 'Open a pool', hint: "on Terra Swap's or Astroport's factory, one signature", keywords: 'create new pair pool list token factory', icon: icon('🏗️'), run: () => openTab('create') },
+      { id: 'do-open-pool', group: 'Do', label: 'Open a pool', hint: "on Openfields Swap's or Astroport's factory, one signature", keywords: 'create new pair pool list token factory', icon: icon('🏗️'), run: () => openTab('create') },
       { id: 'do-sweep', group: 'Do', label: 'Sell small balances in one go', hint: 'leftover tokens into USDC or LUNA, one signature', keywords: 'sweep dust leftovers clean wallet balances sell all convert', icon: icon('🧹'), run: () => openTab('wallet') },
       { id: 'do-keys', group: 'Do', label: 'Keyboard shortcuts', hint: '⌘K search · / amount · f flip the pair', keywords: 'keys hotkeys keyboard', icon: icon('⌨️'), run: () => setShortcuts(true) },
-      { id: 'go-swap', group: 'Go to', label: 'Swap', hint: "the best route through Terra Swap's, Astroport's and Skeleton Swap's pools", keywords: 'trade exchange buy sell convert skeleton white whale', icon: icon('🔀'), run: () => openTab('swap') },
-      { id: 'go-pools', group: 'Go to', label: 'Pools', hint: `${allPools.length} pools on Terra Swap, Astroport and Skeleton Swap: add, zap in, remove`, keywords: 'liquidity lp provide add remove zap fees skeleton white whale', icon: icon('💧'), run: () => openTab('pools') },
+      { id: 'go-swap', group: 'Go to', label: 'Swap', hint: "the best route through Openfields Swap's, Astroport's and Skeleton Swap's pools", keywords: 'trade exchange buy sell convert skeleton white whale', icon: icon('🔀'), run: () => openTab('swap') },
+      { id: 'go-pools', group: 'Go to', label: 'Pools', hint: `${allPools.length} pools on Openfields Swap, Astroport and Skeleton Swap: add, zap in, remove`, keywords: 'liquidity lp provide add remove zap fees skeleton white whale', icon: icon('💧'), run: () => openTab('pools') },
       { id: 'go-bridge', group: 'Go to', label: 'Bridge', hint: 'Noble, the Cosmos Hub, Injective, Neutron and Stride, both ways', keywords: 'transfer ibc deposit withdraw move chains', icon: icon('🌉'), run: () => openTab('transfer') },
       { id: 'go-positions', group: 'Go to', label: 'Portfolio', hint: 'positions on both sites, staked LP included', keywords: 'positions lp exit withdraw staked rewards claim holdings', icon: icon('🧾'), run: () => openTab('positions') },
       { id: 'go-history', group: 'Go to', label: 'History', hint: 'your swaps, liquidity and transfers', keywords: 'transactions receipts activity past', icon: icon('🕘'), run: () => openTab('history') },
       ...(!LITE ? [{ id: 'go-board', group: 'Go to', label: 'Board', hint: 'who was here first, and what they did', keywords: 'leaderboard points badges ranks', icon: icon('🏆'), run: () => openTab('board') }] : []),
       { id: 'page-stats', group: 'Pages', label: 'Stats', hint: 'liquidity, fees paid to providers, liquid staking, routing and uptime', keywords: 'analytics numbers volume tvl uptime data', icon: icon('📊'), run: () => { window.location.href = '/stats' } },
       { id: 'page-verify', group: 'Pages', label: 'Verify the contracts', hint: 'no owner and no admin, checked from your browser', keywords: 'security audit renounced keys checksum trust safe', icon: icon('✓'), run: () => { window.location.href = '/verify' } },
-      { id: 'page-developers', group: 'Pages', label: 'Build with Terra Swap', hint: 'embed a live quote on your site, or call the quote API', keywords: 'developers api embed widget iframe quote integrate', icon: icon('🧩'), run: () => { window.location.href = '/developers' } },
+      { id: 'page-developers', group: 'Pages', label: 'Build with Openfields Swap', hint: 'embed a live quote on your site, or call the quote API', keywords: 'developers api embed widget iframe quote integrate', icon: icon('🧩'), run: () => { window.location.href = '/developers' } },
       { id: 'do-alerts', group: 'Do', label: 'Price alerts and favourites', hint: 'kept in this browser; set an alert on any token page', keywords: 'alert notify notification price watch favourite favorite star', icon: icon('🔔'), run: () => openTab('wallet') },
       {
-        id: 'do-install', group: 'Do', label: 'Install Terra Swap as an app', hint: installPrompt ? 'on this device, with its own icon' : 'on a phone: Share, then Add to Home Screen',
+        id: 'do-install', group: 'Do', label: 'Install Openfields Swap as an app', hint: installPrompt ? 'on this device, with its own icon' : 'on a phone: Share, then Add to Home Screen',
         keywords: 'install app pwa home screen phone mobile desktop', icon: icon('📲'),
         run: () => { if (installPrompt) installPrompt.prompt().catch(() => {}); else setToast({ msg: 'On a phone: open the browser menu or Share, then Add to Home Screen.' }) },
       },
@@ -5546,8 +5546,8 @@ function SwapPageInner() {
       })),
       { id: 'page-source', group: 'Pages', label: 'Source code', hint: 'MIT licensed; anyone can run their own copy', keywords: 'github open source code repository', icon: icon('⌥'), run: () => { window.open('https://github.com/solid-online/terra-swap', '_blank', 'noopener') } },
       ...(!LITE ? [
-        { id: 'app-nft', group: 'Pages', label: 'Terra NFT', hint: 'collections, listings and offers on Terra NFT, Necropolis and Boost', keywords: 'nft collectibles marketplace necropolis boost listings offers buy sell terraluna apps', icon: icon('◆'), run: () => { window.location.href = NFT_URL } },
-        { id: 'app-gov', group: 'Pages', label: 'Terra Gov', hint: 'proposals, votes, validators and where the community pool’s money went', keywords: 'governance proposals vote validators community pool phoenix directive treasury terraluna apps', icon: icon('§'), run: () => { window.location.href = GOV_URL } },
+        { id: 'app-nft', group: 'Pages', label: 'Openfields NFT', hint: 'collections, listings and offers on Openfields NFT, Necropolis and Boost', keywords: 'nft collectibles marketplace necropolis boost listings offers buy sell terraluna apps', icon: icon('◆'), run: () => { window.location.href = NFT_URL } },
+        { id: 'app-gov', group: 'Pages', label: 'Openfields Gov', hint: 'proposals, votes, validators and where the community pool’s money went', keywords: 'governance proposals vote validators community pool phoenix directive treasury terraluna apps', icon: icon('§'), run: () => { window.location.href = GOV_URL } },
         { id: 'app-home', group: 'Pages', label: 'All Openfields apps', hint: 'openfields.app', keywords: 'terraluna apps home other products nft gov switcher', icon: icon('🌍'), run: () => { window.location.href = HOME_URL } },
       ] : []),
     ]
@@ -5707,7 +5707,7 @@ function SwapPageInner() {
               {tabBtn('transfer', t('Bridge'))}
               {tabBtn('positions', t('Portfolio'), tab === 'positions' || tab === 'wallet' || tab === 'history')}
               {!LITE && tabBtn('board', <>{t('Board')}{board?.rows.length ? <span className='terra-tab-count'> · {board.rows.length}</span> : null}</>)}
-              {/* Terra Predict lives next door, once it is live. A link to "not live yet" is a dead end. */}
+              {/* Openfields Predict lives next door, once it is live. A link to "not live yet" is a dead end. */}
               {!LITE && isPredictLive() && <Link href='/predict' prefetch={false} className='tl-btn tl-btn--warm'>Predict ↗</Link>}
               <button type='button' onClick={() => setPalette(true)} title='Search tokens, pools and everything this site does (⌘K)' aria-label='Search everything'
                 className='tl-btn terra-search-btn' style={{ marginLeft: 'auto' }}>
@@ -5867,7 +5867,7 @@ function SwapPageInner() {
           )}
           {data?.live && !LITE && (
             <p style={{ color: C.textWhisper, margin: `${SPACE['3']}px 0 0`, fontSize: TEXT.xs.size, lineHeight: 1.6 }}>
-              Open source and experimental. Terra Swap&apos;s pools run Astroport&apos;s audited contract code, with a {(data.poolFeeBps / 100).toFixed(1)}% pool fee, all to liquidity providers. Swaps also route through Astroport&apos;s and Skeleton Swap&apos;s pools when they price better. Not affiliated with Terraswap (app.terraswap.io), Astroport, Skeleton Swap or White Whale. Amounts are small: trade what you are happy to lose.
+              Open source and experimental. Openfields Swap&apos;s pools run Astroport&apos;s audited contract code, with a {(data.poolFeeBps / 100).toFixed(1)}% pool fee, all to liquidity providers. Swaps also route through Astroport&apos;s and Skeleton Swap&apos;s pools when they price better. Not affiliated with Terraswap (app.terraswap.io), Astroport, Skeleton Swap or White Whale. Amounts are small: trade what you are happy to lose.
             </p>
           )}
           {data?.live && !LITE && <div style={{ marginTop: SPACE['5'] }}><StatBand data={data} board={board} /></div>}
@@ -5938,7 +5938,7 @@ function SwapPageInner() {
         @keyframes terraGlobeSpin { from { opacity: 0; transform: rotate(-140deg) scale(0.4); } to { opacity: 1; transform: none; } }
         .terra-intro-thin { font-weight: 300; }
         .terra-intro-word {
-          font-size: clamp(2.6rem, 12vw, 6.4rem); font-weight: 700; line-height: 0.95; white-space: nowrap;
+          font-size: clamp(1.8rem, 8vw, 6.4rem); font-weight: 700; line-height: 0.95; white-space: nowrap;
           background: linear-gradient(180deg, #fff8dc 0%, #ffd83d 55%, #caa022 100%);
           -webkit-background-clip: text; background-clip: text;
           -webkit-text-fill-color: transparent; color: transparent;
@@ -6190,12 +6190,12 @@ export default function SwapPage() {
 export const getStaticProps: GetStaticProps = async () => ({
   props: {
     og: {
-      title: LITE ? 'Terra Pools' : 'Terra Swap',
+      title: LITE ? 'Openfields Pools' : 'Openfields Swap',
       image: LITE ? `${SITE_URL}/img/openfields-x.png` : `${SITE_URL}/api/og/swap`,
       contract: '', token: '',
       description: LITE
         ? `An unofficial, open-source interface to Astroport's pools on Terra, with no fee. Not affiliated with Astroport.`
-        : 'The best route over Terra Swap and Astroport pools on Terra, with no interface fee. Not affiliated with Terraswap.',
+        : 'The best route over Openfields Swap and Astroport pools on Terra, with no interface fee. Not affiliated with Terraswap.',
       url: `${SITE_URL}/`,
       type: 'website',
     },

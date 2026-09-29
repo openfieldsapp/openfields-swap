@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-# Store and instantiate the Terra Swap router with no admin, checking the chain
+# Store and instantiate the Openfields Swap router with no admin, checking the chain
 # after every step. Run it where terrad holds the deploy key.
 #
 #   ./deploy.sh <key-name>

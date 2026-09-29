@@ -1,5 +1,5 @@
 /**
- * Terra Predict — served at /predict.
+ * Openfields Predict — served at /predict.
  *
  * Yes or no on a price, settled by the chain itself. Parimutuel: winners
  * split the losing pool. The answer is a time-weighted average price read
@@ -327,7 +327,7 @@ function PredictPageInner() {
   return (
     <>
       <Head>
-        <title>Terra Predict</title>
+        <title>Openfields Predict</title>
       </Head>
       <div aria-hidden style={{ position: 'fixed', inset: 0, zIndex: 1, background: `radial-gradient(circle at 50% -20%, #1a1d30 0%, #0a0d18 45%, ${C.void} 100%)` }} />
       {toast && <div style={{ position: 'fixed', left: '50%', bottom: 24, transform: 'translateX(-50%)', zIndex: 50, padding: '10px 16px', background: '#f4f1e8', color: '#1a1405', borderRadius: 999, fontFamily: TERRA_FONT, fontWeight: 600, fontSize: TEXT.sm.size, boxShadow: '0 10px 30px rgba(0,0,0,0.45)' }}>{toast}</div>}
@@ -338,7 +338,7 @@ function PredictPageInner() {
               <div style={{ fontSize: '0.62rem', letterSpacing: '0.34em', color: C.korea, fontWeight: 800, textTransform: 'uppercase', marginBottom: SPACE['2'] }}>Experimental</div>
               <h1 style={{ fontFamily: TERRA_FONT, fontSize: 'clamp(1.6rem, 6vw, 2.6rem)', lineHeight: 1.02, margin: 0, letterSpacing: '-0.02em', fontWeight: 700, display: 'inline-flex', alignItems: 'center', gap: '0.28em', whiteSpace: 'nowrap' }}>
                 <img src='/img/terra-globe.svg' alt='' aria-hidden width={52} height={49} draggable={false} style={{ width: '0.82em', height: 'auto', flex: 'none', filter: 'drop-shadow(0 2px 10px rgba(52,88,184,0.45))' }} />
-                <span className='predict-title'><span style={{ fontWeight: 700 }}>Terra</span> <span style={{ fontWeight: 300 }}>Predict</span></span>
+                <span className='predict-title'><span style={{ fontWeight: 700 }}>Openfields</span> <span style={{ fontWeight: 300 }}>Predict</span></span>
               </h1>
             </div>
             <div style={{ display: 'flex', alignItems: 'center', gap: SPACE['2'], flex: 'none' }}>
@@ -402,7 +402,7 @@ export const getStaticProps: GetStaticProps = async () => {
   return ({
   props: {
     og: {
-      title: 'Terra Predict',
+      title: 'Openfields Predict',
       image: `${base}/api/og/swap`,
       contract: '', token: '',
       description: 'Yes or no on the LUNA price, settled by the chain itself. Parimutuel, no oracle, no admin. Experimental.',

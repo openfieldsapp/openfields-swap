@@ -24,7 +24,7 @@ export default function App({ Component, pageProps }: AppProps) {
   // A page that signs nothing and is framed by other sites (/embed) renders without the wallet stack.
   const bare = (Component as { bare?: boolean }).bare === true
   const og = (pageProps as { og?: PageOg } | undefined)?.og ?? null
-  const title = og?.title ?? 'Terra Swap'
+  const title = og?.title ?? 'Openfields Swap'
   const description = og?.description ?? 'A decentralized exchange on Terra. Experimental.'
   return (
     <>
@@ -53,7 +53,7 @@ export default function App({ Component, pageProps }: AppProps) {
         <meta key='apple-capable' name='apple-mobile-web-app-capable' content='yes' />
         <meta key='mobile-capable' name='mobile-web-app-capable' content='yes' />
         <meta key='apple-status' name='apple-mobile-web-app-status-bar-style' content='black-translucent' />
-        <meta key='apple-title' name='apple-mobile-web-app-title' content='Terra Swap' />
+        <meta key='apple-title' name='apple-mobile-web-app-title' content='Swap' />
       </Head>
       {bare ? (
         <ErrorBoundary>

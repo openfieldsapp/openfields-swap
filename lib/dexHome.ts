@@ -88,7 +88,7 @@ export async function buildHome(): Promise<DexResponse> {
   // No market scan here: it lives in /api/dex-market so a cold start never blocks the page.
   const [allPairs, v2Pairs, head, seoul] = await Promise.all([queryPairs(), queryPairsOf(TERRA_SWAP_FACTORY_V2).catch(() => []), latestBlock(), seoulWeather()])
   const pairs = listedPairs(allPairs)
-  // Factory v2's concentrated and stable pools are Terra Swap's too; each carries its factory for the router.
+  // Factory v2's concentrated and stable pools are Openfields Swap's too; each carries its factory for the router.
   const pools = await Promise.all([
     ...pairs.map(async (p) => toPoolView(p, await queryPool(p.contract_addr))),
     ...v2Pairs.map(async (p) => toPoolView(p, await queryPool(p.contract_addr), HOME_VENUE, undefined, TERRA_SWAP_FACTORY_V2)),

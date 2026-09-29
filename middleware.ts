@@ -50,17 +50,17 @@ function previewCard(request: NextRequest): Response | null {
   let title = '', description = '', query = ''
   if (ADDRESS.test(who)) {
     const short = `${who.slice(0, 9)}…${who.slice(-4)}`
-    title = `${short} on Terra Swap`
-    description = `${short}'s points, badges and moves on the Terra Swap board.`
+    title = `${short} on Openfields Swap`
+    description = `${short}'s points, badges and moves on the Openfields Swap board.`
     query = `?who=${who}`
   } else if (TOKEN.test(from) && TOKEN.test(to) && from.toLowerCase() !== to.toLowerCase()) {
-    title = `Swap ${amount ? `${amount} ` : ''}${from} for ${to} on Terra Swap`
-    description = 'Opens this swap on Terra Swap, priced across Terra Swap and Astroport pools, with no interface fee.'
+    title = `Swap ${amount ? `${amount} ` : ''}${from} for ${to} on Openfields Swap`
+    description = 'Opens this swap on Openfields Swap, priced across Openfields Swap and Astroport pools, with no interface fee.'
     query = `?from=${encodeURIComponent(from)}&to=${encodeURIComponent(to)}${amount ? `&amount=${amount}` : ''}`
   } else return null
   const url = `${origin}/${query}`, image = `${origin}/api/og/swap${query}`
   const meta = [
-    ['og:title', title], ['og:description', description], ['og:image', image], ['og:url', url], ['og:type', 'website'], ['og:site_name', 'Terra Swap'],
+    ['og:title', title], ['og:description', description], ['og:image', image], ['og:url', url], ['og:type', 'website'], ['og:site_name', 'Openfields'],
   ].map(([k, v]) => `<meta property="${k}" content="${esc(v)}">`).join('')
     + `<meta name="twitter:card" content="summary_large_image"><meta name="twitter:title" content="${esc(title)}"><meta name="twitter:description" content="${esc(description)}"><meta name="twitter:image" content="${esc(image)}">`
   const html = `<!doctype html><html lang="en"><head><meta charset="utf-8"><title>${esc(title)}</title><meta name="description" content="${esc(description)}">${meta}<link rel="canonical" href="${esc(url)}"></head><body><a href="${esc(url)}">${esc(title)}</a></body></html>`
