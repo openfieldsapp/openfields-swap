@@ -33,7 +33,7 @@ export const CURRENT_PRODUCT: ProductKey = 'swap'
 /** Every app in the family. The description is the English key; the switcher translates it. */
 export const PRODUCTS: { key: ProductKey; word: string; glyph: string; description: string; url: string }[] = [
   { key: 'home', word: 'Home', glyph: '⌂', description: 'Everything your wallet holds, stakes, owes and votes on', url: TERRA_HOME_URL },
-  { key: 'ask', word: 'Ask', glyph: '✦', description: 'Say what you want to do on Terra, approve it in your wallet', url: ASK_URL },
+  { key: 'ask', word: 'Ask', glyph: '✦', description: 'Say what you want to do on Terra or Injective, approve it in your wallet', url: ASK_URL },
   { key: 'swap', word: 'Swap', glyph: '⇅', description: 'Swap tokens, pools, liquidity, transfers', url: '/' },
   { key: 'stake', word: 'Stake', glyph: '⬢', description: 'Stake LUNA, move it, collect rewards', url: STAKE_URL },
   { key: 'nft', word: 'NFT', glyph: '◆', description: 'Collections, items, listings and offers', url: NFT_URL },
