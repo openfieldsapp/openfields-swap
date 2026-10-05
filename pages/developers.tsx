@@ -147,6 +147,16 @@ ${base}/api/volume?date=2026-09-20`}</Code>
         </p>
       </Panel>
 
+      <Panel title='Counting Openfields transactions' note="Every transaction signed in an Openfields app says which app built it, at the start of its memo. A memo a person types for the receiver (an exchange's deposit memo) is sent exactly as typed instead.">
+        <ul style={{ fontSize: TEXT.xs.size, color: C.textSecondary, lineHeight: 1.8, margin: 0, paddingLeft: 18, fontFamily: mono }}>
+          {['Openfields Swap: …', 'Openfields Ask', 'Openfields Home', 'Openfields NFT: …', 'Openfields Gov: …', 'Openfields Stake: …', 'Openfields Daily'].map(m => <li key={m}>{m}</li>)}
+        </ul>
+        <p style={{ fontSize: TEXT.xs.size, color: C.textMuted, lineHeight: 1.6, margin: '8px 0 0' }}>
+          Match <code style={{ fontFamily: mono }}>^(Openfields|Terra) (Swap|Ask|Home|NFT|Gov|Stake|Daily)\b</code>: before 29 September 2026 the apps were called Terra Swap, Terra Ask and so on, and those memos stay on chain.
+          A swap through Ask or Home also carries the swap&apos;s quote (&ldquo;Openfields Ask · routed swap (quote …)&rdquo;).
+        </p>
+      </Panel>
+
       <Panel title='Notes'>
         <ul style={{ fontSize: TEXT.xs.size, color: C.textSecondary, lineHeight: 1.7, margin: 0, paddingLeft: 18 }}>
           <li>A quote is what the pools would deliver when it is read. It is not an offer and not advice, and it moves with every trade. The same goes for sizes, prices and market data.</li>

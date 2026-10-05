@@ -3325,7 +3325,8 @@ function SendPanel({ pools, onDone }: { pools: PoolView[]; onDone: () => void })
     if (!canSend || !micro) return
     setErr(null); setOk(null); setBusy(true)
     try {
-      const r = await send.mutateAsync({ msgs: [sendMsg({ sender: me, recipient: addr, info: token.info, amount: micro })], memo: memo.trim(), raw: true }) as { transactionHash?: string }
+      // A typed memo goes exactly as typed (an exchange reads it); without one, the memo says the send was made here.
+      const r = await send.mutateAsync({ msgs: [sendMsg({ sender: me, recipient: addr, info: token.info, amount: micro })], ...(memo.trim() ? { memo: memo.trim(), raw: true } : { memo: 'send' }) }) as { transactionHash?: string }
       setOk({ text: `Sent ${fromMicro(micro, token.decimals, 6)} ${token.label} to ${addr.slice(0, 10)}…${addr.slice(-6)}.`, tx: r?.transactionHash ?? '' })
       rememberRecipient(addr)
       setAmount('')
