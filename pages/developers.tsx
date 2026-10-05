@@ -15,7 +15,7 @@ import { KNOWN_TOKENS } from 'lib/dex'
 import { SITE_URL } from 'lib/siteUrl'
 
 const mono = 'ui-monospace, SFMono-Regular, Menlo, monospace'
-const REPO = 'https://github.com/solid-online/terra-swap'
+const REPO = 'https://github.com/openfieldsapp/openfields-swap'
 
 function Code({ children }: { children: string }) {
   return (

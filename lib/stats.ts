@@ -17,8 +17,8 @@ import { isSiteMemo, planRoute, planTrade, quoteBest, readTradeMemo, tradeText }
 const UA = { 'User-Agent': 'Mozilla/5.0 terra-swap-stats', accept: 'application/json' }
 const DAY = 86_400_000
 const WINDOW_DAYS = 30
-const UPTIME_LOG = 'https://raw.githubusercontent.com/solid-online/terra-swap/status/uptime'
-const UPTIME_API = 'https://api.github.com/repos/solid-online/terra-swap/contents/uptime'
+const UPTIME_LOG = 'https://raw.githubusercontent.com/openfieldsapp/openfields-swap/status/uptime'
+const UPTIME_API = 'https://api.github.com/repos/openfieldsapp/openfields-swap/contents/uptime'
 
 interface Ev { type: string; attributes: { key: string; value: string }[] }
 interface Tx { txhash: string; code: number; timestamp: string; events: Ev[]; body?: { memo?: string; messages?: Record<string, unknown>[] } }

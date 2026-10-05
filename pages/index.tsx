@@ -5580,7 +5580,7 @@ function SwapPageInner() {
         id: `lang-${l.code}`, group: 'Do', label: `Language: ${l.name}`, hint: l.code === lang ? 'in use' : 'the swap, the token picker and the wallet',
         keywords: `language lang translate ${l.code} ${l.name} english korean spanish vietnamese 한국어 español tiếng việt`, icon: icon('🌐'), run: () => setLang(l.code),
       })),
-      { id: 'page-source', group: 'Pages', label: 'Source code', hint: 'MIT licensed; anyone can run their own copy', keywords: 'github open source code repository', icon: icon('⌥'), run: () => { window.open('https://github.com/solid-online/terra-swap', '_blank', 'noopener') } },
+      { id: 'page-source', group: 'Pages', label: 'Source code', hint: 'MIT licensed; anyone can run their own copy', keywords: 'github open source code repository', icon: icon('⌥'), run: () => { window.open('https://github.com/openfieldsapp/openfields-swap', '_blank', 'noopener') } },
       ...(!LITE ? [
         { id: 'app-nft', group: 'Pages', label: 'Openfields NFT', hint: 'collections, listings and offers on Openfields NFT, Necropolis and Boost', keywords: 'nft collectibles marketplace necropolis boost listings offers buy sell terraluna apps', icon: icon('◆'), run: () => { window.location.href = NFT_URL } },
         { id: 'app-gov', group: 'Pages', label: 'Openfields Gov', hint: 'proposals, votes, validators and where the community pool’s money went', keywords: 'governance proposals vote validators community pool phoenix directive treasury terraluna apps', icon: icon('§'), run: () => { window.location.href = GOV_URL } },
@@ -5920,7 +5920,7 @@ function SwapPageInner() {
             <div style={{ marginTop: SPACE['5'], paddingTop: SPACE['3'], borderTop: `1px solid ${C.divider}`, display: 'flex', flexWrap: 'wrap', gap: SPACE['2'], fontFamily: TERRA_FONT, fontSize: '0.64rem', letterSpacing: '0.08em', color: C.textMuted, textTransform: 'uppercase' }}>
               <span>phoenix-1{data?.height ? ` #${data.height.toLocaleString('en-US')}` : ''}</span>
               <span>·</span>
-              <a href='https://github.com/solid-online/terra-swap' target='_blank' rel='noreferrer' style={{ color: C.textMuted }}>source · MIT ↗</a>
+              <a href='https://github.com/openfieldsapp/openfields-swap' target='_blank' rel='noreferrer' style={{ color: C.textMuted }}>source · MIT ↗</a>
               <span style={independentStyle}>{INDEPENDENT}</span>
             </div>
           ) : (

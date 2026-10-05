@@ -35,7 +35,7 @@ repository is one way to look at them.
 ## Run it
 
 ```bash
-git clone https://github.com/solid-online/terra-swap
+git clone https://github.com/openfieldsapp/openfields-swap
 cd terra-swap
 cp .env.example .env.local        # defaults point at the live factory
 npm install
@@ -46,7 +46,7 @@ Production: `npm run build && npm start`, or any Node host.
 
 ### Deploy to Vercel in one click
 
-[![Deploy with Vercel](https://vercel.com/button)](https://vercel.com/new/clone?repository-url=https%3A%2F%2Fgithub.com%2Fsolid-online%2Fterra-swap&env=NEXT_PUBLIC_DEX_FACTORY&envDescription=The%20factory%20address%20the%20swap%20reads%20pools%20from&project-name=terra-swap)
+[![Deploy with Vercel](https://vercel.com/button)](https://vercel.com/new/clone?repository-url=https%3A%2F%2Fgithub.com%2Fopenfieldsapp%2Fopenfields-swap&env=NEXT_PUBLIC_DEX_FACTORY&envDescription=The%20factory%20address%20the%20swap%20reads%20pools%20from&project-name=terra-swap)
 
 Everything else is optional: see `.env.example`.
 

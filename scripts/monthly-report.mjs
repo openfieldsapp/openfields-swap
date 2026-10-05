@@ -33,7 +33,7 @@ const maintenance = /^terra1[0-9a-z]{38,58}$/.test(maintArg) ? maintArg : ''
 const CHECK_MINUTES = 10
 const FACTORY = 'terra1gx7n4yrfc2req7tdt9vpj66kr0cssnqkjsr80xmfacjpdlw6mzlqvlp3xd'
 const LCDS = ['https://terra-api.polkachu.com', 'https://terra-lcd.publicnode.com']
-const UA = { 'user-agent': 'terra-swap-report (+https://github.com/solid-online/terra-swap)', accept: 'application/json' }
+const UA = { 'user-agent': 'terra-swap-report (+https://github.com/openfieldsapp/openfields-swap)', accept: 'application/json' }
 
 const usd = (n) => (n >= 1000 ? `$${Math.round(n).toLocaleString('en-US')}` : `$${n.toFixed(2)}`)
 const pct = (n) => `${n.toFixed(2)}%`
@@ -385,7 +385,7 @@ function changesSection() {
   try {
     const log = execFileSync('git', ['log', `--since=${start.toISOString()}`, `--until=${end.toISOString()}`, '--no-merges', '--pretty=format:%h %ad %s', '--date=short'], { encoding: 'utf8' }).trim()
     if (!log) return ['No changes were shipped to this repository this month.']
-    return ['From this repository\'s history (github.com/solid-online/terra-swap):', '', ...log.split('\n').map((l) => `- ${l}`)]
+    return ['From this repository\'s history (github.com/openfieldsapp/openfields-swap):', '', ...log.split('\n').map((l) => `- ${l}`)]
   } catch {
     return ['The git history was not available where this report was generated.']
   }

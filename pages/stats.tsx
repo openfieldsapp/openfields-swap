@@ -25,7 +25,7 @@ const C = {
   surface: '#0b0f1c', surfaceElev: '#111729', divider: 'rgba(255,216,61,0.13)', goldCore: '#caa022', goldLit: '#ffd83d',
   textPrimary: '#f4f1e8', textSecondary: '#d6cfbd', textMuted: '#9a927f', textWhisper: '#6b6555', success: '#3ddc97', alert: '#e04a5a', ember: '#ffb347',
 } as const
-const REPO = 'https://github.com/solid-online/terra-swap'
+const REPO = 'https://github.com/openfieldsapp/openfields-swap'
 
 function Panel({ title, note, children }: { title: string; note?: React.ReactNode; children: React.ReactNode }) {
   return (

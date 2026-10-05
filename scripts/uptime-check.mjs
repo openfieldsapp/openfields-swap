@@ -18,7 +18,7 @@ import { join } from 'node:path'
 
 const dir = process.argv[2] || 'status-data'
 const TIMEOUT_MS = 20_000
-const UA = 'terra-swap-uptime (+https://github.com/solid-online/terra-swap)'
+const UA = 'terra-swap-uptime (+https://github.com/openfieldsapp/openfields-swap)'
 
 const TARGETS = [
   {

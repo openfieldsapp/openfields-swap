@@ -31,7 +31,7 @@ const C = {
   success: '#3ddc97', alert: '#e04a5a', korea: '#e0485a',
 } as const
 
-const REPO = 'https://github.com/solid-online/terra-swap'
+const REPO = 'https://github.com/openfieldsapp/openfields-swap'
 const OWNER_SINK = 'terra1ylr5lqj9e4ehjpxc4944rhjcmq7zdaju50r3tn60vn7rsqym50gq5w27l3'
 /** Codes and checksums as expected. Openfields Swap's own builds: contracts/*\/artifacts/checksums.txt. */
 const EXPECT = {
