@@ -7,7 +7,9 @@
  * the same wallet again when it is the browser extension (Keplr asks once per
  * app, the first time); a disconnect in one app disconnects the next one
  * opened. A WalletConnect session belongs to the site that made it, so a phone
- * connected that way connects again in each app.
+ * connected that way connects again in each app. When Keplr's window is closed
+ * or declined in an app, that app stops opening it by itself (until the person
+ * connects there), so it does not pop up again on every visit.
  *
  * Rendered inside the wallet kit's provider; it draws nothing.
  */
@@ -22,6 +24,11 @@ const OFF = 'none'
 const SETTLE_MS = 700
 /** Where the wallet kit keeps this app's own session (cosmos-kit 2). */
 const SAVED = 'cosmos-kit@2:core//current-wallet'
+/** Set in this app when Keplr's window was closed or declined: it is not opened by itself again. */
+const DECLINED = 'openfields:carry-declined:v1'
+
+const declinedHere = (): boolean => { try { return localStorage.getItem(DECLINED) === '1' } catch { return false } }
+const setDeclined = (on: boolean) => { try { if (on) localStorage.setItem(DECLINED, '1'); else localStorage.removeItem(DECLINED) } catch { /* asked again next time */ } }
 
 export function readCarried(): string | null {
   const m = document.cookie.match(/(?:^|;\s*)of_wallet=([^;]*)/)
@@ -38,8 +45,8 @@ function carry(value: string) {
 export default function WalletCarry({ chain = 'terra2' }: { chain?: string }) {
   const { status, wallet, disconnect } = useChain(chain)
   const extension = useChainWallet(chain, EXTENSION)
-  const now = useRef({ status, wallet, disconnect, connect: extension.connect })
-  now.current = { status, wallet, disconnect, connect: extension.connect }
+  const now = useRef({ status, wallet, disconnect, connect: extension.connect, connected: () => !!extension.chainWallet?.address })
+  now.current = { status, wallet, disconnect, connect: extension.connect, connected: () => !!extension.chainWallet?.address }
   const was = useRef(status)
   const waited = useRef(false)
   const decided = useRef(false)
@@ -54,17 +61,20 @@ export default function WalletCarry({ chain = 'terra2' }: { chain?: string }) {
     const wanted = readCarried()
     if (s === 'Connected') {
       if (wanted === OFF) off()
-      else if (w?.name) carry(w.name)
+      else if (w?.name) { carry(w.name); setDeclined(false) }
       return
     }
     const keplr = (window as unknown as { keplr?: unknown }).keplr
-    if (wanted === EXTENSION && keplr) connect().catch(() => { /* declined in Keplr: stays disconnected */ })
+    if (wanted === EXTENSION && keplr && !declinedHere()) {
+      // The kit records a refusal instead of throwing it, so the outcome is read from the wallet afterwards.
+      connect().then(() => { if (!now.current.connected()) setDeclined(true) }, () => setDeclined(true))
+    }
   }
 
   useEffect(() => {
     if (!decided.current) {
       if (waited.current && status !== 'Connecting') decide()
-    } else if (status === 'Connected' && wallet?.name) carry(wallet.name)
+    } else if (status === 'Connected' && wallet?.name) { carry(wallet.name); setDeclined(false) }
     else if (was.current === 'Connected' && status === 'Disconnected') carry(OFF)
     was.current = status
     // eslint-disable-next-line react-hooks/exhaustive-deps -- decide reads the latest state through a ref

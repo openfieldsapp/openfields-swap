@@ -1,6 +1,6 @@
 /**
- * Search everything the site does: ⌘K (Ctrl+K), or the Search button beside
- * the tabs. Sections and pages, the things people miss (bringing money in from
+ * Search everything the site does: ⌘K (Ctrl+K), or the search button in the
+ * header. Sections and pages, the things people miss (bringing money in from
  * another chain, liquid staking against the hubs, closing a gap), every token
  * to buy or sell, and every pool with liquidity. Typing filters on the label,
  * the description and a few extra words each item answers to; arrows and Enter
@@ -8,8 +8,7 @@
  */
 
 import { useEffect, useMemo, useRef, useState } from 'react'
-import { TEXT } from 'components/tokens'
-import { TERRA_FONT } from 'lib/font'
+import { Icon, IconButton } from 'components/ui'
 
 export interface PaletteItem {
   id: string
@@ -21,11 +20,6 @@ export interface PaletteItem {
   icon?: React.ReactNode
   run: () => void
 }
-
-const C = {
-  surface: '#0b0f1c', surfaceElev: '#111729', divider: 'rgba(255,216,61,0.13)', goldCore: '#caa022', goldLit: '#ffd83d',
-  textPrimary: '#f4f1e8', textSecondary: '#d6cfbd', textMuted: '#9a927f', textWhisper: '#6b6555',
-} as const
 
 /** Shown before anything is typed, in this order. Tokens and pools wait for a query: there are too many. */
 const RESTING = ['Do', 'Go to', 'Pages']
@@ -98,45 +92,32 @@ export default function CommandPalette({ items, onClose }: { items: PaletteItem[
   }
 
   return (
-    <div role='dialog' aria-modal='true' aria-label='Search everything' onKeyDown={onKey} onMouseDown={e => { if (e.target === e.currentTarget) onClose() }}
-      style={{ position: 'fixed', inset: 0, zIndex: 1000, background: 'rgba(3,5,12,0.62)', backdropFilter: 'blur(3px)', display: 'flex', alignItems: 'flex-start', justifyContent: 'center', padding: '10vh 12px 12px' }}>
-      <div style={{ width: 'min(560px, 100%)', maxHeight: 'min(640px, 80vh)', display: 'flex', flexDirection: 'column', background: C.surfaceElev, border: `1px solid ${C.divider}`, borderRadius: 16, boxShadow: '0 24px 60px rgba(0,0,0,0.55)', overflow: 'hidden', fontFamily: TERRA_FONT }}>
-        <div style={{ display: 'flex', alignItems: 'center', gap: 10, padding: '12px 14px', borderBottom: `1px solid ${C.divider}` }}>
-          <span aria-hidden style={{ color: C.goldLit, fontSize: '1.1rem', lineHeight: 1 }}>⌕</span>
+    <div className='of-overlay sw-pal-overlay' onMouseDown={e => { if (e.target === e.currentTarget) onClose() }}>
+      <div className='sw-pal' role='dialog' aria-modal='true' aria-label='Search everything' onKeyDown={onKey}>
+        <div className='sw-pal-head'>
+          <Icon name='search' size={18} />
           <input ref={inputRef} value={q} onChange={e => setQ(e.target.value)} aria-label='Search'
-            placeholder='A token, a pool, or what you want to do'
-            style={{ flex: 1, minWidth: 0, background: 'transparent', border: 'none', outline: 'none', color: C.textPrimary, fontSize: TEXT.md.size, fontFamily: 'inherit' }}
-            spellCheck={false} autoComplete='off' />
-          <button type='button' onClick={onClose} aria-label='Close' style={{ background: 'transparent', border: `1px solid ${C.divider}`, borderRadius: 8, color: C.textMuted, fontSize: TEXT.xs.size, padding: '2px 8px', cursor: 'pointer', fontFamily: 'inherit' }}>esc</button>
+            placeholder='A token, a pool, or what you want to do' spellCheck={false} autoComplete='off'
+            role='combobox' aria-expanded='true' aria-controls='sw-pal-list' aria-activedescendant={list[active] ? `sw-pal-${active}` : undefined} />
+          <IconButton icon='close' label='Close' onClick={onClose} />
         </div>
-        <div ref={listRef} role='listbox' style={{ overflowY: 'auto', padding: 6 }}>
-          {list.length === 0 && (
-            <div style={{ padding: 12, fontSize: TEXT.xs.size, color: C.textMuted, lineHeight: 1.6 }}>
-              Nothing matches. Try LUNA, SOLID, bridge, pool, stake or history.
-            </div>
-          )}
+        <div ref={listRef} id='sw-pal-list' role='listbox' className='sw-pal-list'>
+          {list.length === 0 && <p className='sw-pal-empty'>Nothing matches. Try LUNA, bridge, pool or history.</p>}
           {list.map((item, idx) => (
             <div key={item.id}>
-              {(idx === 0 || list[idx - 1].group !== item.group) && (
-                <div style={{ fontSize: '0.6rem', letterSpacing: '0.14em', textTransform: 'uppercase', color: C.textWhisper, padding: '10px 10px 4px' }}>{item.group}</div>
-              )}
-              <div data-row={idx} role='option' aria-selected={idx === active} onMouseEnter={() => setActive(idx)} onClick={() => pick(item)}
-                style={{ display: 'flex', alignItems: 'center', gap: 10, padding: '8px 10px', borderRadius: 10, cursor: 'pointer', background: idx === active ? C.surface : 'transparent', border: `1px solid ${idx === active ? C.divider : 'transparent'}` }}>
-                <span aria-hidden style={{ width: 26, display: 'inline-flex', justifyContent: 'center', flex: 'none', fontSize: '1rem' }}>{item.icon}</span>
-                <div style={{ minWidth: 0, flex: 1 }}>
-                  <div style={{ color: C.textPrimary, fontSize: TEXT.sm.size, fontWeight: 600 }}>{item.label}</div>
-                  {item.hint && <div style={{ color: C.textMuted, fontSize: TEXT.xs.size, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>{item.hint}</div>}
+              {(idx === 0 || list[idx - 1].group !== item.group) && <div className='sw-pal-group'>{item.group}</div>}
+              <div id={`sw-pal-${idx}`} data-row={idx} role='option' aria-selected={idx === active} className={`sw-pal-item${idx === active ? ' is-active' : ''}`}
+                onMouseEnter={() => setActive(idx)} onClick={() => pick(item)}>
+                {item.icon && <span className='sw-pal-icon' aria-hidden>{item.icon}</span>}
+                <div>
+                  <b>{item.label}</b>
+                  {item.hint && <span>{item.hint}</span>}
                 </div>
-                {idx === active && <span aria-hidden style={{ color: C.goldLit, fontSize: TEXT.xs.size }}>↵</span>}
               </div>
             </div>
           ))}
         </div>
-        {!q && (
-          <div style={{ fontSize: TEXT.xs.size, color: C.textWhisper, padding: '8px 14px', borderTop: `1px solid ${C.divider}`, lineHeight: 1.5 }}>
-            Type a token to buy or sell it, or a pool to jump to it.{touch ? '' : ' ↑ ↓ to move, Enter to open.'}
-          </div>
-        )}
+        {!q && !touch && <div className='sw-pal-foot'>Arrows to move, Enter to open, Esc to close.</div>}
       </div>
     </div>
   )

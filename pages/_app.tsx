@@ -2,10 +2,19 @@ import type { AppProps } from 'next/app'
 import dynamic from 'next/dynamic'
 import Head from 'next/head'
 import ErrorBoundary from 'components/ErrorBoundary'
+import localFont from 'next/font/local'
 import { TxRegionGateProvider } from 'components/RegionGate'
-import RegionBanner from 'components/RegionBanner'
-import { MONTSERRAT } from 'lib/font'
 import 'styles/globals.css'
+import 'styles/swap.css'
+
+/**
+ * The family typeface ships with the site (Montserrat, SIL Open Font License,
+ * its variable Latin cut) rather than being loaded from Google's servers when a
+ * page opens: loading it from Google sends every visitor's address to a third
+ * party, and a German court held in 2022 that doing so without consent breaks
+ * the GDPR. It is a local file, so the build does not reach Google either.
+ */
+const montserrat = localFont({ src: '../lib/fonts/montserrat-latin.woff2', weight: '100 900', display: 'swap' })
 
 // The wallet stack (cosmos-kit, wallet adapters, WalletConnect) is client-only.
 // Social meta is rendered here, server-side, so crawlers get it without it.
@@ -29,7 +38,7 @@ export default function App({ Component, pageProps }: AppProps) {
   return (
     <>
       <style jsx global>{`
-        :root { --tl-font: ${MONTSERRAT}, 'Inter', system-ui, -apple-system, sans-serif; }
+        :root { --font: ${montserrat.style.fontFamily}, system-ui, -apple-system, 'Segoe UI', sans-serif; }
       `}</style>
       <Head>
         <title>{title}</title>
@@ -47,9 +56,9 @@ export default function App({ Component, pageProps }: AppProps) {
         <link key='icon-lg' rel='icon' type='image/png' sizes='200x200' href='/img/openfields-x.png?v=20260923' />
         <link key='apple-touch-icon' rel='apple-touch-icon' href='/img/openfields-x-180.png?v=20260923' />
         <meta name='viewport' content='width=device-width, initial-scale=1, viewport-fit=cover' />
-        {/* Installable as an app: home screen icon, full screen, the night-sky colour behind the status bar. */}
+        {/* Installable as an app: home screen icon, full screen, the page colour behind the status bar. */}
         <link key='manifest' rel='manifest' href='/manifest.webmanifest' />
-        <meta key='theme-color' name='theme-color' content='#05070f' />
+        <meta key='theme-color' name='theme-color' content='#07090f' />
         <meta key='apple-capable' name='apple-mobile-web-app-capable' content='yes' />
         <meta key='mobile-capable' name='mobile-web-app-capable' content='yes' />
         <meta key='apple-status' name='apple-mobile-web-app-status-bar-style' content='black-translucent' />
@@ -63,7 +72,6 @@ export default function App({ Component, pageProps }: AppProps) {
         <ErrorBoundary>
           <Providers>
             <TxRegionGateProvider>
-              <RegionBanner />
               <ErrorBoundary>
                 <Component {...pageProps} />
               </ErrorBoundary>

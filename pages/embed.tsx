@@ -11,23 +11,12 @@ import Head from 'next/head'
 import { useEffect, useState } from 'react'
 import { KNOWN_TOKENS } from 'lib/dex'
 import { TokenIcon } from 'components/TokenIcon'
+import { Icon } from 'components/ui'
 import type { QuoteResponse } from 'lib/api/quote'
-import { MONTSERRAT } from 'lib/font'
 
-const FONT = `${MONTSERRAT}, 'Inter', system-ui, sans-serif`
-const C = {
-  void: '#05070f', surface: '#0b0f1c', elev: '#111729', divider: 'rgba(255,216,61,0.16)', gold: '#ffd83d', goldCore: '#caa022',
-  text: '#f4f1e8', muted: '#9a927f', whisper: '#6b6555', alert: '#e04a5a',
-} as const
 /** The tokens with markets worth quoting; the old cw20 ASTRO and the thinnest listings stay out of a stranger's widget. */
 const TOKENS = KNOWN_TOKENS.filter(t => !['ASTRO.cw20', 'VKR', 'USDT.axl'].includes(t.key))
 const enc = encodeURIComponent
-
-const field: React.CSSProperties = {
-  flex: 1, minWidth: 0, padding: '10px 12px', background: 'rgba(0,0,0,0.35)', border: `1px solid ${C.divider}`, borderRadius: 10,
-  color: C.text, fontSize: 18, fontFamily: 'inherit', fontVariantNumeric: 'tabular-nums', boxSizing: 'border-box',
-}
-const select: React.CSSProperties = { ...field, flex: 'none', width: 140, fontSize: 15, cursor: 'pointer' }
 
 function Embed() {
   const [from, setFrom] = useState('LUNA')
@@ -69,9 +58,14 @@ function Embed() {
   const swapUrl = `${origin}/?from=${enc(from)}&to=${enc(to)}${amount.trim() ? `&amount=${enc(amount.trim())}` : ''}`
   const pools = quote ? quote.parts.reduce((n, p) => n + p.hops.length, 0) : 0
   const tokenSelect = (value: string, onChange: (v: string) => void, label: string) => (
-    <select aria-label={label} value={value} onChange={e => onChange(e.target.value)} style={select}>
-      {TOKENS.map(t => <option key={t.key} value={t.key}>{t.label}</option>)}
-    </select>
+    <label className='sw-token sw-embed-token'>
+      <TokenIcon label={value} size={24} />
+      <span className='of-sr'>{label}</span>
+      <select value={value} onChange={e => onChange(e.target.value)}>
+        {TOKENS.map(t => <option key={t.key} value={t.key}>{t.label}</option>)}
+      </select>
+      <Icon name='chevronDown' size={16} />
+    </label>
   )
 
   return (
@@ -80,45 +74,43 @@ function Embed() {
         <title>Openfields Swap quote</title>
         <meta name='robots' content='noindex' />
       </Head>
-      <div style={{ minHeight: '100vh', background: C.void, color: C.text, fontFamily: FONT, padding: 8, boxSizing: 'border-box', display: 'flex', justifyContent: 'center', alignItems: 'flex-start' }}>
-        <div style={{ width: '100%', maxWidth: 440, background: C.elev, border: `1px solid ${C.divider}`, borderRadius: 16, padding: 14, boxSizing: 'border-box', display: 'grid', gap: 10, alignContent: 'start' }}>
-          <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
-            <img src='/img/terra-globe.svg' alt='' width={22} height={21} />
-            <span style={{ fontSize: 16 }}><b style={{ color: C.gold }}>Openfields</b> <span style={{ fontWeight: 300 }}>Swap</span></span>
-            <span style={{ marginLeft: 'auto', fontSize: 11, letterSpacing: '0.12em', textTransform: 'uppercase', color: C.whisper }}>quote</span>
-          </div>
-
-          <div style={{ display: 'flex', gap: 8, alignItems: 'center' }}>
-            <input aria-label='Amount' inputMode='decimal' value={amount} onChange={e => setAmount(e.target.value.replace(',', '.'))} style={field} />
-            {tokenSelect(from, v => { if (v === to) setTo(from); setFrom(v) }, 'Pay with')}
-          </div>
-          <div style={{ display: 'flex', justifyContent: 'center', margin: '-4px 0' }}>
-            <button type='button' aria-label='Flip' onClick={() => { setFrom(to); setTo(from) }}
-              style={{ width: 30, height: 30, borderRadius: 999, background: C.surface, border: `1px solid ${C.divider}`, color: C.gold, cursor: 'pointer', fontSize: 15 }}>⇅</button>
-          </div>
-          <div style={{ display: 'flex', gap: 8, alignItems: 'center' }}>
-            <div style={{ ...field, display: 'flex', alignItems: 'center', gap: 8, color: quote ? C.text : C.muted }}>
-              <TokenIcon label={to} size={18} />
-              {loading && !quote ? '…' : quote ? Number(quote.expectedOut).toLocaleString('en-US', { maximumFractionDigits: 6 }) : '—'}
+      <main className='sw-embed-page'>
+        <div className='sw-box sw-embed-box'>
+          <p className='sw-embed-brand'>
+            {/* eslint-disable-next-line @next/next/no-img-element -- a 20px mark */}
+            <img src='/img/openfields-x-180.png?v=20260923' alt='' width={20} height={20} />
+            <span><b>Openfields</b> Swap</span>
+          </p>
+          <div className='sw-field'>
+            <div className='sw-field-head'><label htmlFor='em-amount'>You pay</label></div>
+            <div className='sw-field-main'>
+              <input id='em-amount' className='sw-amount' inputMode='decimal' value={amount} onChange={e => setAmount(e.target.value.replace(',', '.'))} />
+              {tokenSelect(from, v => { if (v === to) setTo(from); setFrom(v) }, 'Pay with')}
             </div>
-            {tokenSelect(to, v => { if (v === from) setFrom(to); setTo(v) }, 'Receive')}
           </div>
-
-          <div style={{ fontSize: 12, lineHeight: 1.5, color: err ? C.alert : C.muted, minHeight: 36 }}>
-            {err ?? (quote
-              ? <>Through {pools} pool{pools === 1 ? '' : 's'}{quote.parts.length > 1 ? ', split over two paths' : ''} · price impact {quote.impactPct.toFixed(2)}% · at least {Number(quote.minimumOut).toLocaleString('en-US', { maximumFractionDigits: 6 })} {to} at {quote.slippagePct}% slippage</>
-              : 'Enter an amount to see the best route right now.')}
+          <div className='sw-flip-row'>
+            <button type='button' className='sw-flip' aria-label='Flip the pair' onClick={() => { setFrom(to); setTo(from) }}><Icon name='flip' size={18} /></button>
           </div>
-
-          <a href={swapUrl} target='_blank' rel='noopener noreferrer'
-            style={{ display: 'block', textAlign: 'center', padding: '12px 14px', borderRadius: 12, background: C.gold, color: C.void, fontWeight: 700, textDecoration: 'none', fontSize: 15 }}>
-            Open in Openfields Swap ↗
-          </a>
-          <div style={{ fontSize: 10.5, lineHeight: 1.5, color: C.whisper, textAlign: 'center' }}>
-            No interface fee · a quote, not an offer: prices move with every trade
+          <div className='sw-field'>
+            <div className='sw-field-head'><span>You receive</span></div>
+            <div className='sw-field-main'>
+              <span className='sw-amount is-quoted of-num'>{loading && !quote ? '…' : quote ? Number(quote.expectedOut).toLocaleString('en-US', { maximumFractionDigits: 6 }) : '0'}</span>
+              {tokenSelect(to, v => { if (v === from) setFrom(to); setTo(v) }, 'Receive')}
+            </div>
           </div>
+          <div className='sw-box-rows'>
+            {err ? <p className='sw-error'>{err}</p> : quote ? (
+              <dl className='sw-rows'>
+                <div className='sw-row'><dt>Minimum received</dt><dd>{Number(quote.minimumOut).toLocaleString('en-US', { maximumFractionDigits: 6 })} {to}</dd></div>
+                <div className='sw-row'><dt>Price impact</dt><dd>{quote.impactPct.toFixed(2)}%</dd></div>
+                <div className='sw-row is-muted'><dt>Route</dt><dd>{pools} pool{pools === 1 ? '' : 's'}{quote.parts.length > 1 ? ', split over two paths' : ''}</dd></div>
+              </dl>
+            ) : <p className='sw-fine'>Enter an amount to see the best route right now.</p>}
+          </div>
+          <a className='of-btn of-btn--primary of-btn--lg of-btn--block' href={swapUrl} target='_blank' rel='noopener noreferrer'>Open in Openfields Swap<Icon name='external' size={16} /></a>
+          <p className='sw-fine sw-embed-fine'>A quote, not an offer: prices move with every trade.</p>
         </div>
-      </div>
+      </main>
     </>
   )
 }

@@ -8,8 +8,9 @@
 
 import Link from 'next/link'
 import { useEffect, useState } from 'react'
-import { TEXT } from 'components/tokens'
-import { C, Page, Panel } from 'components/PageShell'
+import AppShell from 'components/shell/AppShell'
+import { Icon } from 'components/ui'
+import { SCAN_ADDRESS, SCAN_TX } from 'lib/products'
 
 const TX = /^\/tx\/([0-9A-Fa-f]{64})\/?$/
 const POOL = /^\/pool\/(terra1[02-9ac-hj-np-z]{38,58})\/?$/
@@ -19,24 +20,19 @@ export default function NotFound() {
   useEffect(() => { setPath(window.location.pathname) }, [])
   const tx = TX.exec(path)?.[1]?.toUpperCase()
   const pool = POOL.exec(path)?.[1]
-  const text = { fontSize: TEXT.xs.size, color: C.textMuted, lineHeight: 1.6, margin: 0 }
   return (
-    <Page width={760}>
-      <h1 style={{ fontSize: 'clamp(1.6rem, 5vw, 2.2rem)', margin: 0 }}>
-        <span style={{ fontWeight: 700, color: C.goldLit }}>{tx ? 'A transaction' : pool ? 'A pool' : 'Nothing'}</span>{' '}
-        <span style={{ fontWeight: 300 }}>{tx || pool ? 'on Terra' : 'here'}</span>
-      </h1>
-      <Panel title={tx ? 'Not found yet' : 'Not found'}>
-        <p style={text}>
-          {tx
-            ? <>The chain&apos;s public endpoints did not return this transaction. One that just landed can take a few seconds to be indexed; refresh in a moment.{' '}
-                <a href={`https://scan.openfields.app/tx/${tx}`} target='_blank' rel='noreferrer' style={{ color: C.goldLit }}>Look it up on Openfields Scan ↗</a></>
-            : pool
-              ? <>No pool answered at this address, or the chain did not answer just now.{' '}
-                  <a href={`https://scan.openfields.app/address/${pool}`} target='_blank' rel='noreferrer' style={{ color: C.goldLit }}>See it on Openfields Scan ↗</a></>
-              : <>There is no page at this address. <Link href='/' style={{ color: C.goldLit }}>Go to the swap</Link></>}
+    <AppShell>
+      <section className='sw-page sw-narrow sw-empty'>
+        <h1 className='sw-title'>{tx ? 'Transaction not found yet' : pool ? 'Pool not found' : 'Nothing here'}</h1>
+        <p className='sw-lede'>
+          {tx ? 'One that just landed can take a few seconds to be indexed. Refresh in a moment.'
+            : pool ? 'No pool answered at this address, or the chain did not answer just now.'
+            : 'There is no page at this address.'}
         </p>
-      </Panel>
-    </Page>
+        {tx ? <a className='of-btn of-btn--secondary' href={SCAN_TX(tx)} target='_blank' rel='noopener noreferrer'>Look it up on Openfields Scan<Icon name='external' size={14} /></a>
+          : pool ? <a className='of-btn of-btn--secondary' href={SCAN_ADDRESS(pool)} target='_blank' rel='noopener noreferrer'>See it on Openfields Scan<Icon name='external' size={14} /></a>
+          : <Link className='of-btn of-btn--primary' href='/'>Go to the swap</Link>}
+      </section>
+    </AppShell>
   )
 }

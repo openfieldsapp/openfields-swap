@@ -9,12 +9,12 @@
  */
 
 import Head from 'next/head'
-import Link from 'next/link'
 import type { GetStaticProps } from 'next'
-import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
+import { useCallback, useEffect, useMemo, useState } from 'react'
 import useMyAddress from 'components/hooks/useMyAddress'
-import WalletButton from 'components/WalletButton'
-import { SPACE, TEXT } from 'components/tokens'
+import AppShell from 'components/shell/AppShell'
+import { Button, Icon } from 'components/ui'
+import { ActionButton, Empty, ErrorNote, failureOf, Row, Toast, type Failure } from 'components/swap/common'
 import { fromMicro, toMicro, queryNativeBalance } from 'lib/dex'
 import {
   LUNA, USDC, LUNA_USDC_PAIR, MIN_LEAD_SECONDS,
@@ -24,50 +24,8 @@ import {
 } from 'lib/predict'
 import type { PredictResponse } from 'lib/api/predict'
 import { useBet, useClaim, useCreateMarket, useObserve, useResolve, useVoidMarket } from 'components/transactions/usePredict'
-import { humanizeTxError } from 'lib/errors'
-import { TERRA_FONT } from 'lib/font'
 import { poll } from 'lib/pageActive'
 import { SITE_URL } from 'lib/siteUrl'
-
-
-const C = {
-  void: '#05070f', surface: '#0b0f1c', surfaceElev: '#111729',
-  divider: 'rgba(255,216,61,0.13)', dividerWarm: 'rgba(255,179,71,0.34)',
-  emberLit: '#ffb347', goldCore: '#caa022', goldLit: '#ffd83d', goldSoft: 'rgba(255,216,61,0.10)',
-  textPrimary: '#f4f1e8', textSecondary: '#d6cfbd', textMuted: '#9a927f', textWhisper: '#6b6555',
-  success: '#3ddc97', alert: '#e04a5a', korea: '#e0485a',
-} as const
-
-const field: React.CSSProperties = {
-  width: '100%', padding: '0.7rem 0.8rem', background: 'rgba(0,0,0,0.32)', border: `1px solid ${C.divider}`,
-  borderRadius: 10, color: C.textPrimary, fontSize: TEXT.md.size, fontFamily: 'inherit', fontVariantNumeric: 'tabular-nums',
-}
-const select: React.CSSProperties = { ...field, cursor: 'pointer', fontSize: TEXT.sm.size }
-const label: React.CSSProperties = { display: 'block', fontSize: '0.64rem', color: C.textMuted, letterSpacing: '0.08em', textTransform: 'uppercase', marginBottom: 6, fontFamily: TERRA_FONT }
-const primaryBtn: React.CSSProperties = {
-  width: '100%', padding: '0.8rem', background: 'linear-gradient(135deg, #caa022 0%, #ffd83d 100%)', color: '#1a1405',
-  border: '1px solid #ffd83d', borderRadius: 10, fontWeight: 700, fontSize: TEXT.sm.size, cursor: 'pointer', fontFamily: 'inherit',
-}
-const ghostBtn: React.CSSProperties = {
-  padding: '0.5rem 0.8rem', background: 'transparent', color: C.textSecondary, border: `1px solid ${C.divider}`,
-  borderRadius: 9, fontSize: TEXT.xs.size, fontWeight: 600, cursor: 'pointer', fontFamily: 'inherit',
-}
-
-function Card({ children, accent }: { children: React.ReactNode; accent?: string }) {
-  return (
-    <div className='predict-card' style={{ background: C.surfaceElev, border: `1px solid ${accent ?? C.divider}`, borderRadius: 16, padding: '1rem 1.1rem' }}>
-      {children}
-    </div>
-  )
-}
-function Empty({ title, body }: { title: string; body: string }) {
-  return (
-    <div style={{ padding: '2rem 1.2rem', textAlign: 'center', border: `1px dashed ${C.divider}`, borderRadius: 16, background: C.surface }}>
-      <div style={{ color: C.textPrimary, fontWeight: 600, marginBottom: 6 }}>{title}</div>
-      <div style={{ color: C.textMuted, fontSize: TEXT.sm.size, lineHeight: 1.6 }}>{body}</div>
-    </div>
-  )
-}
 
 const denomLabel = (d: string) => (d === 'uluna' ? 'LUNA' : d.startsWith('ibc/') ? 'USDC' : d.split('/').pop() ?? d)
 const amt = (micro: string, d = 6, frac = 2) => fromMicro(micro, d, frac)
@@ -88,112 +46,77 @@ function MarketCard({ m, now, spot, twapNow, me, pos, claimable, feeBps, bountyB
   const windowStart = resolve - m.twap_window
   const den = denomLabel(m.denom)
   const [amount, setAmount] = useState('')
-  const [err, setErr] = useState<string | null>(null)
+  const [err, setErr] = useState<Failure | null>(null)
   const bet = useBet(), observe = useObserve(), settle = useResolve(), voidTx = useVoidMarket(), claim = useClaim()
   const busy = bet.isLoading || observe.isLoading || settle.isLoading || voidTx.isLoading || claim.isLoading
 
   const run = async (fn: () => Promise<unknown>, done: string) => {
     setErr(null)
-    try { await fn(); onToast(done); setAmount(''); setTimeout(onDone, 2500) } catch (e) { setErr(humanizeTxError(e)) }
+    try { await fn(); onToast(done); setAmount(''); setTimeout(onDone, 2500) } catch (e) { setErr(failureOf(e)) }
   }
   const place = (side: Side) => {
     const micro = toMicro(amount, 6)
-    if (!micro || micro === '0') return setErr('Enter an amount.')
-    if (BigInt(micro) < BigInt(m.min_bet)) return setErr(`Minimum is ${amt(m.min_bet)} ${den}.`)
-    if (BigInt(micro) > BigInt(balance || '0')) return setErr('Not enough balance.')
-    return run(() => bet.mutateAsync({ sender: me, marketId: m.id, side, denom: m.denom, amountMicro: micro }), `${side.toUpperCase()} placed. Written down.`)
+    if (!micro || micro === '0') return setErr({ text: 'Enter an amount.' })
+    if (BigInt(micro) < BigInt(m.min_bet)) return setErr({ text: `The minimum is ${amt(m.min_bet)} ${den}.` })
+    if (BigInt(micro) > BigInt(balance || '0')) return setErr({ text: 'Not enough balance.' })
+    return run(() => bet.mutateAsync({ sender: me, marketId: m.id, side, denom: m.denom, amountMicro: micro }), `${side === 'yes' ? 'Yes' : 'No'} placed.`)
   }
 
   const outcome = m.resolution?.outcome
-  const status = (() => {
+  const status: { text: string; tone?: 'good' | 'warn' | 'bad' | 'muted' } = (() => {
     switch (phase) {
-      case 'open': return { text: `Open · closes in ${fmtCountdown(close, now)}`, color: C.success }
-      case 'waiting': return { text: `Closed · window opens in ${fmtCountdown(windowStart, now)}`, color: C.textMuted }
-      case 'observe': return { text: `Window open · needs an observer (${fmtCountdown(windowStart + Math.floor(m.twap_window / 2), now)} left)`, color: C.emberLit }
-      case 'missed': return { text: `Nobody observed · settles void at ${new Date(resolve * 1000).toLocaleString()} · refunds`, color: C.alert }
-      case 'averaging': return { text: `Averaging · TWAP so far ${fmtPrice(twapNow)} · settles in ${fmtCountdown(resolve, now)}`, color: C.goldLit }
-      case 'resolve': return { text: m.observation ? 'Ready to settle' : 'Ready to settle · void (no observation) · refunds', color: C.emberLit }
+      case 'open': return { text: `Open, closes in ${fmtCountdown(close, now)}`, tone: 'good' as const }
+      case 'waiting': return { text: `Closed, the window opens in ${fmtCountdown(windowStart, now)}`, tone: 'muted' as const }
+      case 'observe': return { text: `Window open, needs an observer (${fmtCountdown(windowStart + Math.floor(m.twap_window / 2), now)} left)`, tone: 'warn' as const }
+      case 'missed': return { text: `Nobody observed; settles void at ${new Date(resolve * 1000).toLocaleString()} and refunds`, tone: 'bad' as const }
+      case 'averaging': return { text: `Averaging, ${fmtPrice(twapNow)} so far, settles in ${fmtCountdown(resolve, now)}` }
+      case 'resolve': return { text: m.observation ? 'Ready to settle' : 'Ready to settle as void, with refunds', tone: 'warn' as const }
       case 'resolved': return outcome === 'void'
-        ? { text: 'VOID · every stake refundable', color: C.textMuted }
-        : { text: `${outcome!.toUpperCase()} · settled at ${fmtPrice(m.resolution!.twap)}`, color: outcome === 'yes' ? C.success : C.korea }
+        ? { text: 'Void, every stake refundable', tone: 'muted' as const }
+        : { text: `${outcome === 'yes' ? 'Yes' : 'No'}, settled at ${fmtPrice(m.resolution!.twap)}`, tone: outcome === 'yes' ? 'good' as const : 'bad' as const }
     }
   })()
 
   const myYes = Number(pos?.yes ?? 0), myNo = Number(pos?.no ?? 0)
   const claimableAmt = Number(claimable?.amount ?? 0)
+  const pays = (side: Side) => { const x = payoutMultiple(m, side); return x && Number.isFinite(x) ? `, pays ${x.toFixed(2)}×` : '' }
 
   return (
-    <Card accent={phase === 'open' ? C.dividerWarm : undefined}>
-      <div style={{ display: 'flex', justifyContent: 'space-between', gap: SPACE['3'], alignItems: 'flex-start', flexWrap: 'wrap' }}>
-        <div style={{ minWidth: 0, flex: 1 }}>
-          <div style={{ fontFamily: TERRA_FONT, fontWeight: 700, fontSize: '1.05rem', color: C.textPrimary, lineHeight: 1.3 }}>{m.question}</div>
-          <div style={{ fontSize: TEXT.xs.size, color: C.textMuted, marginTop: 4 }}>
-            #{m.id} · YES if the {fmtWindow(m.twap_window)} average ≥ {fmtPrice(m.threshold)} · spot now {fmtPrice(spot)}
-          </div>
-        </div>
-        <div style={{ fontSize: TEXT.xs.size, color: status.color, fontWeight: 700, letterSpacing: '0.04em', textAlign: 'right', whiteSpace: 'nowrap' }}>{status.text}</div>
-      </div>
+    <article className='sw-card'>
+      <h2 className='sw-card-title'>{m.question}</h2>
+      <p className='sw-card-sub'>Yes if the {fmtWindow(m.twap_window)} average is at least {fmtPrice(m.threshold)}. Now {fmtPrice(spot)}.</p>
+      <dl className='sw-rows sw-gap'>
+        <Row k='Status' v={status.text} tone={status.tone} />
+        <Row k='Yes' v={`${amt(m.yes_total)} ${den}${yes != null ? `, ${Math.round(yes * 100)}%` : ''}`} />
+        <Row k='No' v={`${amt(m.no_total)} ${den}${yes != null ? `, ${Math.round((1 - yes) * 100)}%` : ''}`} />
+        {(myYes > 0 || myNo > 0) && <Row k='Yours' tone='strong' v={[myYes > 0 && `${amt(String(myYes))} ${den} on yes`, myNo > 0 && `${amt(String(myNo))} ${den} on no`].filter(Boolean).join(' · ')} />}
+        {yes == null && <p className='sw-fine'>Empty. The first stake sets the odds.</p>}
+      </dl>
 
-      {/* the pools */}
-      <div style={{ marginTop: SPACE['3'] }}>
-        <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: TEXT.xs.size, marginBottom: 4 }}>
-          <span style={{ color: C.success, fontWeight: 700 }}>YES {amt(m.yes_total)} {den}{yes != null && ` · ${Math.round(yes * 100)}%`}</span>
-          <span style={{ color: C.korea, fontWeight: 700 }}>{yes != null && `${Math.round((1 - yes) * 100)}% · `}NO {amt(m.no_total)} {den}</span>
-        </div>
-        <div style={{ height: 6, borderRadius: 999, background: 'rgba(224,72,90,0.35)', overflow: 'hidden' }}>
-          <div style={{ width: `${(yes ?? 0.5) * 100}%`, height: '100%', background: yes == null ? 'transparent' : C.success, transition: 'width 0.6s ease' }} />
-        </div>
-        {yes == null && <div style={{ fontSize: TEXT.xs.size, color: C.textWhisper, marginTop: 4 }}>Empty. First stake sets the odds.</div>}
-      </div>
-
-      {(myYes > 0 || myNo > 0) && (
-        <div style={{ fontSize: TEXT.xs.size, color: C.goldLit, marginTop: SPACE['2'] }}>
-          You: {myYes > 0 && `${amt(String(myYes))} ${den} on YES`}{myYes > 0 && myNo > 0 && ' · '}{myNo > 0 && `${amt(String(myNo))} ${den} on NO`}
-        </div>
-      )}
-
-      {/* actions */}
-      <div style={{ marginTop: SPACE['3'] }}>
+      <div className='sw-act'>
         {phase === 'open' && (me ? (
           <>
-            <div style={{ display: 'flex', gap: SPACE['2'], flexWrap: 'wrap' }}>
-              <input style={{ ...field, flex: '1 1 120px' }} type='number' min='0' step='any' placeholder={`${amt(m.min_bet)}+ ${den}`} value={amount} onChange={e => setAmount(e.target.value)} />
-              <button type='button' disabled={busy} style={{ ...ghostBtn, flex: '1 1 110px', color: C.success, borderColor: 'rgba(61,220,151,0.45)', fontSize: TEXT.sm.size }} onClick={() => place('yes')}>
-                YES{(() => { const x = payoutMultiple(m, 'yes'); return x && Number.isFinite(x) ? ` · pays ${x.toFixed(2)}×` : '' })()}
-              </button>
-              <button type='button' disabled={busy} style={{ ...ghostBtn, flex: '1 1 110px', color: C.korea, borderColor: 'rgba(224,72,90,0.45)', fontSize: TEXT.sm.size }} onClick={() => place('no')}>
-                NO{(() => { const x = payoutMultiple(m, 'no'); return x && Number.isFinite(x) ? ` · pays ${x.toFixed(2)}×` : '' })()}
-              </button>
+            <input className='sw-input' type='number' inputMode='decimal' min='0' step='any' placeholder={`${amt(m.min_bet)} ${den} or more`} aria-label={`Stake in ${den}`} value={amount} onChange={e => setAmount(e.target.value)} />
+            <div className='sw-pair'>
+              <Button size='lg' disabled={busy} onClick={() => place('yes')}>Yes{pays('yes')}</Button>
+              <Button size='lg' disabled={busy} onClick={() => place('no')}>No{pays('no')}</Button>
             </div>
-            <div style={{ fontSize: TEXT.xs.size, color: C.textWhisper, marginTop: 6 }}>
-              Balance {amt(balance)} {den} · payouts shown at today&apos;s pools, before the {feeBps / 100}% fee and {bountyBps / 100}% bounty taken from the losing side.
-            </div>
+            <p className='sw-fine'>Balance {amt(balance)} {den}. Payouts at today&apos;s pools, before the {feeBps / 100}% fee and {bountyBps / 100}% bounty taken from the losing side.</p>
           </>
-        ) : <div className='terra-connect-cta'><WalletButton /></div>)}
+        ) : <ActionButton me={me} label='' onClick={() => {}} />)}
 
-        {phase === 'observe' && (me
-          ? <button type='button' disabled={busy} style={primaryBtn} onClick={() => run(() => observe.mutateAsync({ sender: me, marketId: m.id }), 'Observed. Half the bounty is yours at settlement.')}>Observe the window · half the bounty</button>
-          : <div className='terra-connect-cta'><WalletButton /></div>)}
-
-        {phase === 'resolve' && (me
-          ? <button type='button' disabled={busy} style={primaryBtn} onClick={() => run(() => settle.mutateAsync({ sender: me, marketId: m.id }), 'Settled by the chain.')}>{m.observation ? 'Settle · half the bounty' : 'Settle as void · refunds everyone'}</button>
-          : <div className='terra-connect-cta'><WalletButton /></div>)}
-
-        {voidable && me && (
-          <button type='button' disabled={busy} style={{ ...ghostBtn, marginTop: SPACE['2'] }} onClick={() => run(() => voidTx.mutateAsync({ sender: me, marketId: m.id }), 'Voided. Stakes are refundable.')}>Void (a week unresolved)</button>
-        )}
+        {phase === 'observe' && <ActionButton me={me} busy={busy} onClick={() => run(() => observe.mutateAsync({ sender: me, marketId: m.id }), 'Observed. Half the bounty is yours at settlement.')} label='Observe the window, for half the bounty' />}
+        {phase === 'resolve' && <ActionButton me={me} busy={busy} onClick={() => run(() => settle.mutateAsync({ sender: me, marketId: m.id }), 'Settled by the chain.')} label={m.observation ? 'Settle, for half the bounty' : 'Settle as void, refunding everyone'} />}
+        {voidable && me && <Button variant='quiet' disabled={busy} onClick={() => run(() => voidTx.mutateAsync({ sender: me, marketId: m.id }), 'Voided. Stakes are refundable.')}>Void it, unresolved for a week</Button>}
 
         {phase === 'resolved' && me && (claimableAmt > 0
-          ? <button type='button' disabled={busy} style={primaryBtn} onClick={() => run(() => claim.mutateAsync({ sender: me, marketId: m.id }), 'Claimed.')}>Claim {amt(String(claimableAmt))} {den}</button>
+          ? <Button variant='primary' size='lg' block busy={busy} onClick={() => run(() => claim.mutateAsync({ sender: me, marketId: m.id }), 'Claimed.')}>Claim {amt(String(claimableAmt))} {den}</Button>
           : claimable?.claimed
-            ? <div style={{ fontSize: TEXT.xs.size, color: C.success }}>✓ Claimed</div>
-            : (myYes > 0 || myNo > 0)
-              ? <div style={{ fontSize: TEXT.xs.size, color: C.textMuted }}>Not this time.</div>
-              : null)}
-
-        {err && <div style={{ fontSize: TEXT.xs.size, color: C.alert, marginTop: 8 }}>{err}</div>}
+            ? <p className='sw-ok'><Icon name='check' size={16} />Claimed</p>
+            : (myYes > 0 || myNo > 0) ? <p className='sw-status'>Not this time.</p> : null)}
+        <ErrorNote error={err} />
       </div>
-    </Card>
+    </article>
   )
 }
 
@@ -208,7 +131,7 @@ function CreatePanel({ me, spot, minWindow, onDone, onToast }: { me: string; spo
   const [windowS, setWindowS] = useState<number>(3600)
   const [minBet, setMinBet] = useState('1')
   const [question, setQuestion] = useState('')
-  const [err, setErr] = useState<string | null>(null)
+  const [err, setErr] = useState<Failure | null>(null)
   const create = useCreateMarket()
   useEffect(() => { if (!threshold && spot) setThreshold(spot.toFixed(4)) }, [spot, threshold])
   const autoQuestion = threshold ? `1 LUNA ≥ ${threshold} USDC?` : ''
@@ -217,11 +140,11 @@ function CreatePanel({ me, spot, minWindow, onDone, onToast }: { me: string; spo
   const go = async () => {
     setErr(null)
     const t = Number(threshold)
-    if (!(t > 0)) return setErr('Threshold must be a positive price.')
-    if (windowS < minWindow) return setErr(`Window must be at least ${fmtWindow(minWindow)}.`)
+    if (!(t > 0)) return setErr({ text: 'The threshold must be a positive price.' })
+    if (windowS < minWindow) return setErr({ text: `The window must be at least ${fmtWindow(minWindow)}.` })
     const mb = toMicro(minBet || '1', 6)
-    if (!mb || mb === '0') return setErr('Minimum stake must be positive.')
-    if (!q) return setErr('Write the question.')
+    if (!mb || mb === '0') return setErr({ text: 'The minimum stake must be positive.' })
+    if (!q) return setErr({ text: 'Write the question.' })
     const now = Math.floor(Date.now() / 1000)
     const closeAt = now + Math.max(closeIn, MIN_LEAD_SECONDS + 60)
     try {
@@ -231,37 +154,31 @@ function CreatePanel({ me, spot, minWindow, onDone, onToast }: { me: string; spo
       })
       onToast('Market open.')
       setQuestion(''); setTimeout(onDone, 2500)
-    } catch (e) { setErr(humanizeTxError(e)) }
+    } catch (e) { setErr(failureOf(e)) }
   }
 
   return (
-    <Card>
-      <div style={{ fontFamily: TERRA_FONT, fontWeight: 700, fontSize: TEXT.md.size, color: C.textPrimary, marginBottom: 4 }}>Open a market</div>
-      <p style={{ fontSize: TEXT.xs.size, color: C.textMuted, lineHeight: 1.6, margin: `0 0 ${SPACE['3']}px` }}>
-        Yes or no on the LUNA price in USDC, settled by the average on Astroport&apos;s LUNA/USDC pool over the window after betting closes. Anyone can open one for the cost of gas.
-      </p>
-      <div style={{ display: 'grid', gap: SPACE['3'], gridTemplateColumns: 'repeat(auto-fit, minmax(150px, 1fr))' }}>
-        <div><label style={label}>YES if 1 LUNA ≥ (USDC)</label><input style={field} type='number' min='0' step='any' value={threshold} onChange={e => setThreshold(e.target.value)} placeholder={spot ? spot.toFixed(4) : '0.05'} /></div>
-        <div><label style={label}>Betting closes in</label>
-          <select style={select} value={closeIn} onChange={e => setCloseIn(Number(e.target.value))}>{CLOSE_OPTIONS.map(([l, s]) => <option key={s} value={s}>{l}</option>)}</select></div>
-        <div><label style={label}>Averaging window</label>
-          <select style={select} value={windowS} onChange={e => setWindowS(Number(e.target.value))}>{WINDOW_OPTIONS.filter(([, s]) => s >= minWindow).map(([l, s]) => <option key={s} value={s}>{l}</option>)}</select></div>
-        <div><label style={label}>Minimum stake (LUNA)</label><input style={field} type='number' min='0' step='any' value={minBet} onChange={e => setMinBet(e.target.value)} /></div>
+    <div className='sw-card sw-stack'>
+      <div>
+        <h2 className='sw-card-title'>Open a market</h2>
+        <p className='sw-card-sub'>Yes or no on the LUNA price in USDC, settled by the average on Astroport&apos;s LUNA/USDC pool over the window after betting closes.</p>
       </div>
-      <div style={{ marginTop: SPACE['3'] }}>
-        <label style={label}>Question</label>
-        <input style={field} value={question} onChange={e => setQuestion(e.target.value)} placeholder={autoQuestion || 'Write it the way a friend would ask it'} maxLength={200} />
+      <div className='sw-form-grid'>
+        <div><label className='sw-label' htmlFor='pr-threshold'>Yes if 1 LUNA is at least, in USDC</label><input id='pr-threshold' className='sw-input sw-input--sm' type='number' inputMode='decimal' min='0' step='any' value={threshold} onChange={e => setThreshold(e.target.value)} placeholder={spot ? spot.toFixed(4) : '0.05'} /></div>
+        <div><label className='sw-label' htmlFor='pr-close'>Betting closes in</label>
+          <span className='sw-select sw-select--block'><select id='pr-close' value={closeIn} onChange={e => setCloseIn(Number(e.target.value))}>{CLOSE_OPTIONS.map(([l, s]) => <option key={s} value={s}>{l}</option>)}</select><Icon name='chevronDown' size={14} /></span></div>
+        <div><label className='sw-label' htmlFor='pr-window'>Averaging window</label>
+          <span className='sw-select sw-select--block'><select id='pr-window' value={windowS} onChange={e => setWindowS(Number(e.target.value))}>{WINDOW_OPTIONS.filter(([, s]) => s >= minWindow).map(([l, s]) => <option key={s} value={s}>{l}</option>)}</select><Icon name='chevronDown' size={14} /></span></div>
+        <div><label className='sw-label' htmlFor='pr-min'>Minimum stake, LUNA</label><input id='pr-min' className='sw-input sw-input--sm' type='number' inputMode='decimal' min='0' step='any' value={minBet} onChange={e => setMinBet(e.target.value)} /></div>
       </div>
-      <div style={{ fontSize: TEXT.xs.size, color: C.textWhisper, marginTop: 8, lineHeight: 1.6 }}>
-        Settles {fmtWindow(windowS)} after betting closes. Spot now {fmtPrice(spot)}.
+      <div>
+        <label className='sw-label' htmlFor='pr-question'>Question</label>
+        <input id='pr-question' className='sw-input sw-input--sm' value={question} onChange={e => setQuestion(e.target.value)} placeholder={autoQuestion || 'Write it the way a friend would ask it'} maxLength={200} />
+        <p className='sw-hint'>Settles {fmtWindow(windowS)} after betting closes. Now {fmtPrice(spot)}.</p>
       </div>
-      {err && <div style={{ fontSize: TEXT.xs.size, color: C.alert, marginTop: 8 }}>{err}</div>}
-      <div style={{ marginTop: SPACE['3'] }}>
-        {me
-          ? <button type='button' style={{ ...primaryBtn, opacity: create.isLoading ? 0.6 : 1 }} disabled={create.isLoading} onClick={go}>{create.isLoading ? 'Opening…' : 'Open market'}</button>
-          : <div className='terra-connect-cta'><WalletButton /></div>}
-      </div>
-    </Card>
+      <ErrorNote error={err} />
+      <ActionButton me={me} busy={create.isLoading} onClick={go} label={create.isLoading ? 'Opening…' : 'Open the market'} />
+    </div>
   )
 }
 
@@ -278,7 +195,6 @@ function PredictPageInner() {
   const [mine, setMine] = useState<Record<number, { pos: Position; claimable: Claimable }>>({})
   const [balance, setBalance] = useState('0')
   const [toast, setToast] = useState<string | null>(null)
-  const timer = useRef<ReturnType<typeof setTimeout> | null>(null)
 
   const refresh = useCallback(async () => {
     try {
@@ -305,7 +221,8 @@ function PredictPageInner() {
     return () => { alive = false }
   }, [me, data])
 
-  const showToast = (s: string) => { setToast(s); if (timer.current) clearTimeout(timer.current); timer.current = setTimeout(() => setToast(null), 4000) }
+  const showToast = (msg: string) => setToast(msg)
+  const clearToast = useCallback(() => setToast(null), [])
 
   const sorted = useMemo(() => {
     if (!data) return []
@@ -319,75 +236,46 @@ function PredictPageInner() {
   const settled = sorted.filter(m => !!m.resolution)
   const spotLuna = data?.spot[LUNA_USDC_PAIR]
   const feeBps = data?.config?.fee_bps ?? 0, bountyBps = data?.config?.bounty_bps ?? 0
-
-  const tabBtn = (t: Tab, txt: string) => (
-    <button type='button' onClick={() => setTab(t)} style={{ ...ghostBtn, padding: '0.45rem 0.9rem', color: tab === t ? C.goldLit : C.textMuted, borderColor: tab === t ? C.goldCore : C.divider, background: tab === t ? C.goldSoft : 'transparent' }}>{txt}</button>
-  )
+  const list = tab === 'live' ? live : settled
 
   return (
     <>
       <Head>
         <title>Openfields Predict</title>
       </Head>
-      <div aria-hidden style={{ position: 'fixed', inset: 0, zIndex: 1, background: `radial-gradient(circle at 50% -20%, #1a1d30 0%, #0a0d18 45%, ${C.void} 100%)` }} />
-      {toast && <div style={{ position: 'fixed', left: '50%', bottom: 24, transform: 'translateX(-50%)', zIndex: 50, padding: '10px 16px', background: '#f4f1e8', color: '#1a1405', borderRadius: 999, fontFamily: TERRA_FONT, fontWeight: 600, fontSize: TEXT.sm.size, boxShadow: '0 10px 30px rgba(0,0,0,0.45)' }}>{toast}</div>}
-      <main style={{ minHeight: '100vh', position: 'relative', zIndex: 2, paddingBottom: '4rem', fontFamily: TERRA_FONT, color: C.textPrimary }}>
-        <article className='predict-article' style={{ maxWidth: 680, margin: '0 auto', padding: '1.4rem 1.2rem 2rem' }}>
-          <div className='predict-hero' style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: SPACE['3'], flexWrap: 'wrap', marginBottom: SPACE['3'] }}>
-            <div style={{ minWidth: 0 }}>
-              <div style={{ fontSize: '0.62rem', letterSpacing: '0.34em', color: C.korea, fontWeight: 800, textTransform: 'uppercase', marginBottom: SPACE['2'] }}>Experimental</div>
-              <h1 style={{ fontFamily: TERRA_FONT, fontSize: 'clamp(1.6rem, 6vw, 2.6rem)', lineHeight: 1.02, margin: 0, letterSpacing: '-0.02em', fontWeight: 700, display: 'inline-flex', alignItems: 'center', gap: '0.28em', whiteSpace: 'nowrap' }}>
-                <img src='/img/terra-globe.svg' alt='' aria-hidden width={52} height={49} draggable={false} style={{ width: '0.82em', height: 'auto', flex: 'none', filter: 'drop-shadow(0 2px 10px rgba(52,88,184,0.45))' }} />
-                <span className='predict-title'><span style={{ fontWeight: 700 }}>Openfields</span> <span style={{ fontWeight: 300 }}>Predict</span></span>
-              </h1>
-            </div>
-            <div style={{ display: 'flex', alignItems: 'center', gap: SPACE['2'], flex: 'none' }}>
-              <Link href='/' prefetch={false} style={{ ...ghostBtn, textDecoration: 'none', whiteSpace: 'nowrap' }}>← Swap</Link>
-              <WalletButton />
-            </div>
-          </div>
-
-          {!data && <Empty title='Loading…' body='Reading the chain.' />}
-          {data && !data.live && <Empty title='Not live yet' body='The contract is not deployed. Check back shortly.' />}
+      <AppShell page='predict'>
+        <section className='sw-page sw-narrow' aria-labelledby='pr-title'>
+          <h1 id='pr-title' className='sw-title'>Predict</h1>
+          <p className='sw-lede'>Yes or no on the LUNA price, settled by the chain. Experimental.</p>
+          {!data && <p className='sw-status sw-gap'><span className='of-spin' aria-hidden /> Reading the chain…</p>}
+          {data && !data.live && <Empty title='Not live yet' />}
           {data?.live && (
             <>
-              <div style={{ display: 'flex', gap: SPACE['2'], marginBottom: SPACE['3'], flexWrap: 'wrap' }}>
-                {tabBtn('live', `Live · ${live.length}`)}{tabBtn('settled', `Settled · ${settled.length}`)}{tabBtn('create', 'Open a market')}
-                <span style={{ marginLeft: 'auto', fontSize: TEXT.xs.size, color: C.textMuted, alignSelf: 'center', whiteSpace: 'nowrap' }}>LUNA {fmtPrice(spotLuna)} USDC</span>
+              <div className='of-seg sw-gap sw-tabs' role='tablist' aria-label='Markets'>
+                {([['live', `Live, ${live.length}`], ['settled', `Settled, ${settled.length}`], ['create', 'Open one']] as const).map(([k, text]) => (
+                  <button key={k} type='button' role='tab' aria-selected={tab === k} onClick={() => setTab(k)}>{text}</button>
+                ))}
               </div>
-              {tab === 'create' && <CreatePanel me={me} spot={spotLuna} minWindow={data.config?.min_window ?? 600} onDone={refresh} onToast={showToast} />}
-              {tab !== 'create' && (
-                (tab === 'live' ? live : settled).length === 0
-                  ? <Empty title={tab === 'live' ? 'No open markets' : 'Nothing settled yet'} body={tab === 'live' ? 'Open the first one.' : 'Settled markets show up here with the price they settled at.'} />
-                  : <div style={{ display: 'grid', gap: SPACE['3'] }}>
-                      {(tab === 'live' ? live : settled).map(m => (
-                        <MarketCard key={m.id} m={m} now={now} spot={data.spot[m.pair]} twapNow={data.twap[m.id]?.twap ?? null} me={me}
-                          pos={mine[m.id]?.pos} claimable={mine[m.id]?.claimable} feeBps={feeBps} bountyBps={bountyBps} balance={balance} onDone={refresh} onToast={showToast} />
-                      ))}
-                    </div>
-              )}
-              <div style={{ marginTop: SPACE['4'], fontSize: TEXT.xs.size, color: C.textWhisper, lineHeight: 1.7, borderTop: `1px solid ${C.divider}`, paddingTop: SPACE['3'] }}>
+              <p className='sw-fine sw-gap'>LUNA {fmtPrice(spotLuna)} USDC now.</p>
+              <div className='sw-stack sw-gap'>
+                {tab === 'create' && <CreatePanel me={me} spot={spotLuna} minWindow={data.config?.min_window ?? 600} onDone={refresh} onToast={showToast} />}
+                {tab !== 'create' && (list.length === 0
+                  ? <Empty title={tab === 'live' ? 'No open markets' : 'Nothing settled yet'}>{tab === 'live' && <Button variant='primary' onClick={() => setTab('create')}>Open one</Button>}</Empty>
+                  : list.map(m => (
+                      <MarketCard key={m.id} m={m} now={now} spot={data.spot[m.pair]} twapNow={data.twap[m.id]?.twap ?? null} me={me}
+                        pos={mine[m.id]?.pos} claimable={mine[m.id]?.claimable} feeBps={feeBps} bountyBps={bountyBps} balance={balance} onDone={refresh} onToast={showToast} />
+                    )))}
+              </div>
+              <p className='sw-fine sw-section'>
                 Parimutuel: winners split the losing pool. The {feeBps / 100}% fee and the {bountyBps / 100}% bounty come from the losing side only.
                 The price is the time-weighted average on Astroport&apos;s pool over the window: half the bounty to the first observer, half to whoever settles.
                 With no observer, the market is void and every stake is refundable. No admin can change any of this.
-              </div>
+              </p>
             </>
           )}
-        </article>
-      </main>
-      <style jsx global>{`
-        .terra-connect-cta > * { width: 100%; }
-        /* Same gold as the swap wordmark. */
-        .predict-title {
-          background: linear-gradient(180deg, #fff8dc 0%, #ffd83d 55%, #caa022 100%);
-          -webkit-background-clip: text; background-clip: text; -webkit-text-fill-color: transparent; color: transparent;
-        }
-        @media (max-width: 640px) {
-          .predict-article { padding-top: 0.7rem !important; }
-          .predict-hero h1 { font-size: 1.4rem !important; }
-          .predict-card { padding: 0.8rem 0.85rem !important; }
-        }
-      `}</style>
+        </section>
+      </AppShell>
+      {toast && <Toast msg={toast} onDone={clearToast} />}
     </>
   )
 }
