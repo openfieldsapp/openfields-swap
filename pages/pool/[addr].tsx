@@ -10,9 +10,10 @@
 import Link from 'next/link'
 import type { GetStaticPaths, GetStaticProps } from 'next'
 import { useEffect, useMemo, useState } from 'react'
-import { SPACE, TEXT } from 'components/tokens'
-import { C, Figure, Page, Panel, fmtNum, linkBtn, row } from 'components/PageShell'
-import { PairIcons, TokenIcon } from 'components/TokenIcon'
+import AppShell from 'components/shell/AppShell'
+import { Disclosure, Icon } from 'components/ui'
+import { PairIcons } from 'components/TokenIcon'
+import { Figures, Row, amt, fmtPrice } from 'components/swap/common'
 import PriceHistoryChart from 'components/PriceHistoryChart'
 import dynamic from 'next/dynamic'
 const CandleChart = dynamic(() => import('components/CandleChart'), { ssr: false })
@@ -28,10 +29,10 @@ import type { PoolFeesResponse } from 'lib/api/pool-fees'
 import type { PricesResponse } from 'lib/api/dex-prices'
 import type { DepthResponse } from 'lib/api/depth'
 import { SITE_URL } from 'lib/siteUrl'
+import { SCAN_ADDRESS, SCAN_TX } from 'lib/products'
 
 const ADDR = /^terra1[02-9ac-hj-np-z]{38,58}$/
 const enc = encodeURIComponent
-const mono = 'ui-monospace, SFMono-Regular, Menlo, monospace'
 
 /**
  * Built on the first visit and kept (incremental static regeneration): the
@@ -84,15 +85,16 @@ export const getStaticProps: GetStaticProps = async ctx => {
   }
 }
 
-function Spark({ points }: { points: number[] }) {
+/** The pool's recorded trades as one line. */
+export function Spark({ points }: { points: number[] }) {
   const W = 300, H = 56, PAD = 3
   if (points.length < 2) return null
   const min = Math.min(...points), max = Math.max(...points), span = max - min || 1
   const d = points.map((v, i) => `${i === 0 ? 'M' : 'L'}${(PAD + (i / (points.length - 1)) * (W - PAD * 2)).toFixed(1)},${(H - PAD - ((v - min) / span) * (H - PAD * 2)).toFixed(1)}`).join(' ')
   const up = points[points.length - 1] >= points[0]
   return (
-    <svg viewBox={`0 0 ${W} ${H}`} preserveAspectRatio='none' style={{ width: '100%', height: 56, display: 'block', margin: '6px 0' }}>
-      <path d={d} fill='none' stroke={up ? C.success : C.alert} strokeWidth='2' vectorEffect='non-scaling-stroke' strokeLinejoin='round' strokeLinecap='round' />
+    <svg className='sw-chart-line' viewBox={`0 0 ${W} ${H}`} preserveAspectRatio='none' aria-hidden>
+      <path d={d} fill='none' stroke='currentColor' className={up ? 'sw-pos' : 'sw-neg'} strokeWidth='1.75' vectorEffect='non-scaling-stroke' strokeLinejoin='round' strokeLinecap='round' />
     </svg>
   )
 }
@@ -127,17 +129,17 @@ export default function PoolPage({ addr, label }: { addr: string; label: string 
   const title = pool?.label ?? (label || 'A pool')
   if (!pool) {
     return (
-      <Page>
-        <h1 style={{ fontSize: 'clamp(1.6rem, 5vw, 2.2rem)', margin: 0 }}><span style={{ fontWeight: 700, color: C.goldLit }}>{title}</span> <span style={{ fontWeight: 300 }}>pool</span></h1>
-        <Panel title={done ? 'Not listed here' : 'Reading the pool…'}>
-          {done && (
-            <p style={{ fontSize: TEXT.xs.size, color: C.textMuted, lineHeight: 1.6, margin: 0 }}>
-              Not a pool this site lists, or the chain did not answer just now.{' '}
-              <a href={`https://scan.openfields.app/address/${addr}`} target='_blank' rel='noreferrer' style={{ color: C.goldLit }}>See it on Openfields Scan ↗</a>
-            </p>
-          )}
-        </Panel>
-      </Page>
+      <AppShell page='pools'>
+        <section className='sw-page sw-narrow'>
+          <h1 className='sw-title'>{title}</h1>
+          {done
+            ? <>
+                <p className='sw-lede'>Not a pool this site lists, or the chain did not answer just now.</p>
+                <div className='sw-gap'><a className='of-btn of-btn--secondary' href={SCAN_ADDRESS(addr)} target='_blank' rel='noopener noreferrer'>See it on Openfields Scan<Icon name='external' size={14} /></a></div>
+              </>
+            : <p className='sw-status sw-gap'><span className='of-spin' aria-hidden /> Reading the pool…</p>}
+        </section>
+      </AppShell>
     )
   }
 
@@ -147,7 +149,7 @@ export default function PoolPage({ addr, label }: { addr: string; label: string 
   const off = pool.deviation != null && pool.deviation > 0 ? (pool.deviation > 1 ? pool.deviation : 1 / pool.deviation) : null
   const feeText = pool.venue === 'terraswap'
     ? '0.3% per swap, all of it to liquidity providers'
-    : `${pool.pairType === 'xyk' ? '0.3%' : pool.pairType === 'stable' ? '0.05%' : 'a dynamic fee'} per swap, set by Astroport's pool, part of it to Astroport`
+    : `${pool.pairType === 'xyk' ? '0.3%' : pool.pairType === 'stable' ? '0.05%' : 'A dynamic fee'} per swap, set by Astroport's pool, part of it to Astroport`
   const days = fees && !fees.complete && fees.since ? Math.max(1, Math.round((fees.at - Date.parse(fees.since)) / 86_400_000)) : 30
   const money = (v: { usd: number | null; swaps: number }) => {
     const swaps = `${v.swaps} swap${v.swaps === 1 ? '' : 's'}`
@@ -159,116 +161,106 @@ export default function PoolPage({ addr, label }: { addr: string; label: string 
   const sides = depth && depth !== 'failed' && depth.kind === 'pool' ? [depth.sell0, depth.sell1] : null
 
   return (
-    <Page>
-      <header style={{ display: 'grid', gap: 6 }}>
-        <div style={{ display: 'flex', alignItems: 'center', gap: SPACE['2'], flexWrap: 'wrap' }}>
-          <PairIcons a={t0.label} b={t1.label} size={36} />
-          <h1 style={{ fontSize: 'clamp(1.6rem, 5vw, 2.2rem)', margin: 0, letterSpacing: '-0.02em' }}>
-            <span style={{ fontWeight: 700, color: C.goldLit }}>{pool.label}</span> <span style={{ fontWeight: 300 }}>pool</span>
-          </h1>
-          <span style={{ fontSize: TEXT.caption.size, letterSpacing: '0.1em', textTransform: 'uppercase', color: C.textMuted }}>{VENUE_NAME[pool.venue]}{pool.pairType !== 'xyk' ? ` · ${pool.pairType}` : ''}</span>
-        </div>
-        <p style={{ margin: 0, fontSize: TEXT.xs.size, color: C.textMuted }}>{feeText}</p>
-      </header>
-
-      <div style={{ display: 'flex', gap: SPACE['2'], flexWrap: 'wrap' }}>
-        {!pool.empty && !bothDollars && (
-          <>
-            <Link prefetch={false} href={`/?from=${enc(t0.key)}&to=${enc(t1.key)}`} style={linkBtn(true)}>Swap {t0.label} for {t1.label}</Link>
-            <Link prefetch={false} href={`/?from=${enc(t1.key)}&to=${enc(t0.key)}`} style={linkBtn()}>Swap {t1.label} for {t0.label}</Link>
-          </>
-        )}
-        <Link prefetch={false} href={`/?tab=pools&pool=${pool.contract_addr}`} style={linkBtn(pool.empty)}>{pool.empty ? 'Add the first liquidity' : 'Add liquidity'}</Link>
-      </div>
-
-      <Panel title='Liquidity and price' note={pool.venue === 'terraswap' ? "The market is Astroport's deepest pools on Terra." : undefined}>
-        <div style={{ display: 'flex', gap: SPACE['4'], flexWrap: 'wrap', marginBottom: SPACE['2'] }}>
-          <Figure label='Liquidity' value={pool.empty ? 'empty' : pool.tvlUsd != null ? fmtUsd(pool.tvlUsd) : '—'} />
-          {pool.price > 0 && <Figure label={`1 ${t0.label} =`} value={`${fmtNum(pool.price)} ${t1.label}`} sub={`1 ${t1.label} = ${fmtNum(1 / pool.price)} ${t0.label}`} />}
-          {off != null && <Figure label='Against the market' value={off < 1.03 ? 'in line' : `${off.toFixed(off >= 10 ? 0 : 2)}× off`} sub={off < 1.03 ? 'within 3%' : 'the swap page shows the trade that closes it'} />}
-        </div>
-        {pool.tokens.map((t, i) => (
-          <div key={i} style={row}>
-            <span style={{ display: 'inline-flex', alignItems: 'center', gap: 6 }}><TokenIcon label={t.label} size={16} />{t.label} in the pool</span>
-            <span style={{ color: C.textSecondary, fontVariantNumeric: 'tabular-nums' }}>{fromMicro(pool.reserves[i], t.decimals)}{pool.sideUsd ? ` · ${fmtUsd(pool.sideUsd[i])}` : ''}</span>
+    <AppShell page='pools'>
+      <article className='sw-page'>
+        <div className='sw-head'>
+          <div className='sw-title-row'>
+            <PairIcons a={t0.label} b={t1.label} size={32} />
+            <h1 className='sw-title'>{pool.label}</h1>
           </div>
-        ))}
-      </Panel>
+        </div>
+        <p className='sw-lede'>{VENUE_NAME[pool.venue]}{pool.pairType !== 'xyk' ? `, ${pool.pairType}` : ''}. {feeText}.</p>
 
-      {!pool.empty && (
-        <Panel title='Candlesticks' note='From this site’s own record, which grows over time.'>
-          <CandleChart pair={pool.contract_addr} base={t0.label} quote={t1.label} />
-        </Panel>
-      )}
+        <div className='sw-card sw-gap'>
+          <Figures items={[
+            { label: 'Liquidity', value: pool.empty ? 'Empty' : pool.tvlUsd != null ? fmtUsd(pool.tvlUsd) : '–' },
+            ...(pool.price > 0 ? [{ label: `1 ${t0.label}`, value: `${fmtPrice(pool.price)} ${t1.label}`, sub: `1 ${t1.label} = ${fmtPrice(1 / pool.price)} ${t0.label}` }] : []),
+            ...(off != null ? [{ label: 'Against the market', value: off < 1.03 ? 'In line' : `${off.toFixed(off >= 10 ? 0 : 2)}× off`, sub: off < 1.03 ? 'within 3%' : undefined }] : []),
+          ]} />
+          <dl className='sw-rows sw-divide'>
+            {pool.tokens.map((t, i) => (
+              <Row key={i} k={`${t.label} in the pool`} v={`${amt(pool.reserves[i], t.decimals)}${pool.sideUsd ? ` · ${fmtUsd(pool.sideUsd[i])}` : ''}`} />
+            ))}
+            {fees && fees.day30.swaps > 0 && days >= 7 && <Row k='Paid to providers, 7 days' v={money(fees.day7)} />}
+            {fees && fees.day30.swaps > 0 && <Row k={`Paid to providers, ${days} days`} v={money(fees.day30)} />}
+            {fees && fees.day30.swaps === 0 && <Row k='Paid to providers' v='no swaps in 30 days' tone='muted' />}
+            {!fees && !feesFailed && <Row k='Paid to providers' v='…' tone='muted' />}
+          </dl>
+        </div>
 
-      {charted && !pool.empty && (
-        <Panel title='Price over time' note={`${t1.label} per ${t0.label}, hourly, beside the market price from both tokens' references. Where the lines part, the pool drifted.`}>
-          <PriceHistoryChart query={`pool=${pool.contract_addr}&base=${enc(t0.key)}&quote=${enc(t1.key)}`} unit={t1.label} marketName='Market' />
-        </Panel>
-      )}
+        <div className='sw-act'>
+          {!pool.empty && !bothDollars && <Link prefetch={false} href={`/?from=${enc(t0.key)}&to=${enc(t1.key)}`} className='of-btn of-btn--primary of-btn--lg of-btn--block'>Swap {t0.label} for {t1.label}</Link>}
+          <div className='of-next'>
+            {!pool.empty && !bothDollars && <Link prefetch={false} href={`/?from=${enc(t1.key)}&to=${enc(t0.key)}`} className='of-btn of-btn--quiet of-btn--sm'>Swap {t1.label} for {t0.label}</Link>}
+            <Link prefetch={false} href={`/?tab=pools&pool=${pool.contract_addr}`} className='of-btn of-btn--quiet of-btn--sm'>{pool.empty ? 'Add the first liquidity' : 'Add liquidity'}</Link>
+          </div>
+        </div>
 
-      {!pool.empty && (
-        <Panel title='How much trades before the price moves' note="Selling each side into this pool alone, fee added back. The swap page routes around a thin pool.">
-          {depth === null && <div style={{ fontSize: TEXT.xs.size, color: C.textMuted }}>Pricing a dozen sizes…</div>}
-          {depth === 'failed' && <div style={{ fontSize: TEXT.xs.size, color: C.textMuted }}>No market price for its tokens right now.</div>}
-          {sides && (
-            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(260px, 1fr))', gap: SPACE['3'] }}>
-              {sides.map((d, i) => (
-                <div key={i} style={{ display: 'grid', gap: 6 }}>
-                  <div style={{ fontSize: TEXT.sm.size, color: C.textPrimary, fontWeight: 600 }}>Selling {pool.tokens[i].label}</div>
-                  {d ? <><div style={{ fontSize: TEXT.xs.size, color: C.textSecondary }}>Price impact {markLine(d)}</div><DepthCurve depth={d} /></> : <div style={{ fontSize: TEXT.xs.size, color: C.textMuted }}>No market price for {pool.tokens[i].label}.</div>}
-                </div>
-              ))}
-            </div>
-          )}
-        </Panel>
-      )}
-
-      <Panel title='Paid to its providers' note="Less Astroport's share on Astroport's pools, at today's prices. Past fees, not a forecast.">
-        {!fees && !feesFailed && <div style={{ fontSize: TEXT.xs.size, color: C.textMuted }}>Reading its swaps…</div>}
-        {feesFailed && <div style={{ fontSize: TEXT.xs.size, color: C.textMuted }}>The chain&apos;s history did not answer. Try again in a moment.</div>}
-        {fees && fees.day30.swaps === 0 && <div style={{ fontSize: TEXT.xs.size, color: C.textMuted }}>No swaps in the last 30 days.</div>}
-        {fees && fees.day30.swaps > 0 && (
+        {charted && !pool.empty && (
           <>
-            {days >= 7 && <div style={row}><span>Last 7 days</span><span style={{ color: C.textSecondary }}>{money(fees.day7)}</span></div>}
-            <div style={row}><span>Last {days} days</span><span style={{ color: C.textSecondary }}>{money(fees.day30)}</span></div>
+            <h2 className='sw-h2 sw-section'>Price over time</h2>
+            <p className='sw-hint'>{t1.label} per {t0.label}, hourly, beside the market price. Where the lines part, the pool drifted.</p>
+            <div className='sw-card sw-gap'><PriceHistoryChart query={`pool=${pool.contract_addr}&base=${enc(t0.key)}&quote=${enc(t1.key)}`} unit={t1.label} marketName='Market' /></div>
           </>
         )}
-      </Panel>
 
-      <Panel title='Recent trades' note={`${t1.label} per ${t0.label}.`}>
-        {!prices && <div style={{ fontSize: TEXT.xs.size, color: C.textMuted }}>Reading trades…</div>}
-        {prices && prices.tape.length === 0 && <div style={{ fontSize: TEXT.xs.size, color: C.textMuted }}>No trades found in its recent history.</div>}
-        <Spark points={series} />
-        {(prices?.tape ?? []).slice(0, 6).map(r => (
-          <a key={r.tx} href={`https://scan.openfields.app/tx/${r.tx}`} target='_blank' rel='noreferrer' style={{ ...row, textDecoration: 'none' }}>
-            <span style={{ color: r.side === 'buy' ? C.success : C.alert }}>{r.side === 'buy' ? '▲ bought' : '▼ sold'} {fmtAmount(r.base)} {t0.label}</span>
-            <span style={{ color: C.textSecondary, fontVariantNumeric: 'tabular-nums' }}>for {fmtAmount(r.quote)} {t1.label} · #{r.h.toLocaleString('en-US')} ↗</span>
-          </a>
-        ))}
-      </Panel>
-
-      <Panel title='About'>
-        <div style={row}>
-          <span>Pool contract</span>
-          <a href={`https://scan.openfields.app/address/${pool.contract_addr}`} target='_blank' rel='noreferrer' style={{ color: C.textSecondary, fontFamily: mono, wordBreak: 'break-all', textAlign: 'right' }}>{pool.contract_addr} ↗</a>
-        </div>
-        <div style={row}><span>LP token</span><span style={{ color: C.textSecondary, fontFamily: mono, wordBreak: 'break-all', textAlign: 'right' }}>{pool.liquidity_token}</span></div>
-        <div style={row}><span>LP tokens issued</span><span style={{ color: C.textSecondary }}>{fromMicro(pool.totalShare, 6)}</span></div>
-        <div style={row}>
-          <span>Tokens</span>
-          <span style={{ display: 'inline-flex', gap: 10 }}>
-            {pool.tokens.map(t => known(t.key)
-              ? <Link key={t.key} href={`/token/${enc(t.key)}`} style={{ color: C.goldLit }}>{t.label} ↗</Link>
-              : <span key={t.key} style={{ color: C.textSecondary }}>{t.label}</span>)}
-          </span>
-        </div>
-        {pool.venue === 'terraswap' && (
-          <p style={{ fontSize: TEXT.xs.size, color: C.textMuted, lineHeight: 1.6, margin: '8px 0 0' }}>
-            Openfields Swap&apos;s pools have no admin that can change them and no fee for anyone but their providers. <Link href='/verify' style={{ color: C.goldLit }}>Check it from your browser</Link>.
-          </p>
+        {!pool.empty && (
+          <>
+            <h2 className='sw-h2 sw-section'>Recent trades</h2>
+            {!prices && <p className='sw-status'>Reading trades…</p>}
+            {prices && prices.tape.length === 0 && <p className='sw-status'>No trades found in its recent history.</p>}
+            {prices && prices.tape.length > 0 && (
+              <div className='sw-card'>
+                <Spark points={series} />
+                <div className='sw-tape'>
+                  {prices.tape.slice(0, 6).map(r => (
+                    <a key={r.tx} href={SCAN_TX(r.tx)} target='_blank' rel='noopener noreferrer'>
+                      <span className={r.side === 'buy' ? 'sw-pos' : 'sw-neg'}>{r.side === 'buy' ? 'Bought' : 'Sold'}</span>
+                      <span>{fmtAmount(r.base)} {t0.label} for {fmtAmount(r.quote)} {t1.label}</span>
+                      <span className='sw-tape-end'>#{r.h.toLocaleString('en-US')}</span>
+                    </a>
+                  ))}
+                </div>
+              </div>
+            )}
+          </>
         )}
-      </Panel>
-    </Page>
+
+        {!pool.empty && (
+          <Disclosure summary='Candlesticks' className='sw-section'>
+            <p className='sw-hint'>From this site&apos;s own record, which grows over time.</p>
+            <div className='sw-card sw-gap'><CandleChart pair={pool.contract_addr} base={t0.label} quote={t1.label} /></div>
+          </Disclosure>
+        )}
+
+        {!pool.empty && (
+          <Disclosure summary='How much trades before the price moves' className='sw-gap'>
+            <p className='sw-hint'>Selling each side into this pool alone, fee added back. The swap routes around a thin pool.</p>
+            {depth === null && <p className='sw-status sw-gap'>Pricing a dozen sizes…</p>}
+            {depth === 'failed' && <p className='sw-status sw-gap'>No market price for its tokens right now.</p>}
+            {sides && (
+              <div className='sw-sides sw-gap'>
+                {sides.map((d, i) => (
+                  <div key={i} className='sw-card'>
+                    <p className='sw-card-title'>Selling {pool.tokens[i].label}</p>
+                    {d ? <><p className='sw-card-sub'>Price impact {markLine(d)}</p><DepthCurve depth={d} /></> : <p className='sw-card-sub'>No market price for {pool.tokens[i].label}.</p>}
+                  </div>
+                ))}
+              </div>
+            )}
+          </Disclosure>
+        )}
+
+        <Disclosure summary='Contract' className='sw-gap'>
+          <dl className='sw-rows sw-gap'>
+            <Row k='Pool contract' v={<a className='sw-mono' href={SCAN_ADDRESS(pool.contract_addr)} target='_blank' rel='noopener noreferrer'>{pool.contract_addr}</a>} />
+            <Row k='LP token' v={<span className='sw-mono'>{pool.liquidity_token}</span>} />
+            <Row k='LP tokens issued' v={fromMicro(pool.totalShare, 6)} />
+            <Row k='Tokens' v={<>{pool.tokens.map((t, i) => <span key={t.key}>{i > 0 ? ' · ' : ''}{known(t.key) ? <Link href={`/token/${enc(t.key)}`}>{t.label}</Link> : t.label}</span>)}</>} />
+          </dl>
+          {pool.venue === 'terraswap' && <p className='sw-fine'>Openfields Swap&apos;s pools have no admin that can change them and no fee for anyone but their providers. <Link className='sw-link' href='/verify'>Check it from your browser</Link>.</p>}
+        </Disclosure>
+      </article>
+    </AppShell>
   )
 }

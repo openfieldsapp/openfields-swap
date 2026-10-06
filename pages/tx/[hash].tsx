@@ -10,11 +10,13 @@
 import Link from 'next/link'
 import type { GetStaticPaths, GetStaticProps } from 'next'
 import { useState } from 'react'
-import { SPACE, TEXT } from 'components/tokens'
-import { C, Page, Panel, linkBtn, row } from 'components/PageShell'
+import AppShell from 'components/shell/AppShell'
 import { TokenIcon } from 'components/TokenIcon'
-import { IS_ASTRO, KNOWN_TOKENS, fromMicro, tokenFor, type KnownToken } from 'lib/dex'
-import { TERRA_HOME_URL } from 'components/AppSwitcher'
+import { Icon } from 'components/ui'
+import { Row, amt } from 'components/swap/common'
+import { shortAddress } from 'components/wallet/connect'
+import { IS_ASTRO, KNOWN_TOKENS, tokenFor, type KnownToken } from 'lib/dex'
+import { SCAN_ADDRESS, SCAN_TX, TERRA_HOME_URL } from 'lib/products'
 import { fmtAmount } from 'lib/arb'
 import { TX_HASH, readReceipt, type Receipt } from 'lib/txReceipt'
 import { SITE_URL } from 'lib/siteUrl'
@@ -93,7 +95,6 @@ export const getStaticProps: GetStaticProps = async ctx => {
 /** Only ever rendered with a receipt: a transaction the endpoints do not know is a 404 (getStaticProps, pages/404). */
 export default function TxPage({ hash, receipt }: { hash: string; receipt: Receipt }) {
   const [copied, setCopied] = useState(false)
-  const terrascope = `https://scan.openfields.app/tx/${hash}`
   const share = () => {
     navigator.clipboard?.writeText(window.location.href).then(() => { setCopied(true); setTimeout(() => setCopied(false), 1800) }).catch(() => {})
   }
@@ -106,61 +107,60 @@ export default function TxPage({ hash, receipt }: { hash: string; receipt: Recei
     return KNOWN_TOKENS.some(k => k.key === a.key) && KNOWN_TOKENS.some(k => k.key === b.key) ? `/?from=${encodeURIComponent(a.key)}&to=${encodeURIComponent(b.key)}` : null
   })()
   const moved = (list: { id: string; amount: string }[]) => (
-    <span style={{ display: 'inline-flex', gap: 10, flexWrap: 'wrap', justifyContent: 'flex-end', color: C.textSecondary }}>
-      {list.map((m, i) => <span key={i} style={{ display: 'inline-flex', alignItems: 'center', gap: 5 }}><TokenIcon label={tokenOf(m.id).label} size={16} />{show(m)}</span>)}
+    <span className='sw-moved'>
+      {list.map((m, i) => <span key={i}><TokenIcon label={tokenOf(m.id).label} size={16} />{show(m)}</span>)}
     </span>
   )
   const when = new Date(r.time).toLocaleString('en-GB', { day: 'numeric', month: 'short', year: 'numeric', hour: '2-digit', minute: '2-digit', timeZone: 'UTC' })
   const ourMemo = [...SITE_MEMO_PREFIXES, ...POOLS_MEMO_PREFIXES].some(p => r.memo.startsWith(`${p}:`))
 
   return (
-    <Page width={760}>
-      <header style={{ display: 'grid', gap: 6 }}>
-        <div style={{ fontSize: TEXT.xs.size, letterSpacing: '0.08em', textTransform: 'uppercase', color: r.ok ? C.success : C.alert }}>
-          {r.ok ? '✓ Landed' : '✗ Failed on chain'} <span style={{ color: C.textWhisper }}>· block #{r.height.toLocaleString('en-US')} · {when} UTC</span>
+    <AppShell>
+      <article className='sw-page sw-narrow'>
+        <p className={`sw-receipt-state ${r.ok ? 'sw-pos' : 'sw-neg'}`}>
+          <span className={`sw-verify-mark ${r.ok ? 'is-ok' : 'is-bad'}`} aria-hidden><Icon name={r.ok ? 'check' : 'close'} size={14} /></span>
+          {r.ok ? 'Landed' : 'Failed on chain'}
+        </p>
+        <h1 className='sw-title sw-gap'>{titleFor(r)}</h1>
+        <p className='sw-lede'>Block {r.height.toLocaleString('en-US')}, {when} UTC.</p>
+
+        <div className='sw-card sw-gap'>
+          <dl className='sw-rows'>
+            {r.out.length > 0 && <Row k='Left' v={moved(r.out)} />}
+            {r.in.length > 0 && <Row k='Arrived' v={moved(r.in)} />}
+            {!r.ok && <Row k='Moved' v='Nothing but the network fee.' tone='bad' />}
+            <Row k='Network fee' v={r.feeUluna !== '0' ? `${amt(r.feeUluna, 6, 4)} LUNA` : 'paid by the relayer'} tone='muted' />
+            {r.account && <Row k='Wallet' v={<a href={SCAN_ADDRESS(r.account)} target='_blank' rel='noopener noreferrer'>{shortAddress(r.account)}</a>} tone='muted' />}
+          </dl>
+          {r.quote && (
+            <dl className='sw-rows sw-divide'>
+              <Row k='Quoted' v={`${fmtAmount(r.quote.amount)} ${r.quote.label}`} />
+              {vs != null && <Row k='Against the quote' v={`${vs >= 0 ? '+' : ''}${vs.toFixed(2)}%`} tone={vs >= -0.05 ? 'good' : 'warn'} />}
+              {r.quote.gainPct != null && <Row k='Routing added' v={`${r.quote.gainPct >= 0 ? '+' : ''}${r.quote.gainPct.toFixed(2)}% over the best path through up to two pools`} tone={r.quote.gainPct >= 0.005 ? 'good' : 'muted'} />}
+              {r.minimum && <Row k='Least it allowed' v={show(r.minimum)} tone='muted' />}
+            </dl>
+          )}
+          {r.hops.length > 0 && (
+            <dl className='sw-rows sw-divide'>
+              {r.hops.map((h, i) => (
+                <Row key={i} k={i === 0 ? 'Route' : ''} v={h.pool
+                  ? <Link href={`/pool/${h.pool}`}>{show(h.offer)} to {show(h.ask)}</Link>
+                  : `${show(h.offer)} to ${show(h.ask)}`} />
+              ))}
+            </dl>
+          )}
+          {ourMemo && <p className='sw-fine sw-mono sw-gap'>{r.memo}</p>}
         </div>
-        <h1 style={{ fontSize: 'clamp(1.5rem, 4.6vw, 2.1rem)', margin: 0, letterSpacing: '-0.02em', lineHeight: 1.2 }}>{titleFor(r)}</h1>
-      </header>
 
-      <div style={{ display: 'flex', gap: SPACE['2'], flexWrap: 'wrap' }}>
-        {pairLink && <Link href={pairLink} style={linkBtn(true)}>Swap the same pair</Link>}
-        {!IS_ASTRO && <a href={`${TERRA_HOME_URL}/`} style={linkBtn()}>See your wallet in Openfields Home ↗</a>}
-        <button type='button' onClick={share} style={{ ...linkBtn(), cursor: 'pointer' }}>{copied ? 'Link copied ✓' : 'Copy link'}</button>
-        <a href={terrascope} target='_blank' rel='noreferrer' style={linkBtn()}>Openfields Scan ↗</a>
-      </div>
-
-      <Panel title='What moved' note={r.ok ? undefined : 'It failed, so nothing moved but the network fee.'}>
-        {r.out.length > 0 && <div style={row}><span>Left</span>{moved(r.out)}</div>}
-        {r.in.length > 0 && <div style={row}><span>Arrived</span>{moved(r.in)}</div>}
-        <div style={row}><span>Network fee</span><span style={{ color: C.textSecondary }}>{r.feeUluna !== '0' ? `${fromMicro(r.feeUluna, 6, 4)} LUNA` : 'paid by the relayer'}</span></div>
-        {r.account && <div style={row}><span>Wallet</span><a href={`https://scan.openfields.app/address/${r.account}`} target='_blank' rel='noreferrer' style={{ color: C.textSecondary }}>{r.account.slice(0, 10)}…{r.account.slice(-6)} ↗</a></div>}
-      </Panel>
-
-      {r.quote && (
-        <Panel title='Against the quote' note="Openfields Swap writes the quote into the transaction's memo.">
-          <div style={row}><span>Quoted</span><span style={{ color: C.textSecondary }}>{fmtAmount(r.quote.amount)} {r.quote.label}</span></div>
-          {vs != null && <div style={row}><span>Arrived against the quote</span><span style={{ color: vs >= -0.05 ? C.success : C.ember }}>{vs >= 0 ? '+' : ''}{vs.toFixed(2)}%</span></div>}
-          {r.quote.gainPct != null && <div style={row}><span>Routing added</span><span style={{ color: r.quote.gainPct >= 0.005 ? C.success : C.textSecondary }}>{r.quote.gainPct >= 0 ? '+' : ''}{r.quote.gainPct.toFixed(2)}% over the best path through up to two pools</span></div>}
-          {r.minimum && <div style={row}><span>Least it allowed</span><span style={{ color: C.textSecondary }}>{show(r.minimum)}</span></div>}
-        </Panel>
-      )}
-
-      {r.hops.length > 0 && (
-        <Panel title='Route' note='In the order the pools executed it.'>
-          {r.hops.map((h, i) => (
-            <div key={i} style={row}>
-              <span style={{ color: C.textSecondary }}>{show(h.offer)} → {show(h.ask)}</span>
-              {h.pool && <Link href={`/pool/${h.pool}`} style={{ color: C.goldLit }}>{tokenOf(h.offer.id).label} / {tokenOf(h.ask.id).label} pool ↗</Link>}
-            </div>
-          ))}
-        </Panel>
-      )}
-
-      {ourMemo && (
-        <Panel title='Memo'>
-          <div style={{ fontFamily: 'ui-monospace, SFMono-Regular, Menlo, monospace', fontSize: TEXT.xs.size, color: C.textSecondary, wordBreak: 'break-word' }}>{r.memo}</div>
-        </Panel>
-      )}
-    </Page>
+        <div className='sw-act'>
+          {pairLink && <Link href={pairLink} className='of-btn of-btn--primary of-btn--lg of-btn--block'>Swap the same pair</Link>}
+          <div className='of-next'>
+            <a href={SCAN_TX(hash)} target='_blank' rel='noopener noreferrer' className='of-btn of-btn--quiet of-btn--sm'>Openfields Scan<Icon name='external' size={14} /></a>
+            {!IS_ASTRO && <a href={`${TERRA_HOME_URL}/`} className='of-btn of-btn--quiet of-btn--sm'>Openfields Home<Icon name='external' size={14} /></a>}
+            <button type='button' onClick={share} className='of-btn of-btn--quiet of-btn--sm'>{copied ? 'Link copied' : 'Copy link'}<Icon name={copied ? 'check' : 'copy'} size={14} /></button>
+          </div>
+        </div>
+      </article>
+    </AppShell>
   )
 }

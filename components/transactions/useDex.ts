@@ -20,13 +20,14 @@ import {
 } from 'lib/msgs'
 import { POOLS_MEMO_PREFIXES, SITE_MEMO_PREFIXES, type RoutePlan, type TradePlan } from 'lib/route'
 import { sendInjectiveTx } from 'lib/injective'
+import { wakeWalletConnect, type KitChainWallet } from 'components/wallet/kitWallet'
 
 /** The name every memo signed here starts with (lib/route: readers also accept the old "Terra Swap"). */
 const MEMO = (IS_ASTRO ? POOLS_MEMO_PREFIXES : SITE_MEMO_PREFIXES)[0]
 
 /** Shared broadcaster: region gate (cookie + server), sign, assert on-chain success. */
 export function useDexBroadcast() {
-  const { address, getSigningCosmWasmClient, isWalletConnected } = useWallet()
+  const { address, getSigningCosmWasmClient, isWalletConnected, chainWallet } = useWallet()
   const { txAllowed, country } = useTxRegionGate()
   return useCallback(async (msgs: EncodeObject[], memo: string) => {
     if (txAllowed === false) throw new RegionRestricted(country)
@@ -37,13 +38,15 @@ export function useDexBroadcast() {
     } catch (e) {
       if (e instanceof RegionRestricted) throw e
     }
+    // A phone's WalletConnect session put back after a reload cannot sign until it is connected again (kitWallet).
+    await wakeWalletConnect(chainWallet as KitChainWallet | undefined)
     const client = await getSigningCosmWasmClient()
     const res = await client.signAndBroadcast(address, msgs, 'auto', memo)
     if (res && typeof res.code === 'number' && res.code !== 0) {
       throw new Error(res.rawLog || `Transaction failed on chain (code ${res.code})`)
     }
     return res
-  }, [address, getSigningCosmWasmClient, isWalletConnected, txAllowed, country])
+  }, [address, getSigningCosmWasmClient, isWalletConnected, chainWallet, txAllowed, country])
 }
 
 export interface RouteSwapArgs {
@@ -164,6 +167,7 @@ export function useCosmosBroadcast(chainName: CosmosSource, label: string) {
     } catch (e) {
       if (e instanceof RegionRestricted) throw e
     }
+    await wakeWalletConnect(chain.chainWallet as KitChainWallet | undefined)
     const client = await chain.getSigningStargateClient()
     const res = await client.signAndBroadcast(chain.address, msgs, 'auto', memo)
     if (res && typeof res.code === 'number' && res.code !== 0) {
@@ -196,6 +200,7 @@ export function useInjectiveBroadcast() {
     } catch (e) {
       if (e instanceof RegionRestricted) throw e
     }
+    await wakeWalletConnect(injective.chainWallet as KitChainWallet | undefined)
     return sendInjectiveTx(injective.getOfflineSignerDirect(), injective.address, msgs, memo)
   }, [injective, txAllowed, country])
 }

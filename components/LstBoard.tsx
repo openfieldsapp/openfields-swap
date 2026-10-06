@@ -2,21 +2,14 @@
  * Liquid staking tokens against their hubs (/api/lst, lib/lstBoard): what the
  * best route through either site's pools pays for selling ampLUNA or bLUNA,
  * beside redeeming at the hub's rate after unbonding, and what it gets for
- * buying, beside minting at the hub. On the Pools tab and on /stats.
+ * buying, beside minting at the hub. In Pools and on /stats.
  */
 
 import Link from 'next/link'
-import { useEffect, useState } from 'react'
-import { SPACE, TEXT } from 'components/tokens'
+import { Fragment, useEffect, useState } from 'react'
 import type { LstResponse } from 'lib/api/lst'
 import type { LstSide } from 'lib/lstBoard'
-import { TERRA_FONT } from 'lib/font'
 import { poll } from 'lib/pageActive'
-
-const C = {
-  surface: '#0b0f1c', surfaceElev: '#111729', divider: 'rgba(255,216,61,0.13)', goldCore: '#caa022', goldLit: '#ffd83d',
-  textPrimary: '#f4f1e8', textSecondary: '#d6cfbd', textMuted: '#9a927f', textWhisper: '#6b6555', success: '#3ddc97', ember: '#ffb347',
-} as const
 
 const signed = (v: number) => `${v >= 0 ? '+' : ''}${v.toFixed(2)}%`
 const dollars = (n: number) => `$${n.toLocaleString('en-US')}`
@@ -24,7 +17,7 @@ const dollars = (n: number) => `$${n.toLocaleString('en-US')}`
 const THIN_PCT = 10
 
 export default function LstBoard({ onTrade }: {
-  /** Open the swap panel on this trade. Without it the board links to the swap page instead. */
+  /** Open the swap box on this trade. Without it the board links to the swap page instead. */
   onTrade?: (fromId: string, toId: string, amount: string) => void
 }) {
   const [data, setData] = useState<LstResponse | null>(null)
@@ -43,68 +36,55 @@ export default function LstBoard({ onTrade }: {
 
   const action = (fromId: string, toId: string, fromKey: string, toKey: string, side: LstSide) => (
     onTrade
-      ? <button type='button' onClick={() => onTrade(fromId, toId, side.amount)} style={{ background: 'transparent', border: `1px solid ${C.divider}`, borderRadius: 8, color: C.goldLit, fontSize: TEXT.xs.size, padding: '1px 8px', cursor: 'pointer', fontFamily: 'inherit' }}>swap</button>
-      : <Link prefetch={false} href={`/?from=${encodeURIComponent(fromKey)}&to=${encodeURIComponent(toKey)}&amount=${side.amount}`} style={{ color: C.goldLit, fontSize: TEXT.xs.size }}>swap ↗</Link>
+      ? <button type='button' className='of-btn of-btn--quiet of-btn--sm' onClick={() => onTrade(fromId, toId, side.amount)}>Swap</button>
+      : <Link prefetch={false} className='of-btn of-btn--quiet of-btn--sm' href={`/?from=${encodeURIComponent(fromKey)}&to=${encodeURIComponent(toKey)}&amount=${side.amount}`}>Swap</Link>
   )
+  const against = (v: number, good: boolean, text: string, thin: string) => Math.abs(v) > THIN_PCT
+    ? <span className='sw-item-sub'>{thin} ({signed(v)})</span>
+    : <span className={`sw-item-sub ${good ? 'sw-pos' : 'sw-warn'}`}>{signed(v)} {text}</span>
 
+  if (!data) return <p className='sw-status'>{failed ? 'The hubs did not answer. Try again in a moment.' : 'Pricing both ways through every site…'}</p>
   return (
-    <section style={{ background: C.surfaceElev, border: `1px solid ${C.divider}`, borderRadius: 16, padding: '1rem 1.1rem', fontFamily: TERRA_FONT }}>
-      <div style={{ display: 'flex', alignItems: 'baseline', gap: SPACE['2'], flexWrap: 'wrap' }}>
-        <h2 style={{ fontSize: TEXT.md.size, margin: 0, color: C.textPrimary }}>Liquid staking · pools against the hubs</h2>
-        {data && <span style={{ fontSize: TEXT.xs.size, color: C.textWhisper }}>priced {new Date(data.at).toLocaleTimeString('en-GB', { hour: '2-digit', minute: '2-digit' })}</span>}
-      </div>
-      <p style={{ fontSize: TEXT.xs.size, color: C.textMuted, lineHeight: 1.6, margin: '4px 0 10px' }}>
-        ampLUNA and bLUNA are minted and redeemed at their hub&apos;s rate, and the pools drift from it. A $100 and a $5,000 trade through the best route, against redeeming or minting at the hub.
-      </p>
-      {!data && <div style={{ fontSize: TEXT.xs.size, color: C.textMuted }}>{failed ? 'The hubs did not answer. Try again in a moment.' : 'Pricing both ways through both sites…'}</div>}
-      <div style={{ display: 'grid', gap: SPACE['3'] }}>
-        {data?.rows.map(row => {
-          const days = `${Math.round(row.unbondDays)} to ${Math.round(row.unbondDays + row.epochDays)} days`
-          return (
-            <div key={row.key} style={{ display: 'grid', gap: 4 }}>
-              <div style={{ display: 'flex', alignItems: 'baseline', gap: SPACE['2'], flexWrap: 'wrap' }}>
-                <b style={{ color: C.textPrimary, fontSize: TEXT.sm.size }}>{row.key}</b>
-                <span style={{ fontSize: TEXT.xs.size, color: C.textSecondary }}>{row.provider}&apos;s hub: 1 {row.key} = {row.rate.toFixed(4)} LUNA</span>
-                <span style={{ fontSize: TEXT.xs.size, color: C.textWhisper }}>redeeming takes about {days}</span>
-              </div>
-              {row.sizes.map(s => (
-                <div key={s.usd} style={{ display: 'grid', gap: 2, padding: '6px 10px', background: C.surface, borderRadius: 10, border: `1px solid ${C.divider}` }}>
-                  {!s.sell && !s.buy && <div style={{ fontSize: TEXT.xs.size, color: C.textWhisper }}>{dollars(s.usd)}: the pools could not be priced just now.</div>}
-                  {s.sell && (
-                    <div style={{ display: 'flex', gap: SPACE['2'], alignItems: 'baseline', flexWrap: 'wrap', fontSize: TEXT.xs.size, color: C.textMuted }}>
-                      <span style={{ minWidth: '6.5rem' }}>Sell {dollars(s.usd)}</span>
-                      <span style={{ color: C.textSecondary }}>{s.sell.rate.toFixed(4)} LUNA each</span>
-                      {Math.abs(s.sell.vsHubPct) > THIN_PCT
-                        ? <span title={s.sell.route} style={{ color: C.textWhisper }}>the pools are too thin for this size ({signed(s.sell.vsHubPct)}); redeeming at {row.provider} pays the rate</span>
-                        : <span title={s.sell.route} style={{ color: s.sell.vsHubPct < -0.05 ? C.ember : C.success }}>
-                            {signed(s.sell.vsHubPct)} {s.sell.vsHubPct < -0.05 ? `against redeeming at ${row.provider}` : 'against the hub rate'}
-                          </span>}
-                      <span style={{ marginLeft: 'auto' }}>{action(row.token, 'uluna', row.key, 'LUNA', s.sell)}</span>
-                    </div>
-                  )}
-                  {s.buy && (
-                    <div style={{ display: 'flex', gap: SPACE['2'], alignItems: 'baseline', flexWrap: 'wrap', fontSize: TEXT.xs.size, color: C.textMuted }}>
-                      <span style={{ minWidth: '6.5rem' }}>Buy {dollars(s.usd)}</span>
-                      <span style={{ color: C.textSecondary }}>{s.buy.rate.toFixed(4)} {row.key} per LUNA</span>
-                      {Math.abs(s.buy.vsHubPct) > THIN_PCT
-                        ? <span title={s.buy.route} style={{ color: C.textWhisper }}>the pools are too thin for this size ({signed(s.buy.vsHubPct)}); minting at {row.provider} pays the rate</span>
-                        : <span title={s.buy.route} style={{ color: s.buy.vsHubPct > 0.05 ? C.success : C.ember }}>
-                            {signed(s.buy.vsHubPct)} against minting at {row.provider}
-                          </span>}
-                      <span style={{ marginLeft: 'auto' }}>{action('uluna', row.token, 'LUNA', row.key, s.buy)}</span>
-                    </div>
-                  )}
-                </div>
-              ))}
+    <div className='sw-stack'>
+      {data.rows.map(row => {
+        const days = `${Math.round(row.unbondDays)} to ${Math.round(row.unbondDays + row.epochDays)} days`
+        return (
+          <div key={row.key} className='sw-list'>
+            <div className='sw-item'>
+              <span className='sw-item-main'>
+                <span className='sw-item-title'>{row.key}</span>
+                <span className='sw-item-sub'>1 {row.key} = {row.rate.toFixed(4)} LUNA at {row.provider}&apos;s hub · redeeming takes about {days}</span>
+              </span>
             </div>
-          )
-        })}
-      </div>
-      {data && (
-        <div style={{ fontSize: TEXT.xs.size, color: C.textWhisper, lineHeight: 1.6, marginTop: SPACE['2'] }}>
-          Pool fees included, gas not. Negative on selling: redeeming at the hub pays more, after unbonding. Positive on buying: the pool gives more than minting. Today&apos;s numbers, not a forecast.
-        </div>
-      )}
-    </section>
+            {row.sizes.map(s => (
+              <Fragment key={s.usd}>
+                {!s.sell && !s.buy && <p className='sw-item sw-fine'>{dollars(s.usd)}: the pools could not be priced just now.</p>}
+                {s.sell && (
+                  <div className='sw-item' title={s.sell.route}>
+                    <span className='sw-item-main'>
+                      <span className='sw-item-title'>Sell {dollars(s.usd)} <span className='sw-tag'>{s.sell.rate.toFixed(4)} LUNA each</span></span>
+                      {against(s.sell.vsHubPct, s.sell.vsHubPct >= -0.05, s.sell.vsHubPct < -0.05 ? `against redeeming at ${row.provider}` : 'against the hub rate', `The pools are too thin for this size; redeeming at ${row.provider} pays the rate`)}
+                    </span>
+                    {action(row.token, 'uluna', row.key, 'LUNA', s.sell)}
+                  </div>
+                )}
+                {s.buy && (
+                  <div className='sw-item' title={s.buy.route}>
+                    <span className='sw-item-main'>
+                      <span className='sw-item-title'>Buy {dollars(s.usd)} <span className='sw-tag'>{s.buy.rate.toFixed(4)} {row.key} per LUNA</span></span>
+                      {against(s.buy.vsHubPct, s.buy.vsHubPct > 0.05, `against minting at ${row.provider}`, `The pools are too thin for this size; minting at ${row.provider} pays the rate`)}
+                    </span>
+                    {action('uluna', row.token, 'LUNA', row.key, s.buy)}
+                  </div>
+                )}
+              </Fragment>
+            ))}
+          </div>
+        )
+      })}
+      <p className='sw-fine'>
+        Priced {new Date(data.at).toLocaleTimeString('en-GB', { hour: '2-digit', minute: '2-digit' })}. Pool fees included, gas not. Negative on selling: redeeming at the hub pays more, after unbonding. Positive on buying: the pool gives more than minting. Today&apos;s numbers, not a forecast.
+      </p>
+    </div>
   )
 }

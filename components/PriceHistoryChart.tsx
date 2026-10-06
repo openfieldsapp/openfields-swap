@@ -7,8 +7,7 @@
  */
 
 import { useEffect, useMemo, useRef, useState } from 'react'
-import { C, fmtNum } from 'components/PageShell'
-import { TEXT } from 'components/tokens'
+import { fmtPrice } from 'components/swap/common'
 import type { Point, Range, Series } from 'lib/priceHistory'
 
 const RANGES: Range[] = ['1d', '7d', '30d', '90d']
@@ -69,7 +68,8 @@ export default function PriceHistoryChart({ query, unit, marketName = 'Market' }
   const first = points[0]?.[1], last = points[points.length - 1]?.[1]
   const change = points.length >= 2 && first && last ? (last / first - 1) * 100 : null
   const up = (change ?? 0) >= 0
-  const stroke = change == null ? C.goldLit : up ? C.success : C.alert
+  const tone = change == null ? '' : up ? 'sw-pos' : 'sw-neg'
+  const fmtNum = (n: number) => (n >= 1000 ? Math.round(n).toLocaleString('en-US') : fmtPrice(n))
   const show = (v: number) => (unit === '$' ? `$${fmtNum(v)}` : `${fmtNum(v)} ${unit}`)
   const nearest = (pts: Point[], t: number) => pts.reduce<Point | null>((b, p) => (!b || Math.abs(p[0] - t) < Math.abs(b[0] - t) ? p : b), null)
   const hp = hover != null && scale ? nearest(points.length ? points : market, scale.t0 + (hover / W) * (scale.t1 - scale.t0)) : null
@@ -81,44 +81,34 @@ export default function PriceHistoryChart({ query, unit, marketName = 'Market' }
     setHover(Math.max(0, Math.min(W, ((e.clientX - r.left) / r.width) * W)))
   }
 
-  const btn = (on: boolean): React.CSSProperties => ({
-    padding: '2px 9px', borderRadius: 999, fontSize: TEXT.xs.size, fontFamily: 'inherit', cursor: 'pointer',
-    background: on ? 'rgba(255,216,61,0.08)' : 'transparent', color: on ? C.goldLit : C.textMuted, border: `1px solid ${on ? C.goldCore : C.divider}`,
-  })
-
   return (
-    <div>
-      <div style={{ display: 'flex', alignItems: 'baseline', gap: 10, flexWrap: 'wrap', marginBottom: 6 }}>
-        <span style={{ fontSize: '1.35rem', fontWeight: 700, color: C.goldLit, fontVariantNumeric: 'tabular-nums' }}>{hp ? show(hp[1]) : last ? show(last) : '—'}</span>
-        {!hp && change != null && <span style={{ fontSize: TEXT.sm.size, fontWeight: 700, color: stroke, fontVariantNumeric: 'tabular-nums' }}>{up ? '▲' : '▼'} {Math.abs(change).toFixed(2)}%</span>}
-        {hp && <span style={{ fontSize: TEXT.xs.size, color: C.textMuted }}>{new Date(hp[0]).toLocaleString('en-GB', { day: 'numeric', month: 'short', hour: '2-digit', minute: '2-digit' })}{hm ? ` · ${marketName.toLowerCase()} ${show(hm[1])}` : ''}</span>}
-        <span style={{ marginLeft: 'auto', display: 'inline-flex', gap: 6 }}>
-          {RANGES.map(r => <button key={r} type='button' onClick={() => setRange(r)} style={btn(range === r)}>{r.toUpperCase()}</button>)}
-        </span>
+    <div className='sw-history'>
+      <div className='sw-chart-head'>
+        <div>
+          <span className='sw-chart-price'>{hp ? show(hp[1]) : last ? show(last) : '–'}</span>{' '}
+          {!hp && change != null && <span className={`sw-chart-change ${tone}`}>{up ? '+' : ''}{change.toFixed(2)}%</span>}
+          {hp && <span className='sw-fine'>{new Date(hp[0]).toLocaleString('en-GB', { day: 'numeric', month: 'short', hour: '2-digit', minute: '2-digit' })}{hm ? `, ${marketName.toLowerCase()} ${show(hm[1])}` : ''}</span>}
+        </div>
+        <div className='of-seg sw-ranges' role='radiogroup' aria-label='Range'>
+          {RANGES.map(r => <button key={r} type='button' role='radio' aria-checked={range === r} onClick={() => setRange(r)}>{r.toUpperCase()}</button>)}
+        </div>
       </div>
       {scale ? (
-        <div ref={box} onPointerMove={onMove} onPointerLeave={() => setHover(null)} style={{ position: 'relative', touchAction: 'pan-y' }}>
-          <svg viewBox={`0 0 ${W} ${H}`} preserveAspectRatio='none' style={{ width: '100%', height: 190, display: 'block' }} role='img' aria-label={`Price over ${range}`}>
-            <defs>
-              <linearGradient id={`hist-${query.length}-${range}`} x1='0' y1='0' x2='0' y2='1'>
-                <stop offset='0%' stopColor={stroke} stopOpacity='0.22' />
-                <stop offset='100%' stopColor={stroke} stopOpacity='0' />
-              </linearGradient>
-            </defs>
-            {market.length > 1 && <path d={pathOf(market)} fill='none' stroke={C.textMuted} strokeWidth='1.5' strokeDasharray='4 4' vectorEffect='non-scaling-stroke' />}
-            {points.length > 1 && <path d={`${pathOf(points)} L${scale.x(points[points.length - 1][0]).toFixed(1)},${H} L${scale.x(points[0][0]).toFixed(1)},${H} Z`} fill={`url(#hist-${query.length}-${range})`} stroke='none' />}
-            {points.length > 1 && <path d={pathOf(points)} fill='none' stroke={stroke} strokeWidth='2' vectorEffect='non-scaling-stroke' strokeLinejoin='round' strokeLinecap='round' />}
-            {hp && <line x1={scale.x(hp[0])} x2={scale.x(hp[0])} y1={0} y2={H} stroke={C.textWhisper} strokeWidth='1' vectorEffect='non-scaling-stroke' />}
+        <div ref={box} className='sw-history-plot' onPointerMove={onMove} onPointerLeave={() => setHover(null)}>
+          <svg viewBox={`0 0 ${W} ${H}`} preserveAspectRatio='none' role='img' aria-label={`Price over ${range}`}>
+            {market.length > 1 && <path className='sw-svg-faint' d={pathOf(market)} fill='none' strokeWidth='1.5' strokeDasharray='4 4' vectorEffect='non-scaling-stroke' />}
+            {points.length > 1 && <path className={tone || 'sw-svg-line'} stroke='currentColor' d={pathOf(points)} fill='none' strokeWidth='1.75' vectorEffect='non-scaling-stroke' strokeLinejoin='round' strokeLinecap='round' />}
+            {hp && <line className='sw-svg-grid' x1={scale.x(hp[0])} x2={scale.x(hp[0])} y1={0} y2={H} strokeWidth='1' vectorEffect='non-scaling-stroke' />}
+            {hp && <circle className={tone || 'sw-svg-line'} fill='currentColor' cx={scale.x(hp[0])} cy={scale.y(hp[1])} r='3.5' vectorEffect='non-scaling-stroke' />}
           </svg>
-          {hp && <span aria-hidden style={{ position: 'absolute', left: `${(scale.x(hp[0]) / W) * 100}%`, top: `${(scale.y(hp[1]) / H) * 100}%`, width: 8, height: 8, marginLeft: -4, marginTop: -4, borderRadius: 999, background: stroke, boxShadow: `0 0 8px ${stroke}` }} />}
-          <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: TEXT.xs.size, color: C.textWhisper, marginTop: 4 }}>
+          <div className='sw-axis'>
             <span>{when(scale.t0, range)}</span>
-            {market.length > 1 && <span><span style={{ color: stroke }}>━</span> this pool · <span style={{ color: C.textMuted }}>┅</span> {marketName.toLowerCase()}</span>}
+            {market.length > 1 && <span>solid: this pool · dashed: {marketName.toLowerCase()}</span>}
             <span>{when(scale.t1, range)}</span>
           </div>
         </div>
       ) : (
-        <div style={{ fontSize: TEXT.xs.size, color: C.textMuted, lineHeight: 1.6, padding: '18px 0' }}>
+        <p className='sw-status sw-history-empty'>
           {failed
             ? 'The price record did not answer. Try again in a moment.'
             : !data
@@ -126,7 +116,7 @@ export default function PriceHistoryChart({ query, unit, marketName = 'Market' }
               : data.since
                 ? `Recorded every ten minutes since ${new Date(`${data.since}T00:00:00Z`).toLocaleDateString('en-GB', { day: 'numeric', month: 'long', year: 'numeric' })}. This range fills in as it goes.`
                 : 'Prices are recorded every ten minutes from the first recording on, so the chart starts empty.'}
-        </div>
+        </p>
       )}
     </div>
   )

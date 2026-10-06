@@ -15,21 +15,12 @@
  */
 
 import Head from 'next/head'
-import Link from 'next/link'
 import { useCallback, useEffect, useRef, useState } from 'react'
-import { SPACE, TEXT } from 'components/tokens'
-import SiteNav from 'components/SiteNav'
-import ShellHeader from 'components/ShellHeader'
-import { pageColumn, pageMain } from 'components/PageShell'
+import AppShell from 'components/shell/AppShell'
+import { Button, cx, Icon } from 'components/ui'
 import { ASTRO_FACTORY, ASTRO_ROUTER, ROUTER_FACTORIES, SKELETON_FACTORY, TERRA_SWAP_FACTORY, TERRA_SWAP_FACTORY_V2, TERRA_SWAP_ROUTER, VENUE_INCENTIVES, smart } from 'lib/dex'
 import { lcdFetch } from 'lib/lcd'
-import { TERRA_FONT } from 'lib/font'
-
-const C = {
-  surface: '#0b0f1c', surfaceElev: '#111729', divider: 'rgba(255,216,61,0.13)',
-  goldCore: '#caa022', goldLit: '#ffd83d', textPrimary: '#f4f1e8', textSecondary: '#d6cfbd', textMuted: '#9a927f', textWhisper: '#6b6555',
-  success: '#3ddc97', alert: '#e04a5a', korea: '#e0485a',
-} as const
+import { SCAN_ADDRESS } from 'lib/products'
 
 const REPO = 'https://github.com/openfieldsapp/openfields-swap'
 const OWNER_SINK = 'terra1ylr5lqj9e4ehjpxc4944rhjcmq7zdaju50r3tn60vn7rsqym50gq5w27l3'
@@ -47,7 +38,7 @@ type State = 'checking' | 'ok' | 'bad' | 'note'
 interface Check { group: string; what: string; expected: string; found: string; state: State; href?: string }
 interface PairConfig { code_id: number; pair_type: Record<string, unknown>; total_fee_bps: number; maker_fee_bps: number; is_disabled: boolean }
 
-const addressUrl = (a: string) => `https://scan.openfields.app/address/${a}`
+const addressUrl = SCAN_ADDRESS
 const shortHash = (h: string) => (h ? `${h.slice(0, 10)}…${h.slice(-6)}` : 'no answer')
 
 async function readJson<T>(path: string): Promise<T | null> {
@@ -185,52 +176,49 @@ export default function VerifyPage() {
       <Head>
         <title>Verify · Openfields Swap</title>
       </Head>
-      <main style={pageMain}>
-        <ShellHeader><SiteNav here='verify' /></ShellHeader>
-        <div className='of-col' style={pageColumn(760)}>
-          <h1 style={{ fontSize: 'clamp(1.8rem, 5vw, 2.4rem)', margin: '0.6rem 0 0.4rem', letterSpacing: '-0.02em' }}>
-            <span style={{ fontWeight: 700, color: C.goldLit }}>Verify</span> <span style={{ fontWeight: 300 }}>the contracts</span>
-          </h1>
-          <p style={{ fontSize: TEXT.sm.size, color: C.textSecondary, lineHeight: 1.65, margin: `0 0 ${SPACE['3']}px` }}>
-            Read by your browser from a public Terra endpoint when this page opens, not from this site&apos;s server. Openfields Swap&apos;s own contracts are compared with the reproducible builds in <a href={REPO} target='_blank' rel='noreferrer' style={{ color: C.goldLit }}>the repository</a>; the factory and the pools run Astroport&apos;s code. From a terminal, <code>contracts/owner-sink/verify.sh</code> and <code>contracts/router/verify.sh</code> check the same things.
-          </p>
-          <div style={{ display: 'flex', alignItems: 'center', gap: SPACE['2'], flexWrap: 'wrap', margin: `0 0 ${SPACE['3']}px` }}>
-            <span style={{ fontSize: TEXT.sm.size, fontWeight: 700, color: running ? C.textMuted : bad ? C.alert : C.success }}>
-              {running ? `Checking… ${passed} passed so far` : bad ? `${bad} check${bad === 1 ? '' : 's'} did not pass` : `All ${passed} checks passed`}
+      <AppShell page='verify'>
+        <article className='sw-page'>
+          <h1 className='sw-title'>Verify the contracts</h1>
+          <p className='sw-lede'>Read by your browser from a public Terra endpoint, not from this site&apos;s server.</p>
+          <div className='sw-card sw-gap sw-verify-head' role='status'>
+            <span className={cx('sw-verify-mark', !running && (bad ? 'is-bad' : 'is-ok'))} aria-hidden>
+              {running ? <span className='of-spin' /> : <Icon name={bad ? 'close' : 'check'} size={16} />}
             </span>
-            {at && !running && <span style={{ fontSize: TEXT.xs.size, color: C.textWhisper }}>at {at.toLocaleTimeString('en-GB')}</span>}
-            <button type='button' onClick={start} disabled={running} style={{ marginLeft: 'auto', padding: '0.45rem 0.9rem', background: 'transparent', color: C.textSecondary, border: `1px solid ${C.divider}`, borderRadius: 9, fontSize: TEXT.xs.size, fontWeight: 600, cursor: running ? 'default' : 'pointer', fontFamily: 'inherit' }}>
-              {running ? 'checking…' : 'check again'}
-            </button>
+            <span className='sw-item-main'>
+              <span className='sw-item-title'>{running ? `Checking, ${passed} passed so far` : bad ? `${bad} check${bad === 1 ? '' : 's'} did not pass` : `All ${passed} checks passed`}</span>
+              {at && !running && <span className='sw-item-sub'>at {at.toLocaleTimeString('en-GB')}</span>}
+            </span>
+            <Button size='sm' onClick={start} disabled={running}>Check again</Button>
           </div>
-          <div style={{ display: 'grid', gap: SPACE['3'] }}>
-            {GROUPS.map(g => {
-              const rows = checks.filter(c => c.group === g.key)
-              if (g.key === 'router' && !TERRA_SWAP_ROUTER) return null
-              return (
-                <section key={g.key} style={{ background: C.surfaceElev, border: `1px solid ${C.divider}`, borderRadius: 16, padding: '1rem 1.1rem' }}>
-                  <div style={{ display: 'flex', alignItems: 'baseline', gap: SPACE['2'], flexWrap: 'wrap' }}>
-                    <h2 style={{ fontSize: TEXT.md.size, margin: 0 }}>{g.title}</h2>
-                    {g.address && <a href={addressUrl(g.address)} target='_blank' rel='noreferrer' style={{ fontSize: TEXT.xs.size, color: C.textMuted, fontFamily: 'monospace', wordBreak: 'break-all' }}>{g.address}</a>}
-                  </div>
-                  <p style={{ fontSize: TEXT.xs.size, color: C.textMuted, lineHeight: 1.6, margin: '4px 0 8px' }}>{g.blurb}</p>
-                  {rows.length === 0 && <div style={{ fontSize: TEXT.xs.size, color: C.textWhisper }}>{running ? 'reading…' : 'no answer from the chain'}</div>}
+          {GROUPS.map(g => {
+            const rows = checks.filter(c => c.group === g.key)
+            if (g.key === 'router' && !TERRA_SWAP_ROUTER) return null
+            return (
+              <section key={g.key} aria-labelledby={`sw-v-${g.key}`}>
+                <h2 id={`sw-v-${g.key}`} className='sw-h2 sw-section'>{g.title}</h2>
+                <p className='sw-hint'>{g.blurb}</p>
+                {g.address && <p className='sw-fine sw-mono'><a href={addressUrl(g.address)} target='_blank' rel='noopener noreferrer'>{g.address}</a></p>}
+                <ul className='sw-list sw-gap sw-checks'>
+                  {rows.length === 0 && <li className='sw-item sw-fine'>{running ? 'Reading…' : 'No answer from the chain'}</li>}
                   {rows.map(c => (
-                    <div key={c.what} style={{ display: 'grid', gridTemplateColumns: '1.4rem minmax(8rem, 12rem) 1fr', gap: '0.2rem 0.6rem', padding: '6px 0', borderTop: `1px solid ${C.divider}`, fontSize: TEXT.xs.size, alignItems: 'baseline' }}>
-                      <span style={{ color: c.state === 'ok' ? C.success : c.state === 'bad' ? C.alert : C.textMuted, fontWeight: 700 }}>{c.state === 'ok' ? '✓' : c.state === 'bad' ? '✗' : '•'}</span>
-                      <span style={{ color: C.textSecondary }}>{c.href ? <a href={c.href} target='_blank' rel='noreferrer' style={{ color: 'inherit' }}>{c.what} ↗</a> : c.what}</span>
-                      <span style={{ fontFamily: 'monospace', wordBreak: 'break-all', color: C.textPrimary }}>
-                        {c.found}
-                        {c.state !== 'ok' && <span style={{ display: 'block', color: C.textWhisper, fontFamily: TERRA_FONT }}>expected: {c.expected}</span>}
+                    <li key={c.what} className='sw-item'>
+                      <span className={cx('sw-verify-mark', c.state === 'ok' && 'is-ok', c.state === 'bad' && 'is-bad')} aria-label={c.state === 'ok' ? 'passed' : c.state === 'bad' ? 'did not pass' : 'note'}>
+                        <Icon name={c.state === 'ok' ? 'check' : c.state === 'bad' ? 'close' : 'chevronRight'} size={14} />
                       </span>
-                    </div>
+                      <span className='sw-item-main'>
+                        <span className='sw-item-title'>{c.href ? <a href={c.href} target='_blank' rel='noopener noreferrer'>{c.what}</a> : <span>{c.what}</span>}</span>
+                        <span className='sw-item-sub sw-mono'>{c.found}</span>
+                        {c.state !== 'ok' && <span className='sw-fine'>Expected: {c.expected}</span>}
+                      </span>
+                    </li>
                   ))}
-                </section>
-              )
-            })}
-          </div>
-        </div>
-      </main>
+                </ul>
+              </section>
+            )
+          })}
+          <p className='sw-fine sw-section'>Openfields Swap&apos;s own contracts are compared with the reproducible builds in <a className='sw-link' href={REPO} target='_blank' rel='noopener noreferrer'>the repository</a>; the factory and the pools run Astroport&apos;s code. From a terminal, <code>contracts/owner-sink/verify.sh</code> and <code>contracts/router/verify.sh</code> check the same things.</p>
+        </article>
+      </AppShell>
     </>
   )
 }

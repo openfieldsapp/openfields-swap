@@ -1,6 +1,6 @@
 /**
  * /sitemap.xml: the pages search engines should know about. The sections of
- * the app, /stats and /verify, a page per listed token that sits in a pool,
+ * the app, /how, /stats and /verify, a page per listed token that sits in a pool,
  * and a page per pool with liquidity on either factory. Built from the same
  * server-side pool read as the stats routes and cached at the edge for an hour.
  */
@@ -15,7 +15,7 @@ const esc = (s: string) => s.replace(/&/g, '&amp;').replace(/</g, '&lt;').replac
 
 export const getServerSideProps: GetServerSideProps = async ({ req, res }) => {
   const base = `https://${req.headers.host ?? 'swap.openfields.app'}`
-  const urls = ['/', '/?tab=pools', '/?tab=bridge', '/stats', '/verify']
+  const urls = ['/', '/?tab=pools', '/?tab=bridge', '/how', '/stats', '/verify']
   let tokens = KNOWN_TOKENS.map(t => t.key)
   const pools: string[] = []
   try {

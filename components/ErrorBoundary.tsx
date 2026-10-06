@@ -9,6 +9,7 @@ interface State {
   error?: Error
 }
 
+/** The whole page in one sentence and one button when something breaks; the reason is there for whoever wants it. */
 export default class ErrorBoundary extends React.Component<Props, State> {
   constructor(props: Props) {
     super(props)
@@ -22,29 +23,16 @@ export default class ErrorBoundary extends React.Component<Props, State> {
   render() {
     if (this.state.hasError) {
       return (
-        <section style={{ textAlign: 'center', padding: '3rem 1rem' }}>
-          <h2 style={{ marginBottom: '0.5rem' }}>Something went wrong</h2>
-          <p style={{ color: 'var(--text-secondary)', fontSize: '0.9rem', marginBottom: '1.5rem' }}>
-            {this.state.error?.message || 'An unexpected error occurred'}
-          </p>
-          <button
-            onClick={() => {
-              this.setState({ hasError: false, error: undefined })
-              window.location.reload()
-            }}
-            style={{
-              background: 'var(--gradient-brand)',
-              color: '#000',
-              border: 'none',
-              padding: '0.6rem 1.5rem',
-              borderRadius: '10px',
-              cursor: 'pointer',
-              fontWeight: 600,
-              fontSize: '0.85rem',
-            }}
-          >
-            Reload Page
-          </button>
+        <section className='of-crash' role='alert'>
+          <h1 className='of-crash-title'>Something went wrong.</h1>
+          <p className='of-note'>Reload the page to start again.</p>
+          <button type='button' className='of-btn of-btn--primary' onClick={() => window.location.reload()}>Reload</button>
+          {this.state.error?.message && (
+            <details className='of-disclosure'>
+              <summary>Details</summary>
+              <pre className='of-code'>{this.state.error.message}</pre>
+            </details>
+          )}
         </section>
       )
     }
