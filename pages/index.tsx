@@ -16,7 +16,7 @@ import type { GetStaticProps } from 'next'
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import useMyAddress from 'components/hooks/useMyAddress'
 import AppShell from 'components/shell/AppShell'
-import { SectionNav, type Section, type SectionNavValue } from 'components/shell/nav'
+import { SectionNav, rememberPlace, type Section, type SectionNavValue } from 'components/shell/nav'
 import { Icon } from 'components/ui'
 import CommandPalette, { type PaletteItem } from 'components/CommandPalette'
 import { PairIcons, TokenIcon } from 'components/TokenIcon'
@@ -117,6 +117,7 @@ export default function SwapPage() {
       if ((u.searchParams.get('tab') ?? '') === want && u.toString() === window.location.href) return
       if (want) u.searchParams.set('tab', want); else u.searchParams.delete('tab')
       window.history.replaceState(window.history.state, '', `${u.pathname}${u.search}${u.hash}`)
+      rememberPlace()
     } catch { /* sandboxed */ }
   }, [tab])
 

@@ -20,3 +20,11 @@ export interface SectionNavValue {
 
 export const SectionNav = createContext<SectionNavValue | null>(null)
 export const useSectionNav = () => useContext(SectionNav)
+
+/** Where the app's own page was last, with its query, so a page about the app can close back to it. */
+export const BACK = 'openfields:back:v1'
+
+/** Keeps the address of the app's page the person is on; the swap page also calls it when its tab changes the address in place. */
+export function rememberPlace() {
+  try { sessionStorage.setItem(BACK, `${window.location.pathname}${window.location.search}`) } catch { /* Close goes to the start */ }
+}
