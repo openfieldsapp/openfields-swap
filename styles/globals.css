@@ -228,7 +228,17 @@ svg { flex: none; }
 .of-top[data-scrolled='true'] { border-bottom-color: var(--line); }
 .of-top-in { display: flex; align-items: center; gap: 4px; max-width: calc(var(--column) + 2 * var(--gutter)); height: 100%; margin: 0 auto; padding: 0 var(--gutter); }
 .of-top-end { display: flex; align-items: center; gap: 4px; margin-left: auto; }
-.of-brand { display: inline-flex; align-items: center; gap: 10px; height: var(--h-md); padding-right: 2px; border-radius: 10px; font-size: var(--t-md); letter-spacing: -0.01em; white-space: nowrap; }
+.of-brand {
+  display: inline-flex; align-items: center; gap: 10px; height: var(--h-md); margin-left: -8px; padding: 0 8px;
+  border: 0; border-radius: 999px; background: transparent; color: var(--fg); cursor: pointer;
+  font-size: var(--t-md); letter-spacing: -0.01em; white-space: nowrap;
+  transition: background-color var(--d-1) var(--ease);
+}
+.of-brand[aria-expanded='true'] { background: var(--bg-2); }
+/* On touch screens a tapped name would keep its hover. */
+@media (hover: hover) { .of-brand:hover { background: var(--bg-2); } }
+.of-brand-chev { display: inline-grid; margin-left: -4px; color: var(--fg-3); transition: transform var(--d-2) var(--ease); }
+.of-brand[aria-expanded='true'] .of-brand-chev { transform: rotate(180deg); }
 .of-brand img { width: 24px; height: 24px; border-radius: 50%; }
 .of-brand-word b { font-weight: 600; }
 /* The smallest phones: the mark and the app's name, so the wallet still fits on the same line. */
@@ -236,8 +246,11 @@ svg { flex: none; }
 .of-top-link { display: inline-flex; align-items: center; height: var(--h-icon); padding: 0 12px; border-radius: 999px; font-size: var(--t-sm); font-weight: 500; color: var(--fg-2); transition: color var(--d-1) var(--ease), background-color var(--d-1) var(--ease); }
 .of-top-link:hover { color: var(--fg); background: var(--bg-2); }
 .of-top-link[aria-current='page'] { color: var(--fg); }
+.of-close { gap: 6px; border: 0; background: transparent; cursor: pointer; animation: of-fade var(--d-2) var(--ease) both; }
 @media (max-width: 640px) {
   .of-top-link { display: none; }
+  .of-top-link.of-close { display: inline-flex; justify-content: center; width: var(--h-icon); padding: 0; }
+  .of-close span { display: none; }
 }
 
 .of-next { display: flex; flex-wrap: wrap; gap: 4px; margin-left: -12px; }
@@ -245,7 +258,7 @@ svg { flex: none; }
 /* The family: every Openfields app, one menu away from the name. */
 .of-apps { left: 0; width: 560px; padding: 8px; }
 .of-apps-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 2px; }
-.of-app-item { display: grid; gap: 2px; padding: 10px 12px; border-radius: 10px; transition: background-color var(--d-1) var(--ease); }
+.of-app-item { display: grid; align-content: start; gap: 2px; padding: 10px 12px; border-radius: 10px; transition: background-color var(--d-1) var(--ease); }
 .of-app-item:hover { background: var(--bg-2); }
 .of-app-item b { display: flex; align-items: center; gap: 6px; font-size: var(--t-md); font-weight: 500; }
 .of-app-item b svg { color: var(--accent); }

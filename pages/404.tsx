@@ -21,7 +21,7 @@ export default function NotFound() {
   const tx = TX.exec(path)?.[1]?.toUpperCase()
   const pool = POOL.exec(path)?.[1]
   return (
-    <AppShell>
+    <AppShell page='missing'>
       <section className='sw-page sw-narrow sw-empty'>
         <h1 className='sw-title'>{tx ? 'Transaction not found yet' : pool ? 'Pool not found' : 'Nothing here'}</h1>
         <p className='sw-lede'>
