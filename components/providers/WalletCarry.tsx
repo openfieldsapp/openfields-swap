@@ -4,8 +4,8 @@
  * when someone moves from one app to another. A cookie on openfields.app
  * carries only which wallet they connected with, never the address, or that
  * they disconnected. An app that opens without a session of its own connects
- * the same wallet again when it is the browser extension (Keplr asks once per
- * app, the first time); a disconnect in one app disconnects the next one
+ * the same wallet again when it is a browser extension, Keplr or Vultisig (each
+ * asks once per app, the first time); a disconnect in one app disconnects the next one
  * opened. A WalletConnect session belongs to the site that made it, so a phone
  * connected that way connects again in each app. When Keplr's window is closed
  * or declined in an app, that app stops opening it by itself (until the person
@@ -15,10 +15,14 @@
  */
 
 import { useEffect, useRef } from 'react'
-import { useChain, useChainWallet } from '@cosmos-kit/react'
+import { useChain } from '@cosmos-kit/react'
 
 const COOKIE = 'of_wallet'
-const EXTENSION = 'keplr-extension'
+/** The browser extensions connected again by themselves, with how to tell that each is in this browser. Vultisig also answers at window.keplr when Keplr is missing. */
+const EXTENSIONS: Record<string, () => boolean> = {
+  'keplr-extension': () => { const k = (window as unknown as { keplr?: { isVulticonnect?: boolean } }).keplr; return !!k && !k.isVulticonnect },
+  'vultisig-extension': () => !!(window as unknown as { vultisig?: { keplr?: unknown } }).vultisig?.keplr,
+}
 const OFF = 'none'
 /** How long after the kit starts to wait for it to restore this app's own session. */
 const SETTLE_MS = 700
@@ -43,10 +47,9 @@ function carry(value: string) {
 }
 
 export default function WalletCarry({ chain = 'terra2' }: { chain?: string }) {
-  const { status, wallet, disconnect } = useChain(chain)
-  const extension = useChainWallet(chain, EXTENSION)
-  const now = useRef({ status, wallet, disconnect, connect: extension.connect, connected: () => !!extension.chainWallet?.address })
-  now.current = { status, wallet, disconnect, connect: extension.connect, connected: () => !!extension.chainWallet?.address }
+  const { status, wallet, disconnect, walletRepo } = useChain(chain)
+  const now = useRef({ status, wallet, disconnect, repo: walletRepo })
+  now.current = { status, wallet, disconnect, repo: walletRepo }
   const was = useRef(status)
   const waited = useRef(false)
   const decided = useRef(false)
@@ -54,7 +57,7 @@ export default function WalletCarry({ chain = 'terra2' }: { chain?: string }) {
   // Once the kit has restored whatever this app had: follow what was chosen in the others. Until then
   // nothing is written, so this app's own old session cannot overwrite a disconnect made elsewhere.
   const decide = () => {
-    const { status: s, wallet: w, disconnect: off, connect } = now.current
+    const { status: s, wallet: w, disconnect: off, repo } = now.current
     // The kit has a session of its own saved here that it has not restored yet: wait for it
     if (s !== 'Connected' && s !== 'Error' && localStorage.getItem(SAVED)) return
     decided.current = true
@@ -64,10 +67,11 @@ export default function WalletCarry({ chain = 'terra2' }: { chain?: string }) {
       else if (w?.name) { carry(w.name); setDeclined(false) }
       return
     }
-    const keplr = (window as unknown as { keplr?: unknown }).keplr
-    if (wanted === EXTENSION && keplr && !declinedHere()) {
+    // Only a wallet this app offers (Vultisig is offered only where its extension is) and that is in this browser.
+    const cw = wanted && EXTENSIONS[wanted]?.() ? repo.getWallet(wanted) : undefined
+    if (cw && !declinedHere()) {
       // The kit records a refusal instead of throwing it, so the outcome is read from the wallet afterwards.
-      connect().then(() => { if (!now.current.connected()) setDeclined(true) }, () => setDeclined(true))
+      cw.connect().then(() => { if (!cw.address) setDeclined(true) }, () => setDeclined(true))
     }
   }
 
