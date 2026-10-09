@@ -76,6 +76,7 @@ export default function How() {
         <ul>
           <li>Nothing about you on its server, unless you turn on price alerts with the page closed: then this browser&apos;s notification address and its alert levels, and nothing else.</li>
           <li>Starred tokens, alerts, recent tokens, saved addresses and the language stay in this browser.</li>
+          <li>With a wallet connected, the ✦ in the corner asks Openfields Home’s server what waits for that address and opens each line there. That server keeps the answer for up to a minute and logs no address.</li>
           <li>In some countries wallet actions are not offered; pages and data stay open everywhere.</li>
         </ul>
 

@@ -5,6 +5,7 @@
  */
 
 const PATHS = {
+  arrowUp: <path d='M12 19V5M5.5 11.5 12 5l6.5 6.5' />,
   chevronDown: <path d='m7 10 5 5 5-5' />,
   chevronRight: <path d='m10 7 5 5-5 5' />,
   chevronLeft: <path d='m14 7-5 5 5 5' />,

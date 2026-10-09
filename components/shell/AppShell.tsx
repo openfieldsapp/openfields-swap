@@ -14,8 +14,10 @@ import { IS_ASTRO } from 'lib/dex'
 import { HOME_URL } from 'lib/products'
 import { LANGS, setLang, useLang, type Lang } from 'lib/i18n'
 import AppSwitcher from './AppSwitcher'
+import Companion from './Companion'
 import { BACK, SECTION_HREF, rememberPlace, useSectionNav, type Section } from './nav'
 import WalletPill from './WalletPill'
+import { useWalletAddress } from 'lib/wallet/address'
 
 const APP_WORD = IS_ASTRO ? 'Pools' : 'Swap'
 const SOURCE_URL = 'https://github.com/openfieldsapp/openfields-swap'
@@ -71,6 +73,7 @@ export default function AppShell({ children, page = 'other', wide = false }: { c
   const router = useRouter()
   const here = (p: Page) => (page === p ? 'page' as const : undefined)
   const about = ABOUT.includes(page)
+  const address = useWalletAddress()
 
   // The app's own pages, query included, are where Close goes back to; a missing page is not.
   useEffect(() => {
@@ -136,6 +139,7 @@ export default function AppShell({ children, page = 'other', wide = false }: { c
           </div>
         </div>
       </footer>
+      <Companion address={address} />
     </div>
   )
 }

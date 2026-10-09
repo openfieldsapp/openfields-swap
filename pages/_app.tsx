@@ -6,6 +6,7 @@ import localFont from 'next/font/local'
 import { TxRegionGateProvider } from 'components/RegionGate'
 import 'styles/globals.css'
 import 'styles/swap.css'
+import 'styles/companion.css'
 
 /**
  * The family typeface ships with the site (Montserrat, SIL Open Font License,
