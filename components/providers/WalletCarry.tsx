@@ -4,7 +4,7 @@
  * when someone moves from one app to another. A cookie on openfields.app
  * carries only which wallet they connected with, never the address, or that
  * they disconnected. An app that opens without a session of its own connects
- * the same wallet again when it is a browser extension, Keplr or Vultisig (each
+ * the same wallet again when it is a browser extension, Keplr, Vultisig or Station (each
  * asks once per app, the first time); a disconnect in one app disconnects the next one
  * opened. A WalletConnect session belongs to the site that made it, so a phone
  * connected that way connects again in each app. When Keplr's window is closed
@@ -16,12 +16,14 @@
 
 import { useEffect, useRef } from 'react'
 import { useChain } from '@cosmos-kit/react'
+import { hasStation, isStationKeplr } from 'lib/wallet/station'
 
 const COOKIE = 'of_wallet'
-/** The browser extensions connected again by themselves, with how to tell that each is in this browser. Vultisig also answers at window.keplr when Keplr is missing. */
+/** The browser extensions connected again by themselves, with how to tell that each is in this browser. Vultisig, and Station as the default wallet, also answer at window.keplr. */
 const EXTENSIONS: Record<string, () => boolean> = {
-  'keplr-extension': () => { const k = (window as unknown as { keplr?: { isVulticonnect?: boolean } }).keplr; return !!k && !k.isVulticonnect },
+  'keplr-extension': () => { const k = (window as unknown as { keplr?: { isVulticonnect?: boolean } }).keplr; return !!k && !k.isVulticonnect && !isStationKeplr(k) },
   'vultisig-extension': () => !!(window as unknown as { vultisig?: { keplr?: unknown } }).vultisig?.keplr,
+  'station-extension': hasStation,
 }
 const OFF = 'none'
 /** How long after the kit starts to wait for it to restore this app's own session. */
