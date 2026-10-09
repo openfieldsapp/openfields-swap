@@ -31,6 +31,12 @@
  *    out of a DEX's total so the same LUNA is not counted twice, so both
  *    figures are recorded and the page says which convention it is showing.
  *
+ * And one met on 2026-10-08, when the public nodes failed a large share of
+ * requests: a reading that heard from 320 of 853 pools, or priced none of them,
+ * still added up to a number, $0 or $75k against $1.8M an hour before. So a
+ * reading that heard from too few pools or priced nothing writes its totals as
+ * null, and `missing` says why.
+ *
  * usage: node scripts/astro-check.mjs <dir>
  */
 
@@ -456,7 +462,15 @@ for (const p of priceable) {
 }
 valued.sort((a, b) => b.usd - a.usd)
 
-const tvl = valued.reduce((s, p) => s + p.usd, 0)
+// A healthy reading hears from 848 of 853 pools; the few that never answer are
+// broken pairs. Below this share, or with nothing priced, the sum is not a total.
+const MIN_POOLS_READ = 0.95
+const missing = []
+if (read.length < pairs.length * MIN_POOLS_READ) missing.push('pools')
+if (valued.length === 0) missing.push('prices')
+// Whether the value totals hold. The day's transactions are judged on their own.
+const whole = missing.length === 0
+const tvl = whole ? valued.reduce((s, p) => s + p.usd, 0) : null
 
 /**
  * Liquid staking tokens hold the same LUNA that the staking protocol already
@@ -493,13 +507,14 @@ const activePools = top.filter(p => (p.txs ?? 0) > 0).length
 const used = top.filter(p => (p.txs ?? 0) > 0)
 const { seen, poolsOf } = await dayTransactions(used, height).catch(() => ({ seen: new Map(), poolsOf: new Map() }))
 const txs24h = seen.size > 0 ? seen.size : null
+if (txs24h === null) missing.push('txs')
 // Kept because each per-pool number is right on its own, and the gap between
 // this and txs24h is how much routing happens.
 const poolVisits = top.reduce((s, p) => s + (p.txs ?? 0), 0)
 const wallets = seen.size > 0 ? walletsFrom(seen, poolsOf) : null
 
 const share = n => {
-  if (!(tvl > 0)) return null
+  if (!whole || !(tvl > 0)) return null
   return round(valued.slice(0, n).reduce((s, p) => s + p.usd, 0) / tvl, 4)
 }
 
@@ -520,7 +535,7 @@ const line = JSON.stringify({
   tvl: round(tvl),
   // The same reading without liquid staking tokens, which is how a total is
   // reached that can be set beside other chains measured the same way.
-  tvlExLst: round(tvl - lstUsd),
+  tvlExLst: whole ? round(tvl - lstUsd) : null,
   pools: pairs.length,
   read: read.length,
   held: held.length,
@@ -556,6 +571,7 @@ const line = JSON.stringify({
     v: round(p.usd),
     x: p.txs ?? null,
   })),
+  missing,
 })
 
 mkdirSync(join(dir, 'astro'), { recursive: true })

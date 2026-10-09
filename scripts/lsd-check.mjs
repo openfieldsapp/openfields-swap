@@ -27,6 +27,12 @@
  *  - `previous_batches` returns the oldest first, so asking without a cursor
  *    answers with 2022 and says nothing about what is leaving now.
  *
+ * And one met on 2026-10-08, when the public nodes failed a large share of
+ * requests from 15:31 UTC: a read that fails must land as null, never as a zero
+ * or an empty list. Written as zeros, the hubs backed no validators and held no
+ * LUNA, which reads as a fact about the hubs. So every failed read is null, and
+ * `missing` names them.
+ *
  * usage: node scripts/lsd-check.mjs <dir>
  */
 
@@ -88,6 +94,8 @@ async function smart(contract, msg) {
 
 const trySmart = (c, m) => smart(c, m).catch(() => null)
 const micro = v => Number(v ?? 0) / 1e6
+/** For a field of a read that may have failed: missing stays missing. */
+const microOrNull = v => (v === null || v === undefined ? null : micro(v))
 const round = (n, d = 2) => (Number.isFinite(n) ? Math.round(n * 10 ** d) / 10 ** d : null)
 
 async function txsLastDay(addr, height) {
@@ -100,16 +108,21 @@ async function txsLastDay(addr, height) {
   return Number.isFinite(total) ? total : null
 }
 
-/** What a hub actually delegates, from the staking module rather than its own config. */
+/**
+ * What a hub actually delegates, from the staking module rather than its own
+ * config. Null when the read failed, which is not the same as delegating nothing.
+ */
 async function delegationsOf(addr) {
   const j = await lcdJson(`/cosmos/staking/v1beta1/delegations/${addr}?pagination.limit=100`).catch(() => null)
-  return (j?.delegation_responses ?? [])
+  if (!Array.isArray(j?.delegation_responses)) return null
+  return j.delegation_responses
     .map(d => ({ v: d?.delegation?.validator_address ?? '', l: micro(d?.balance?.amount) }))
     .filter(d => d.v)
     .sort((a, b) => b.l - a.l)
 }
 
 function spreadOf(dels) {
+  if (!dels) return { used: null, funded: null, top: null, topSix: null }
   const funded = dels.filter(d => d.l > 0)
   const total = funded.reduce((s, d) => s + d.l, 0)
   return {
@@ -150,7 +163,7 @@ const counts = await Promise.all(
 )
 
 /** A hub's stake next to the whole of each validator it backs. */
-const withShare = dels => dels.slice(0, 12).map(d => {
+const withShare = dels => dels && dels.slice(0, 12).map(d => {
   const v = validators.get(d.v)
   return {
     v: d.v,
@@ -161,9 +174,22 @@ const withShare = dels => dels.slice(0, 12).map(d => {
   }
 })
 
-const erisLuna = micro(erisState?.total_uluna)
-const bbLuna = micro(bbState?.total_native)
-const bonded = micro(pool?.pool?.bonded_tokens)
+const erisLuna = microOrNull(erisState?.total_uluna)
+const bbLuna = microOrNull(bbState?.total_native)
+const bonded = microOrNull(pool?.pool?.bonded_tokens)
+const shareOf = luna => (luna !== null && bonded > 0 ? round(luna / bonded, 4) : null)
+/** A configured validator list, or null when the config did not answer. */
+const listed = config => (Array.isArray(config?.validators) ? config.validators.length : null)
+
+// Every read that did not answer, by name, so a line says what it lacks.
+const missing = [
+  ['pool', bonded], ['validators', validatorPage],
+  ['eris.state', erisState], ['eris.config', erisConfig], ['eris.batches', erisBatches], ['eris.dels', erisDels],
+  ['backbone.state', bbState], ['backbone.config', bbConfig], ['backbone.dels', bbDels],
+  ['vault.state', vaultState],
+  ['txs.erisHub', counts[0]], ['txs.erisToken', counts[1]], ['txs.vaultLp', counts[2]],
+  ['txs.bbHub', counts[3]], ['txs.bbToken', counts[4]],
+].filter(([, v]) => v === null || v === undefined).map(([name]) => name)
 
 const t = `${new Date().toISOString().slice(0, 16)}Z`
 const line = JSON.stringify({
@@ -171,48 +197,50 @@ const line = JSON.stringify({
   height,
   chain: {
     bonded: round(bonded, 0),
-    validators: validators.size,
+    validators: validatorPage ? validators.size : null,
   },
   eris: {
     luna: round(erisLuna, 0),
-    tokens: round(micro(erisState?.total_ustake), 0),
+    tokens: round(microOrNull(erisState?.total_ustake), 0),
     // Rises as rewards arrive; never a price.
     rate: round(Number(erisState?.exchange_rate), 6),
-    tvl: round(micro(erisState?.tvl_uluna), 0),
-    unbonding: round(micro(erisState?.unbonding), 0),
+    tvl: round(microOrNull(erisState?.tvl_uluna), 0),
+    unbonding: round(microOrNull(erisState?.unbonding), 0),
     fee: Number(erisConfig?.fee_config?.protocol_reward_fee ?? NaN) || null,
     feeTo: erisConfig?.fee_config?.protocol_fee_contract ?? null,
     owner: erisConfig?.owner ?? null,
     // The configured list is a ceiling; the delegations below are the spread.
-    configured: (erisConfig?.validators ?? []).length,
+    configured: listed(erisConfig),
     ...spreadOf(erisDels),
-    share: bonded > 0 ? round(erisLuna / bonded, 4) : null,
+    share: shareOf(erisLuna),
     dels: withShare(erisDels),
-    queue: (Array.isArray(erisBatches) ? erisBatches : [])
-      .filter(b => !b?.reconciled)
-      .map(b => ({
-        id: b?.id ?? null,
-        luna: round(micro(b?.uluna_unclaimed ?? b?.amount_unclaimed), 0),
-        end: b?.est_unbond_end_time ?? null,
-      })),
+    queue: Array.isArray(erisBatches)
+      ? erisBatches
+          .filter(b => !b?.reconciled)
+          .map(b => ({
+            id: b?.id ?? null,
+            luna: round(micro(b?.uluna_unclaimed ?? b?.amount_unclaimed), 0),
+            end: b?.est_unbond_end_time ?? null,
+          }))
+      : null,
   },
   backbone: {
     luna: round(bbLuna, 0),
-    tokens: round(micro(bbState?.total_usteak), 0),
+    tokens: round(microOrNull(bbState?.total_usteak), 0),
     rate: round(Number(bbState?.exchange_rate), 6),
     fee: Number(bbConfig?.fee_rate ?? NaN) || null,
     feeTo: bbConfig?.fee_account ?? null,
     owner: bbConfig?.owner ?? null,
-    configured: (bbConfig?.validators ?? []).length,
+    configured: listed(bbConfig),
     ...spreadOf(bbDels),
-    share: bonded > 0 ? round(bbLuna / bonded, 4) : null,
+    share: shareOf(bbLuna),
     dels: withShare(bbDels),
   },
   // A separate product from the hub: an arbitrage vault, priced in its own LP token.
   vault: {
     rate: round(Number(vaultState?.exchange_rate), 6),
-    tvl: round(micro(vaultState?.balances?.tvl_utoken), 0),
-    lp: round(micro(vaultState?.total_lp_supply), 0),
+    tvl: round(microOrNull(vaultState?.balances?.tvl_utoken), 0),
+    lp: round(microOrNull(vaultState?.total_lp_supply), 0),
   },
   txs24h: {
     erisHub: counts[0],
@@ -221,6 +249,7 @@ const line = JSON.stringify({
     bbHub: counts[3],
     bbToken: counts[4],
   },
+  missing,
 })
 
 mkdirSync(join(dir, 'lsd'), { recursive: true })
