@@ -20,7 +20,6 @@ import {
 } from 'lib/msgs'
 import { POOLS_MEMO_PREFIXES, SITE_MEMO_PREFIXES, type RoutePlan, type TradePlan } from 'lib/route'
 import { sendInjectiveTx } from 'lib/injective'
-import { STATION } from 'lib/wallet/station'
 import { wakeWalletConnect, type KitChainWallet } from 'components/wallet/kitWallet'
 
 /** The name every memo signed here starts with (lib/route: readers also accept the old "Terra Swap"). */
@@ -201,8 +200,6 @@ export function useInjectiveBroadcast() {
     } catch (e) {
       if (e instanceof RegionRestricted) throw e
     }
-    // Injective's keys sign in direct mode, which Station cannot.
-    if (injective.chainWallet?.walletName === STATION) throw new Error('Station cannot sign on Injective here. Use Keplr for this one.')
     await wakeWalletConnect(injective.chainWallet as KitChainWallet | undefined)
     return sendInjectiveTx(injective.getOfflineSignerDirect(), injective.address, msgs, memo)
   }, [injective, txAllowed, country])
