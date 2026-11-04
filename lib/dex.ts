@@ -339,6 +339,26 @@ export function fromMicro(micro: string | number, decimals = 6, maxFrac = 4): st
   return n.toLocaleString('en-US', { maximumFractionDigits: n >= 1000 ? 0 : frac })
 }
 
+/**
+ * Smallest units → the exact plain decimal an amount field takes back:
+ * toMicro(microToInput(x, d), d) === x. No grouping, no rounding, no float.
+ *
+ * fromMicro is for reading, and rounds to whole units from 1,000 up. Max and
+ * All buttons filled fields with it, so a wallet's whole balance came back as
+ * more than it held, or less: 2,271.519449 LP became 2,272 and Remove stayed
+ * disabled, while 18,708.285933 became 18,708 and left the rest in the pool
+ * (2026-11-04, a provider leaving ROAR/USDC and ROAR/USDC.inj).
+ */
+export function microToInput(micro: string | bigint, decimals = 6): string {
+  const s = String(micro).trim()
+  if (!/^\d+$/.test(s)) return ''
+  if (decimals <= 0) return s.replace(/^0+(?=\d)/, '')
+  const padded = s.padStart(decimals + 1, '0')
+  const int = padded.slice(0, -decimals).replace(/^0+(?=\d)/, '')
+  const frac = padded.slice(-decimals).replace(/0+$/, '')
+  return frac ? `${int}.${frac}` : int
+}
+
 // ─── Queries (LCD, no signer) ───────────────────────────────────
 
 export async function smart<T>(contract: string, msg: object): Promise<T | null> {

@@ -15,7 +15,7 @@ import { askToConnect, shortAddress } from 'components/wallet/connect'
 import { useAstroLegacyExit, useClaimRewards, useExitPosition, useLstWithdraw, useStakeLp, useTerraMsgs, useUnstake } from 'components/transactions/useDex'
 import {
   KNOWN_TOKENS, ASTRO_CONVERTER, ASTRO_CW20, ASTRO_STAKING, XASTRO_CW20, VENUE_INCENTIVES, VENUE_NAME, IS_ASTRO,
-  assetId, fromMicro, queryBalance, resolveToken, sameAsset, toMicro, tokenFor, type KnownToken, type PoolView,
+  assetId, microToInput, queryBalance, resolveToken, sameAsset, toMicro, tokenFor, type KnownToken, type PoolView,
 } from 'lib/dex'
 import { fmtAmount, fmtUsd } from 'lib/arb'
 import { routeMsgs, sendMsg } from 'lib/msgs'
@@ -478,7 +478,7 @@ function Send({ pools, onDone }: { pools: PoolView[]; onDone: () => void }) {
                 // Sending all LUNA would leave nothing for this transaction's fee, or the next one.
                 const keep = isLuna ? BigInt(100_000) : BigInt(0)
                 const max = BigInt(bal) > keep ? BigInt(bal) - keep : BigInt(0)
-                setAmount(fromMicro(max.toString(), token.decimals, 6).replace(/,/g, ''))
+                setAmount(microToInput(max, token.decimals))
               }}>Max</button>
             )}
           </span>

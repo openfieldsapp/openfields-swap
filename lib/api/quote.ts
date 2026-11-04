@@ -24,7 +24,7 @@
 
 import type { NextApiRequest, NextApiResponse } from 'next'
 import { fromUtf8 } from '@cosmjs/encoding'
-import { KNOWN_TOKENS, assetId, fromMicro, toMicro, type KnownToken } from 'lib/dex'
+import { KNOWN_TOKENS, assetId, microToInput, toMicro, type KnownToken } from 'lib/dex'
 import { tradeMsgs } from 'lib/msgs'
 import { planTrade, quoteBest, quoteExactOut, tradeMemo, tradeText, type TradePlan } from 'lib/route'
 import { routingPools } from 'lib/routingPools'
@@ -101,7 +101,8 @@ const sameMachine = (req: NextApiRequest): boolean => {
 
 const find = (v: unknown): KnownToken | undefined =>
   typeof v === 'string' ? KNOWN_TOKENS.find(t => t.key.toLowerCase() === v.toLowerCase() || assetId(t.info) === v) : undefined
-const plain = (micro: string, decimals: number) => fromMicro(micro, decimals, Math.min(decimals, 8)).replace(/,/g, '')
+/** Exact: the quote's minimumOut is a limit integrators sign with, so it is never rounded (lib/dex microToInput). */
+const plain = (micro: string, decimals: number) => microToInput(micro, decimals)
 const enc = encodeURIComponent
 
 export default async function handler(req: NextApiRequest, res: NextApiResponse<QuoteResponse | { error: string }>) {

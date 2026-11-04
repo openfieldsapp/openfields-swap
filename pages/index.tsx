@@ -30,7 +30,7 @@ import LoopCard from 'components/swap/LoopCard'
 import { Toast, liquidityByToken, publishTokenData } from 'components/swap/common'
 import { isCrystalHolder } from 'lib/holders'
 import {
-  KNOWN_TOKENS, NOBLE_USDC, USDC_INJ_DENOM, assetId, fromMicro, annotateMarket, annotateValues, IS_ASTRO, VENUE_NAME,
+  KNOWN_TOKENS, NOBLE_USDC, USDC_INJ_DENOM, assetId, microToInput, annotateMarket, annotateValues, IS_ASTRO, VENUE_NAME,
   type PoolView, type KnownToken,
 } from 'lib/dex'
 import { arbPlans, type ArbPlan } from 'lib/arb'
@@ -208,7 +208,7 @@ export default function SwapPage() {
   const [preset, setPreset] = useState<SwapPreset | null>(null)
   const oneSided = useCallback((plan: ArbPlan) => {
     setLoopFor(null)
-    setPreset({ fromId: assetId(plan.inToken.info), toId: assetId(plan.outToken.info), amount: fromMicro(plan.inMicro, plan.inToken.decimals, 6).replace(/,/g, ''), n: Date.now() })
+    setPreset({ fromId: assetId(plan.inToken.info), toId: assetId(plan.outToken.info), amount: microToInput(plan.inMicro, plan.inToken.decimals), n: Date.now() })
     setTab('swap')
   }, [setTab])
   const takeArb = useCallback((plan: ArbPlan) => { setLoopFor(plan); setTab('swap') }, [setTab])

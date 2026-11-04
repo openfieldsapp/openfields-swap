@@ -18,7 +18,7 @@ import useMyAddress from 'components/hooks/useMyAddress'
 import { askToConnect } from 'components/wallet/connect'
 import { useLstBond, useLstUnbond, useTradeSwap } from 'components/transactions/useDex'
 import {
-  assetId, fromMicro, isListed, queryBalance, sameAsset, toMicro, HOME_VENUE, IS_ASTRO, VENUE_NAME,
+  assetId, fromMicro, isListed, microToInput, queryBalance, sameAsset, toMicro, HOME_VENUE, IS_ASTRO, VENUE_NAME,
   type KnownToken, type PoolView,
 } from 'lib/dex'
 import { fmtAmount } from 'lib/arb'
@@ -667,7 +667,7 @@ export default function SwapBox({ pools, venuePools, feeBps, crystal, onDone, pr
                 {t('Balance')} {amt(balance, from.decimals)}
                 {Number(balance) > 0 && (
                   <button type='button' className='sw-max'
-                    onClick={() => { setMode('in'); setReceipt(null); setAmount(fromMicro((BigInt(balance) * BigInt(10_000 - feeBps - 1) / BigInt(10_000)).toString(), from.decimals, 6).replace(/,/g, '')) }}>
+                    onClick={() => { setMode('in'); setReceipt(null); setAmount(microToInput(BigInt(balance) * BigInt(10_000 - feeBps - 1) / BigInt(10_000), from.decimals)) }}>
                     {t('Max')}
                   </button>
                 )}

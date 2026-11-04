@@ -24,7 +24,7 @@ import { askToConnect } from 'components/wallet/connect'
 import { useCosmosMsgs, useInjectiveMsgs, useTerraMsgs } from 'components/transactions/useDex'
 import {
   NOBLE_USDC, USDC_INJ_DENOM, ATOM_DENOM, ASTRO_IBC_DENOM, DATOM_DENOM, FUEL_DENOM, STLUNA_DENOM, STATOM_DENOM, TERRA_SWAP_ROUTER, HOME_VENUE,
-  assetId, fromMicro, isListed, queryBalance, sameAsset, toMicro, tokenFor, type KnownToken, type PoolView,
+  assetId, fromMicro, isListed, microToInput, queryBalance, sameAsset, toMicro, tokenFor, type KnownToken, type PoolView,
 } from 'lib/dex'
 import { quoteBest, planTrade, routeText, tradeText, reachable, routerPlan, type RoutePlan, type TradePlan } from 'lib/route'
 import { arrivalSwapMsg, ibcTransferMsg, tradeMsgs } from 'lib/msgs'
@@ -425,7 +425,7 @@ function CosmosTransfer({ net, routePools, onDone }: { net: SourceChain; routePo
                       // The source chain takes its network fee in the same token, so leave a little behind when moving all of it.
                       const keep = dir === 'in' ? net.feeReserve : BigInt(0)
                       const max = BigInt(fromBal) > keep ? BigInt(fromBal) - keep : BigInt(0)
-                      setAmount(fromMicro(max.toString(), fromDecimals, 6).replace(/,/g, ''))
+                      setAmount(microToInput(max, fromDecimals))
                     }}>Max</button>
                   )}
                 </span>
@@ -626,7 +626,7 @@ function InjectiveTransfer({ routePools, onDone }: { routePools: PoolView[]; onD
             {showBal
               ? <span className='sw-field-bal'>{amt(fromBal, 6)} USDC.inj
                   {/* Injective takes its fee in INJ, so all of the USDC.inj can go. */}
-                  {Number(fromBal) > 0 && <button type='button' className='sw-max' onClick={() => setAmount(fromMicro(fromBal, 6, 6).replace(/,/g, ''))}>Max</button>}
+                  {Number(fromBal) > 0 && <button type='button' className='sw-max' onClick={() => setAmount(microToInput(fromBal, 6))}>Max</button>}
                 </span>
               : <span className='sw-field-bal'>Injective not connected</span>}
           </div>

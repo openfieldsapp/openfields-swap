@@ -14,7 +14,7 @@ import useMyAddress from 'components/hooks/useMyAddress'
 import { shortAddress } from 'components/wallet/connect'
 import { useExitPosition, useProvideLiquidity, useZap } from 'components/transactions/useDex'
 import {
-  NOBLE_USDC, USDC_INJ_DENOM, assetId, fromMicro, lpConcentration, lpPosition, planZap, queryBalance, queryCw20Balance, smart, toMicro,
+  NOBLE_USDC, USDC_INJ_DENOM, assetId, lpConcentration, microToInput, lpPosition, planZap, queryBalance, queryCw20Balance, smart, toMicro,
   IS_ASTRO, VENUE_INCENTIVES, VENUE_NAME, type KnownToken, type PoolView, type Venue, type ZapPlan,
 } from 'lib/dex'
 import { fmtAmount, fmtUsd, type ArbPlan } from 'lib/arb'
@@ -475,7 +475,7 @@ function PoolRow({ p, routePools, onDone, firstHand, arb, onTake, holders, flow 
                   {me && (
                     <div className='sw-field-head'>
                       <span className='sw-field-bal'>Balance {amt(zBal, zTok.decimals)} {zTok.label}</span>
-                      {Number(zBal) > 0 && <button type='button' className='sw-max' onClick={() => setZAmt(fromMicro((BigInt(zBal) * BigInt(9_960) / BigInt(10_000)).toString(), zTok.decimals, 6).replace(/,/g, ''))}>Max</button>}
+                      {Number(zBal) > 0 && <button type='button' className='sw-max' onClick={() => setZAmt(microToInput(BigInt(zBal) * BigInt(9_960) / BigInt(10_000), zTok.decimals))}>Max</button>}
                     </div>
                   )}
                   {useRouted && zRouted ? (() => {
@@ -512,8 +512,10 @@ function PoolRow({ p, routePools, onDone, firstHand, arb, onTake, holders, flow 
             <div className='sw-pool-form'>
               <div className='sw-pair'>
                 <input className='sw-input' type='number' inputMode='decimal' min='0' step='any' placeholder='LP amount' aria-label='LP amount to remove' value={lpAmt} onChange={e => setLpAmt(e.target.value)} />
-                <Button onClick={() => setLpAmt(fromMicro(lpAll, 6, 6).replace(/,/g, ''))}>All</Button>
+                <Button onClick={() => setLpAmt(microToInput(lpAll, 6))}>All</Button>
               </div>
+              {/* Over the balance the button is disabled; say why instead of leaving it grey. */}
+              {!!lpMicro && BigInt(lpMicro) > BigInt(lpAll) && <p className='sw-hint is-bad'>You hold {microToInput(lpAll, 6)} LP in this pool.</p>}
               <ActionButton me={me} label={withdraw.isLoading ? 'Confirm in your wallet' : 'Remove liquidity'} onClick={remove} disabled={!canRemove} busy={withdraw.isLoading} />
             </div>
           )}
