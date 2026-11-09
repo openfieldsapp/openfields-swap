@@ -1,0 +1,86 @@
+# Checks the Openfields sites and atrium.markets every 10 minutes from GitHub's machines
+# and appends each result to uptime/YYYY-MM.jsonl on the `status` branch, and reads Terra
+# itself and every public endpoint into chain/YYYY-MM-DD.jsonl beside it. Both logs are
+# public, and status.openfields.app reads them back. See scripts/uptime-check.mjs and
+# scripts/chain-check.mjs.
+#
+# GitHub starts scheduled workflows when it has capacity, not on the minute: the
+# `*/10` schedule this workflow began with ran three times on its first day
+# (2026-09-14), so the log said almost nothing. Now one run keeps watch for close to
+# the six hours a job may last, checking on every 10-minute mark and pushing each
+# result as it goes, and then starts the next run itself. The hourly schedule only
+# restarts the chain if a handover ever fails. Runs share one concurrency group, so
+# they never overlap: a run started while another watches waits its turn. To stop
+# the checks, disable this workflow in the Actions tab.
+#
+# The same ten-minute beat sends price alerts to browsers with the page closed
+# (/api/push-check, lib/push), and calls /api/price-record, which writes down
+# prices for the charts (lib/priceHistory) if the pool-scans workflow has not
+# written that slot already. Both ignore a second call in the same slot.
+name: uptime
+
+on:
+  schedule:
+    - cron: '17 * * * *'
+  workflow_dispatch:
+
+permissions:
+  contents: write
+  actions: write
+
+concurrency:
+  group: uptime
+  cancel-in-progress: false
+
+jobs:
+  watch:
+    runs-on: ubuntu-latest
+    # Six hours is the most a job may run; the watch below ends before that and hands over.
+    timeout-minutes: 355
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          sparse-checkout: scripts
+      - uses: actions/checkout@v4
+        with:
+          ref: status
+          path: status-data
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+      - name: Check every 10 minutes and write each result down
+        env:
+          WATCH_MINUTES: '340'
+        run: |
+          git -C status-data config user.name "terra-swap-status"
+          git -C status-data config user.email "terra-swap-status@users.noreply.github.com"
+          end=$(( $(date +%s) + WATCH_MINUTES * 60 ))
+          while :; do
+            node scripts/uptime-check.mjs status-data || echo "check did not complete"
+            node scripts/chain-check.mjs status-data || echo "chain check did not complete"
+            node scripts/creda-check.mjs status-data || echo "creda check did not complete"
+            node scripts/astro-check.mjs status-data || echo "astro check did not complete"
+            node scripts/lsd-check.mjs status-data || echo "lsd check did not complete"
+            (
+              cd status-data
+              git add uptime chain creda astro lsd
+              git commit -q -m "uptime $(date -u +%Y-%m-%dT%H:%MZ)" || exit 0
+              for i in 1 2 3; do
+                git pull -q --rebase origin status && git push -q origin HEAD:status && exit 0
+                sleep 5
+              done
+              echo "could not push this result; the next one carries it"
+            )
+            curl -fsS -m 90 -o /dev/null https://swap.openfields.app/api/price-record || echo "price record did not answer"
+            curl -fsS -m 90 -o /dev/null https://swap.openfields.app/api/push-check || echo "alert check did not answer"
+            now=$(date +%s)
+            next=$(( (now / 600 + 1) * 600 ))
+            if [ "$next" -ge "$end" ]; then break; fi
+            sleep $(( next - now ))
+          done
+      - name: Hand over to the next run
+        # Not after a cancel: cancelling a run is how someone stops the chain by hand.
+        if: ${{ !cancelled() }}
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: gh workflow run uptime.yml --repo "${{ github.repository }}" --ref "${{ github.ref_name }}"

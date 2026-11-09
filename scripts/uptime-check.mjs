@@ -1,0 +1,147 @@
+#!/usr/bin/env node
+/**
+ * One uptime check of the maintained sites, appended as JSON lines to
+ * <dir>/uptime/YYYY-MM.jsonl. Openfields Status shows them (status.openfields.app),
+ * and so does the swap's own /stats.
+ *
+ * .github/workflows/uptime.yml runs it every 10 minutes on GitHub's machines,
+ * so the sites are measured from outside the host that serves them, and the
+ * log is public on this repository's `status` branch. A site counts as up
+ * only if its page loads and its data API answers with live data. A failed
+ * check is retried once after five seconds before it is written down.
+ *
+ * usage: node scripts/uptime-check.mjs <dir>
+ */
+
+import { appendFileSync, mkdirSync } from 'node:fs'
+import { join } from 'node:path'
+
+const dir = process.argv[2] || 'status-data'
+const TIMEOUT_MS = 20_000
+const UA = 'terra-swap-uptime (+https://github.com/openfieldsapp/openfields-swap)'
+
+const TARGETS = [
+  {
+    site: 'swap.openfields.app',
+    checks: [
+      { url: 'https://swap.openfields.app/', expect: (r) => r.status === 200 },
+      { url: 'https://swap.openfields.app/api/dex', json: true, expect: (r, j) => r.status === 200 && j?.live === true && j?.pools?.length > 0 },
+      // Astroport's pools, listed on the same site since pools.openfields.app was folded into it (2026-09-14).
+      { url: 'https://swap.openfields.app/api/dex-venue', json: true, expect: (r, j) => r.status === 200 && j?.pools?.length > 0 },
+    ],
+  },
+  {
+    site: 'nft.openfields.app',
+    checks: [
+      { url: 'https://nft.openfields.app/', expect: (r) => r.status === 200 },
+      { url: 'https://nft.openfields.app/api/for-sale?limit=1', json: true, expect: (r, j) => r.status === 200 && typeof j?.total === 'number' },
+    ],
+  },
+  {
+    // Openfields Gov's own reads are heavy enough that asking for one every ten minutes would be rude to the chain; the page is the check.
+    site: 'gov.openfields.app',
+    checks: [
+      { url: 'https://gov.openfields.app/', expect: (r) => r.status === 200 },
+    ],
+  },
+  {
+    site: 'openfields.app',
+    checks: [
+      { url: 'https://openfields.app/', expect: (r) => r.status === 200 },
+      { url: 'https://openfields.app/api/pulse', json: true, expect: (r, j) => r.status === 200 && !!j },
+    ],
+  },
+  {
+    site: 'status.openfields.app',
+    checks: [
+      { url: 'https://status.openfields.app/', expect: (r) => r.status === 200 },
+      { url: 'https://status.openfields.app/api/chain', json: true, expect: (r, j) => r.status === 200 && j?.height > 0 },
+    ],
+  },
+  {
+    site: 'stake.openfields.app',
+    checks: [
+      { url: 'https://stake.openfields.app/', expect: (r) => r.status === 200 },
+      { url: 'https://stake.openfields.app/api/validators', json: true, expect: (r, j) => r.status === 200 && j?.rows?.length > 0 },
+    ],
+  },
+  {
+    site: 'data.openfields.app',
+    checks: [
+      { url: 'https://data.openfields.app/', expect: (r) => r.status === 200 },
+      { url: 'https://data.openfields.app/api/creda', json: true, expect: (r, j) => r.status === 200 && j?.markets?.length > 0 && j?.trustworthy === true },
+    ],
+  },
+  {
+    // "pending" is the few minutes after midnight UTC before the day's first readings are written, and is normal.
+    site: 'daily.openfields.app',
+    checks: [
+      { url: 'https://daily.openfields.app/', expect: (r) => r.status === 200 },
+      { url: 'https://daily.openfields.app/api/puzzle/today', json: true, expect: (r, j) => r.status === 200 && (j?.status === 'ready' || j?.status === 'pending') },
+    ],
+  },
+  {
+    // The live feed reads the newest blocks and their transactions, so it answers only when the chain does.
+    site: 'scan.openfields.app',
+    checks: [
+      { url: 'https://scan.openfields.app/', expect: (r) => r.status === 200 },
+      { url: 'https://scan.openfields.app/api/live', json: true, expect: (r, j) => r.status === 200 && j?.latest > 0 && j?.blocks?.length > 0 },
+    ],
+  },
+  {
+    // The conversation itself is not asked for: every question costs a model call. The page and its API answering is the check.
+    site: 'ask.openfields.app',
+    checks: [
+      { url: 'https://ask.openfields.app/', expect: (r) => r.status === 200 },
+      { url: 'https://ask.openfields.app/api/geo', json: true, expect: (r, j) => r.status === 200 && typeof j?.tx_allowed === 'boolean' },
+    ],
+  },
+  {
+    // The page is static; /api/h/health answers from Openfields Home's reader on our own server, through the site's rewrite, so it checks the whole way.
+    site: 'home.openfields.app',
+    checks: [
+      { url: 'https://home.openfields.app/', expect: (r) => r.status === 200 },
+      { url: 'https://home.openfields.app/api/h/health', json: true, expect: (r, j) => r.status === 200 && j?.ok === true },
+    ],
+  },
+  {
+    site: 'atrium.markets',
+    checks: [
+      { url: 'https://atrium.markets/', expect: (r) => r.status === 200 },
+      { url: 'https://atrium.markets/api/atrium/stats', json: true, expect: (r, j) => r.status === 200 && j?.contractDeployed === true },
+    ],
+  },
+]
+
+async function once(check) {
+  const started = Date.now()
+  try {
+    const r = await fetch(check.url, { headers: { 'user-agent': UA }, redirect: 'follow', signal: AbortSignal.timeout(TIMEOUT_MS) })
+    let j = null
+    if (check.json) { try { j = await r.json() } catch { j = null } } else { await r.arrayBuffer() }
+    const ok = Boolean(check.expect(r, j))
+    return { ok, ms: Date.now() - started, detail: ok ? null : `${check.url} answered ${r.status}${check.json && !j ? ' without JSON' : check.json ? ' without live data' : ''}` }
+  } catch (e) {
+    const why = e?.name === 'TimeoutError' ? `no answer in ${TIMEOUT_MS / 1000}s` : String(e?.cause?.code ?? e?.message ?? e).slice(0, 120)
+    return { ok: false, ms: Date.now() - started, detail: `${check.url}: ${why}` }
+  }
+}
+
+async function checkTwice(check) {
+  const first = await once(check)
+  if (first.ok) return first
+  await new Promise((r) => setTimeout(r, 5_000))
+  return once(check)
+}
+
+const t = new Date().toISOString().slice(0, 16) + 'Z'
+const lines = []
+for (const target of TARGETS) {
+  const results = await Promise.all(target.checks.map(checkTwice))
+  const failed = results.find((r) => !r.ok)
+  lines.push(JSON.stringify({ t, site: target.site, ok: !failed, ms: Math.max(...results.map((r) => r.ms)), detail: failed?.detail ?? null }))
+}
+
+mkdirSync(join(dir, 'uptime'), { recursive: true })
+appendFileSync(join(dir, 'uptime', `${t.slice(0, 7)}.jsonl`), lines.join('\n') + '\n')
+console.log(lines.join('\n'))

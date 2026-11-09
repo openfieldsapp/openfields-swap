@@ -1,0 +1,45 @@
+/*
+ * ✦ Openfields Ask in the corner (components/shell/Companion). The same file in Stake, Swap and Data, on the
+ * design system's tokens only, so it needs nothing else from the app.
+ */
+.of-cmp { position: fixed; z-index: 50; right: max(16px, env(safe-area-inset-right)); bottom: max(16px, env(safe-area-inset-bottom)); }
+.of-cmp-btn {
+  position: relative; display: grid; place-items: center; width: 48px; height: 48px; padding: 0;
+  border: 1px solid var(--line-2); border-radius: 999px; background: var(--bg-2); color: var(--fg);
+  font-size: var(--t-xl); line-height: 1; box-shadow: var(--shadow-pop); cursor: pointer;
+  transition: background-color var(--d-1) var(--ease), border-color var(--d-1) var(--ease);
+}
+.of-cmp-btn:hover { background: var(--bg-3); border-color: var(--line-3); }
+.of-cmp-btn:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
+.of-cmp-dot { flex: none; width: 6px; height: 6px; border-radius: 50%; background: var(--caution); }
+.of-cmp-dot--on { position: absolute; top: 9px; right: 9px; width: 8px; height: 8px; box-shadow: 0 0 0 2px var(--bg-2); }
+.of-cmp-pop {
+  position: absolute; right: 0; bottom: calc(100% + 10px); width: min(340px, calc(100vw - 32px)); padding: 6px;
+  background: var(--bg-1); border: 1px solid var(--line-2); border-radius: var(--r-3); box-shadow: var(--shadow-pop);
+  animation: of-fade var(--d-1) var(--ease) both;
+}
+.of-cmp-label { margin: 0; padding: 10px 10px 6px; font-size: var(--t-xs); font-weight: 500; color: var(--fg-3); }
+.of-cmp-note { margin: 0; padding: 4px 10px 8px; font-size: var(--t-sm); color: var(--fg-3); }
+.of-cmp-item {
+  display: flex; align-items: center; gap: 10px; width: 100%; min-height: var(--h-md); padding: 8px 10px;
+  border-radius: var(--r-1); color: var(--fg); font-size: var(--t-sm); font-weight: 500; text-decoration: none;
+  transition: background-color var(--d-1) var(--ease);
+}
+.of-cmp-item:hover { background: var(--bg-2); }
+.of-cmp-item:focus-visible { outline: 2px solid var(--accent); outline-offset: 1px; }
+.of-cmp-item > span:not(.of-cmp-dot) { flex: 1; min-width: 0; }
+.of-cmp-item > svg { flex: none; color: var(--fg-3); }
+.of-cmp-home { color: var(--fg-2); }
+.of-cmp-ask { display: flex; align-items: center; gap: 6px; margin-top: 6px; padding: 8px 4px 2px; border-top: 1px solid var(--line); }
+.of-cmp-input {
+  flex: 1; min-width: 0; height: var(--h-md); padding: 0 12px;
+  background: var(--bg); border: 1px solid var(--line-2); border-radius: var(--r-2);
+  font-size: var(--t-sm); color: var(--fg); transition: border-color var(--d-1) var(--ease);
+}
+.of-cmp-input:hover { border-color: var(--line-3); }
+.of-cmp-input:focus { outline: none; border-color: var(--line-3); }
+.of-cmp-input:focus-visible { outline: 2px solid var(--accent); outline-offset: 1px; }
+.of-cmp-input::placeholder { color: var(--fg-3); opacity: 1; }
+@media (prefers-reduced-motion: reduce) { .of-cmp-pop { animation: none; } }
+/* Room under the footer, so the button never covers its last lines. */
+.of-foot { padding-bottom: calc(80px + env(safe-area-inset-bottom)); }
